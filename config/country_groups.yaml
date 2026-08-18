@@ -1,0 +1,58 @@
+# Country groups for the toggle. ISO-3166 alpha-3.
+# Membership is political and changes — each group carries an `as_of`.
+# Small enough to hand-maintain; review annually.
+
+groups:
+  world:
+    label: "All countries"
+    note: "Everything the source data covers. Default view."
+    members: ALL
+
+  seed15:
+    label: "Original 15"
+    note: >
+      The hand-coded set from the source spreadsheet. Kept so the sourced
+      data can be diffed against the original judgement calls.
+    as_of: 2026-08-18
+    members: [IND, USA, IDN, BRA, JPN, PHL, DEU, THA, GBR, FRA, ZAF, ITA, COL, KOR, ESP]
+
+  g7:
+    label: "G7"
+    as_of: 2026-08-18
+    members: [USA, GBR, FRA, DEU, ITA, JPN, CAN]
+
+  g20:
+    label: "G20"
+    note: "Excludes the EU and African Union bloc seats, which have no single government."
+    as_of: 2026-08-18
+    members: [ARG, AUS, BRA, CAN, CHN, FRA, DEU, IND, IDN, ITA, JPN, MEX,
+              RUS, SAU, ZAF, KOR, TUR, GBR, USA]
+
+  eu:
+    label: "European Union"
+    as_of: 2026-08-18
+    members: [AUT, BEL, BGR, HRV, CYP, CZE, DNK, EST, FIN, FRA, DEU, GRC,
+              HUN, IRL, ITA, LVA, LTU, LUX, MLT, NLD, POL, PRT, ROU, SVK,
+              SVN, ESP, SWE]
+
+  oecd:
+    label: "OECD"
+    as_of: 2026-08-18
+    members: [AUS, AUT, BEL, CAN, CHL, COL, CRI, CZE, DNK, EST, FIN, FRA,
+              DEU, GRC, HUN, ISL, IRL, ISR, ITA, JPN, KOR, LVA, LTU, LUX,
+              MEX, NLD, NZL, NOR, POL, PRT, SVK, SVN, ESP, SWE, CHE, TUR,
+              GBR, USA]
+
+  brics:
+    label: "BRICS+"
+    note: >
+      Founding five plus the 2024 expansion, plus Indonesia (Jan 2025).
+      Saudi Arabia was invited but has not formally acceded — excluded.
+    as_of: 2026-08-18
+    members: [BRA, RUS, IND, CHN, ZAF, EGY, ETH, IRN, ARE, IDN]
+
+  asean:
+    label: "ASEAN"
+    note: "Timor-Leste acceded as the 11th member in October 2025."
+    as_of: 2026-08-18
+    members: [BRN, KHM, IDN, LAO, MYS, MMR, PHL, SGP, THA, VNM, TLS]
