@@ -1,0 +1,40 @@
+note: 'DPI countryname -> OWID entity name. Verified 2026-08-18: with these entries every
+  DPI country resolves to an OWID entity. Historical states under `drop` have no modern OWID
+  population series and are excluded; revisit if the site ever covers pre-1991 successor states
+  properly.'
+rename:
+  Bosnia-Herz: Bosnia and Herzegovina
+  Burma: Myanmar
+  C. Verde Is.: Cape Verde
+  Cent. Af. Rep.: Central African Republic
+  Comoro Is.: Comoros
+  Congo (DRC): Democratic Republic of Congo
+  Czech Rep.: Czechia
+  Dom. Rep.: Dominican Republic
+  Eq. Guinea: Equatorial Guinea
+  FRG/Germany: Germany
+  Macedonia: North Macedonia
+  P. N. Guinea: Papua New Guinea
+  PRC: China
+  PRK: North Korea
+  ROK: South Korea
+  S. Africa: South Africa
+  Slovak Rep.: Slovakia
+  Solomon Is.: Solomon Islands
+  St. Lucia: Saint Lucia
+  Swaziland: Eswatini
+  Timor-Leste: East Timor
+  Trinidad-Tobago: Trinidad and Tobago
+  UAE: United Arab Emirates
+  UK: United Kingdom
+  USA: United States
+  eSwatini: Eswatini
+drop:
+- Czechoslovakia
+- GDR
+- Serbia and Montenegro
+- Soviet Union
+- Turk Cyprus
+- Yemen (AR)
+- Yemen (PDR)
+- Yugoslavia

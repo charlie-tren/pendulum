@@ -28,19 +28,27 @@ Destination: charlietrenorden.com.
 4. **Moving averages are trailing.** The original spreadsheet used a centred
    mean that peeked at t+1. Do not reintroduce it.
 5. **CC-BY is a licence, not a suggestion.** V-Dem and OWID get named.
-6. **No empty first screen.** The site opens on the headline chart with a
+6. **Never renormalise away the uncoded band.** About a quarter of the world's
+   population has no left-right code in DPI, concentrated in the Global South.
+   Hiding it turns a Western-weighted sample into a claim about "the world".
+   Worked example: ASEAN in 2023 is 18% coded, and the coded fraction is
+   Vietnam and Laos, so a renormalised chart would report ASEAN as perfectly
+   left-wing. Show the band.
+7. **No empty first screen.** The site opens on the headline chart with a
    default already chosen. Never write the default state to the URL.
-7. **Microcopy says what a control is for**, never narrates the mechanic.
+8. **Microcopy says what a control is for**, never narrates the mechanic.
    "One person, one vote" not "tap to switch weighting".
 
 ## Coding convention for orientation
 
-A country's orientation for year Y is the orientation of the party of the
-**head of government on 30 June of year Y**. `+1` right, `-1` left, `0`
-centrist / grand coalition / technocratic / national unity.
+A country's orientation for year Y is that of the chief executive's party on
+**1 January of year Y** — DPI's documented convention, which we follow rather
+than invent our own. In semi-presidential systems DPI codes the **head of
+state**, not the PM. `+1` right, `-1` left, `0` centrist.
 
-Full reasoning and the open question about semi-presidential systems:
-`docs/seed-corrections.md`.
+`uncoded` is a separate category and must never be folded into `0`. DPI's
+codebook defines its own `0` as "No information", which is a different claim
+from "centrist". Full reasoning: `docs/seed-corrections.md`.
 
 ## Layout
 
