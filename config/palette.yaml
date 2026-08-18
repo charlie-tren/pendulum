@@ -36,3 +36,19 @@ sources:
   unresolved:
     colour: '#dcdcdc'
     label: No data
+regimes:
+  closed_autocracy:
+    label: Closed autocracy
+    short: Closed autocracies
+  electoral_autocracy:
+    label: Electoral autocracy
+    short: Electoral autocracies
+  electoral_democracy:
+    label: Electoral democracy
+    short: Electoral democracies
+  liberal_democracy:
+    label: Liberal democracy
+    short: Liberal democracies
+  unknown:
+    label: Regime not classified
+    short: Not classified

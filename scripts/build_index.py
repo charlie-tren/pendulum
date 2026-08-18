@@ -32,6 +32,12 @@ CATEGORIES = ["left", "centre", "right", "no_reading", "unresolved"]
 SOURCES = ["dpi", "vparty", "carry_forward", "hand", "wikidata",
            "no_reading", "unresolved"]
 SCORE = {"left": -1.0, "centre": 0.0, "right": 1.0}
+# V-Dem Regimes of the World, via OWID. Codes confirmed against the dataset's
+# own metadata rather than assumed - inverting these would invert the chart.
+REGIMES = {"0": "closed_autocracy", "1": "electoral_autocracy",
+           "2": "electoral_democracy", "3": "liberal_democracy"}
+REGIME_ORDER = ["closed_autocracy", "electoral_autocracy",
+                "electoral_democracy", "liberal_democracy", "unknown"]
 END_YEAR = 2026
 
 
@@ -51,6 +57,60 @@ def load_population():
             except ValueError:
                 continue
     return pop
+
+
+def load_regimes():
+    """(entity, year) -> regime label. V-Dem RoW runs to 2025; 2026 has none,
+    which surfaces as `unknown` rather than being back-filled."""
+    out = {}
+    with open(RAW / "political-regime.csv", encoding="utf-8-sig") as fh:
+        for row in csv.DictReader(fh):
+            if not row["code"] or row["code"].startswith("OWID"):
+                continue
+            label = REGIMES.get(row["regime_row_owid"])
+            if label:
+                out[(row["entity"], int(row["year"]))] = label
+    return out
+
+
+def cross_tab(records, pop, members, regimes):
+    """Population and country shares across the regime x ideology grid.
+
+    Every cell is a share of the WHOLE group, so the grid sums to 1 and the
+    mosaic can be read directly: the cell area is the answer to "how many
+    people live under a right-wing electoral autocracy".
+    """
+    by_year = defaultdict(list)
+    for rec in records:
+        if members is not None and rec["entity"] not in members:
+            continue
+        by_year[rec["year"]].append(rec)
+
+    out = []
+    for year in sorted(by_year):
+        recs = by_year[year]
+        cells = {r: {b: 0.0 for b in CATEGORIES} for r in REGIME_ORDER}
+        ncells = {r: {b: 0 for b in CATEGORIES} for r in REGIME_ORDER}
+        total = 0.0
+        for rec in recs:
+            regime = regimes.get((rec["entity"], year), "unknown")
+            ncells[regime][rec["bucket"]] += 1
+            p = pop.get((rec["entity"], year))
+            if p is None:
+                continue
+            cells[regime][rec["bucket"]] += p
+            total += p
+        if not total:
+            continue
+        out.append({
+            "year": year,
+            "pop": round(total),
+            "cells": {r: {b: round(v / total, 5) for b, v in row.items() if v}
+                      for r, row in cells.items() if any(row.values())},
+            "counts": {r: {b: v for b, v in row.items() if v}
+                       for r, row in ncells.items() if any(row.values())},
+        })
+    return out
 
 
 def load_continents():
@@ -137,7 +197,7 @@ def resolve_members(spec, iso_to_entity, continents, pop, entities):
 def main() -> int:
     cmap = yaml.safe_load((CFG / "country_map.yaml").read_text(encoding="utf-8"))
     groups = yaml.safe_load((CFG / "country_groups.yaml").read_text(encoding="utf-8"))["groups"]
-    pop, continents = load_population(), load_continents()
+    pop, continents, regimes = load_population(), load_continents(), load_regimes()
 
     records = extend_years(load_dpi(cmap))
     records = resolve(
@@ -159,6 +219,7 @@ def main() -> int:
     for key, spec in groups.items():
         members = resolve_members(spec, iso_to_entity, continents, pop, entities)
         agg = aggregate(records, pop, members)
+        agg["cross"] = cross_tab(records, pop, members, regimes)
         trailing_ma(agg["index"], "mean_by_country")
         trailing_ma(agg["index"], "mean_by_population")
         agg["by_country"] = [{**r, "source": {k: v for k, v in r["source"].items() if v}}
@@ -174,6 +235,8 @@ def main() -> int:
                 "V-Party v2 (V-Dem Institute, 2022), party positions to ~2019",
                 "Wikidata P1387 party alignment joined to dated head-of-government terms",
                 "Hand-coded rows in data/seed/hand_coded.csv, each with a written basis",
+                "Political regime: V-Dem Regimes of the World via Our World in Data, "
+                "1789-2025",
                 "Population: Our World in Data / UN WPP - historical to 2023, medium-variant projection for 2024-2026",
             ],
             "coverage": f"1975-{END_YEAR}",

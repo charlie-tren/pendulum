@@ -158,3 +158,18 @@ a { color: var(--accent); }
   .segmented button[aria-checked="true"] { background: var(--accent); color: #0f1114; }
   .readout { background: rgba(26,29,34,0.97); }
 }
+
+/* ---- year slider ---- */
+.control-year { margin: 6px 0 14px; max-width: 460px; }
+.control-year label { display: flex; align-items: baseline; gap: 8px; }
+.control-year output {
+  font-size: 17px; font-weight: 650; color: var(--ink);
+  letter-spacing: -0.01em; text-transform: none;
+}
+input[type="range"] {
+  width: 100%; accent-color: var(--accent); cursor: pointer; margin: 0;
+}
+input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+
+.mosaic-cell { cursor: default; }
+.mosaic-cell:hover { filter: brightness(1.12); }

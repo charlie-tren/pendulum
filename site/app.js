@@ -1,9 +1,11 @@
 /* Pendulum — static frontend. No framework, no build step, no dependencies.
    Charts are hand-rolled SVG so this still runs in five years. */
 
-const DEFAULTS = { group: "world", weight: "by_population" };
+const DEFAULTS = { group: "world", weight: "by_population", year: 2023 };
 const BANDS = ["left", "centre", "right", "no_reading", "unresolved"];
 const SOURCES = ["dpi", "vparty", "carry_forward", "hand", "wikidata", "no_reading", "unresolved"];
+const REGIME_ORDER = ["closed_autocracy", "electoral_autocracy",
+                      "electoral_democracy", "liberal_democracy", "unknown"];
 /* Below this share of the group resolved, a year is drawn as provisional.
    Movement in a thinly-covered year is usually the data changing, not the world. */
 const PROVISIONAL_BELOW = 0.8;
@@ -18,6 +20,7 @@ const svgEl = (name, attrs = {}) => {
   return node;
 };
 const pct = (v) => (v == null ? "—" : `${(v * 100).toFixed(v * 100 < 10 ? 1 : 0)}%`);
+const sum = (obj) => Object.values(obj || {}).reduce((a, b) => a + b, 0);
 
 /* ---------- URL state. The default is never written to the URL. ---------- */
 
@@ -25,20 +28,22 @@ function readHash() {
   const params = new URLSearchParams(location.hash.slice(1));
   const group = params.get("group");
   const weight = params.get("weight");
+  const year = parseInt(params.get("year"), 10);
   if (group && DATA.groups[group]) state.group = group;
   if (weight === "by_country" || weight === "by_population") state.weight = weight;
+  if (Number.isInteger(year)) state.year = year;
 }
 
 function writeHash() {
   const params = new URLSearchParams();
-  for (const key of ["group", "weight"]) {
+  for (const key of ["group", "weight", "year"]) {
     if (state[key] !== DEFAULTS[key]) params.set(key, state[key]);
   }
   const hash = params.toString();
   history.replaceState(null, "", hash ? `#${hash}` : location.pathname + location.search);
 }
 
-/* ---------- chart geometry ---------- */
+/* ---------- shared chart geometry ---------- */
 
 function scales(series, box, pad) {
   const years = series.map((r) => r.year);
@@ -52,7 +57,7 @@ function scales(series, box, pad) {
   };
 }
 
-function axes(svg, s, { ticks = [0, 0.25, 0.5, 0.75, 1], fmt = pct, step = 10 } = {}) {
+function axes(svg, s, { ticks = [0, 0.5, 1], fmt = pct, step = 10 } = {}) {
   for (const v of ticks) {
     svg.appendChild(svgEl("line", {
       x1: s.pad.l, x2: s.box.w - s.pad.r, y1: s.y(v), y2: s.y(v),
@@ -99,7 +104,7 @@ function drawStack(svgId, series, keys, palette, box, { provisional = null } = {
   const pad = { l: 44, r: 10, t: 10, b: 26 };
   const s = scales(series, box, pad);
   hatchDefs(svg);
-  axes(svg, s, { ticks: [0, 0.5, 1] });
+  axes(svg, s);
 
   let base = series.map(() => 0);
   for (const key of keys) {
@@ -110,11 +115,10 @@ function drawStack(svgId, series, keys, palette, box, { provisional = null } = {
     base = top;
   }
 
-  if (provisional && provisional.length) {
-    const from = s.x(provisional[0]) - (s.iw / (s.y1 - s.y0)) / 2;
+  if (provisional) {
+    const from = s.x(provisional) - (s.iw / (s.y1 - s.y0)) / 2;
     svg.appendChild(svgEl("rect", {
-      x: from, y: pad.t, width: s.box.w - pad.r - from, height: s.ih,
-      fill: "url(#provisional)",
+      x: from, y: pad.t, width: s.box.w - pad.r - from, height: s.ih, fill: "url(#provisional)",
     }));
     svg.appendChild(svgEl("line", {
       x1: from, x2: from, y1: pad.t, y2: pad.t + s.ih,
@@ -174,7 +178,156 @@ function drawLine(series) {
   }
 }
 
-/* ---------- interaction ---------- */
+/* ---------- regime x ideology mosaic ----------
+   Column width is the share of people living under that regime type; row
+   height within the column is the ideology split inside it. So the AREA of a
+   block is its share of everyone, which is the only reading that answers
+   "how many people live under a right-wing electoral autocracy". */
+
+function drawMosaic(group) {
+  const svg = $("#mosaic");
+  const readout = $("#mosaic-readout");
+  svg.innerHTML = "";
+  readout.hidden = true;
+
+  const row = (group.cross || []).find((r) => r.year === state.year);
+  if (!row) {
+    $("#mosaic-caption").textContent = "No regime classification for this year.";
+    return;
+  }
+
+  const box = { w: 960, h: 340 };
+  const pad = { l: 4, r: 4, t: 6, b: 46 };
+  const iw = box.w - pad.l - pad.r;
+  const ih = box.h - pad.t - pad.b;
+  const gap = 7;
+
+  const cols = REGIME_ORDER
+    .map((regime) => ({ regime, cells: row.cells[regime] || {} }))
+    .map((col) => ({ ...col, total: sum(col.cells) }))
+    .filter((col) => col.total > 0.0005);
+  const usable = iw - gap * (cols.length - 1);
+
+  let x = pad.l;
+  for (const col of cols) {
+    const w = col.total * usable;
+    let y = pad.t;
+    for (const band of BANDS) {
+      const v = col.cells[band];
+      if (!v) continue;
+      const h = (v / col.total) * ih;
+      const rect = svgEl("rect", {
+        x: x.toFixed(1), y: y.toFixed(1),
+        width: Math.max(w, 0.5).toFixed(1), height: Math.max(h, 0).toFixed(1),
+        fill: DATA.palette.buckets[band].colour, class: "mosaic-cell",
+      });
+      const n = (row.counts[col.regime] || {})[band] || 0;
+      rect.addEventListener("pointerenter", () => {
+        readout.innerHTML =
+          `<b>${pct(v)} of people</b>` +
+          `<div class="row"><span><i style="background:${DATA.palette.buckets[band].colour}"></i>` +
+          `${DATA.palette.buckets[band].label}</span></div>` +
+          `<div class="row"><span>${DATA.palette.regimes[col.regime].label}</span></div>` +
+          `<div class="prov">${Math.round(v * row.pop / 1e6)}m people · ` +
+          `${n} ${n === 1 ? "country" : "countries"} · ${row.year}</div>`;
+        readout.hidden = false;
+      });
+      svg.appendChild(rect);
+
+      if (w > 64 && h > 22) {
+        const light = band === "no_reading" || band === "unresolved";
+        const t = svgEl("text", {
+          x: (x + 8).toFixed(1), y: (y + 17).toFixed(1), "font-size": 12.5,
+          fill: light ? "var(--ink-soft)" : "#fff", "font-weight": 600,
+        });
+        t.textContent = pct(v);
+        svg.appendChild(t);
+      }
+      y += h;
+    }
+    [DATA.palette.regimes[col.regime].short, pct(col.total)].forEach((text, i) => {
+      const t = svgEl("text", {
+        x: (x + w / 2).toFixed(1), y: (pad.t + ih + 19 + i * 15).toFixed(1),
+        "text-anchor": "middle", "font-size": 12.5,
+        fill: i ? "var(--ink-faint)" : "var(--ink-soft)", "font-weight": i ? 400 : 600,
+      });
+      t.textContent = text;
+      svg.appendChild(t);
+    });
+    x += w + gap;
+  }
+  svg.onpointerleave = () => { readout.hidden = true; };
+
+  const ranked = [];
+  for (const col of cols) {
+    for (const band of ["left", "centre", "right"]) {
+      if (col.cells[band]) ranked.push({ v: col.cells[band], band, regime: col.regime });
+    }
+  }
+  ranked.sort((a, b) => b.v - a.v);
+  const top = ranked[0];
+  $("#mosaic-caption").textContent = top
+    ? `The largest single group in ${row.year} is ` +
+      `${DATA.palette.buckets[top.band].label.toLowerCase()}-governed ` +
+      `${DATA.palette.regimes[top.regime].short.toLowerCase()}, at ${pct(top.v)} of ` +
+      `this group's population.`
+    : "";
+}
+
+/* ---------- small multiples, one panel per regime ---------- */
+
+function drawMultiples(group) {
+  const svg = $("#multiples");
+  svg.innerHTML = "";
+  const series = group.cross || [];
+  if (!series.length) return;
+
+  const box = { w: 960, h: 260 };
+  const pad = { l: 4, r: 4, t: 24, b: 26 };
+  const panels = REGIME_ORDER.filter((r) => r !== "unknown");
+  const gap = 16;
+  const pw = (box.w - pad.l - pad.r - gap * (panels.length - 1)) / panels.length;
+  const ih = box.h - pad.t - pad.b;
+  const years = series.map((r) => r.year);
+  const [y0, y1] = [Math.min(...years), Math.max(...years)];
+  const ymax = Math.max(...series.flatMap((r) => panels.map((p) => sum(r.cells[p]))), 0.05);
+
+  panels.forEach((regime, i) => {
+    const ox = pad.l + i * (pw + gap);
+    const sx = (yr) => ox + ((yr - y0) / (y1 - y0)) * pw;
+    const sy = (v) => pad.t + ih - (v / ymax) * ih;
+
+    let base = series.map(() => 0);
+    for (const band of BANDS) {
+      const top = series.map((r, j) => base[j] + ((r.cells[regime] || {})[band] || 0));
+      const pts = series.map((r, j) => `${sx(r.year).toFixed(1)},${sy(top[j]).toFixed(1)}`)
+        .concat(series.map((r, j) => `${sx(r.year).toFixed(1)},${sy(base[j]).toFixed(1)}`).reverse());
+      svg.appendChild(svgEl("polygon", {
+        points: pts.join(" "), fill: DATA.palette.buckets[band].colour,
+      }));
+      base = top;
+    }
+    svg.appendChild(svgEl("line", {
+      x1: ox, x2: ox + pw, y1: pad.t + ih, y2: pad.t + ih,
+      stroke: "var(--rule)", "stroke-width": 1,
+    }));
+    const title = svgEl("text", {
+      x: ox, y: pad.t - 9, "font-size": 12.5, fill: "var(--ink-soft)", "font-weight": 600,
+    });
+    title.textContent = DATA.palette.regimes[regime].short;
+    svg.appendChild(title);
+    for (const yr of [y0, y1]) {
+      const t = svgEl("text", {
+        x: sx(yr), y: box.h - 8, "font-size": 11, fill: "var(--ink-faint)",
+        "text-anchor": yr === y0 ? "start" : "end",
+      });
+      t.textContent = yr;
+      svg.appendChild(t);
+    }
+  });
+}
+
+/* ---------- hover on the headline chart ---------- */
 
 function attachHover(s, series, palette, group) {
   const svg = $("#area");
@@ -184,14 +337,13 @@ function attachHover(s, series, palette, group) {
     "stroke-width": 1, "stroke-opacity": 0.35, visibility: "hidden",
   });
   svg.appendChild(marker);
-
   const counts = group.by_country;
+
   const show = (evt) => {
     const rect = svg.getBoundingClientRect();
-    const px = ((evt.touches ? evt.touches[0].clientX : evt.clientX) - rect.left)
-      / rect.width * s.box.w;
-    const frac = (px - s.pad.l) / s.iw;
-    const year = Math.round(s.y0 + frac * (s.y1 - s.y0));
+    const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+    const px = ((clientX - rect.left) / rect.width) * s.box.w;
+    const year = Math.round(s.y0 + ((px - s.pad.l) / s.iw) * (s.y1 - s.y0));
     const row = series.find((r) => r.year === year);
     if (!row) return;
     marker.setAttribute("x1", s.x(year));
@@ -205,7 +357,8 @@ function attachHover(s, series, palette, group) {
       .map(([k, v]) => `${DATA.palette.sources[k].label} ${Math.round(v * 100)}%`)
       .join(" · ");
     const rows = BANDS.filter((k) => (row[k] || 0) > 0.001).map((k) =>
-      `<div class="row"><span><i style="background:${palette[k].colour}"></i>${palette[k].label}</span><span>${pct(row[k])}</span></div>`);
+      `<div class="row"><span><i style="background:${palette[k].colour}"></i>` +
+      `${palette[k].label}</span><span>${pct(row[k])}</span></div>`);
     readout.innerHTML = `<b>${year}</b>${rows.join("")}` +
       (state.weight === "by_population" && row.pop
         ? `<div class="prov">${(row.pop / 1e9).toFixed(2)}bn people</div>` : "") +
@@ -229,40 +382,43 @@ function render() {
   $("#chart-title").textContent = byPop
     ? `${group.label} — share of people by how their country is governed`
     : `${group.label} — share of countries by government`;
-  $("#group-hint").textContent = group.n_members
-    ? `${group.n_members} countries` : "";
+  $("#group-hint").textContent = group.n_members ? `${group.n_members} countries` : "";
 
   $("#legend").innerHTML = BANDS.map((k) =>
     `<span><i style="background:${palette[k].colour}"></i>${palette[k].label}</span>`).join("");
   $("#legend-src").innerHTML = SOURCES.map((k) =>
-    `<span><i style="background:${DATA.palette.sources[k].colour}"></i>${DATA.palette.sources[k].label}</span>`).join("");
+    `<span><i style="background:${DATA.palette.sources[k].colour}"></i>` +
+    `${DATA.palette.sources[k].label}</span>`).join("");
 
   const shareKey = byPop ? "coded_share_pop" : "coded_share_countries";
-  const thin = group.index.filter((r) => (r[shareKey] ?? 1) < PROVISIONAL_BELOW).map((r) => r.year);
-  const runStart = thin.length ? Math.min(...thin.filter((y) => y > 2015)) : null;
+  const thin = group.index.filter((r) => (r[shareKey] ?? 1) < PROVISIONAL_BELOW && r.year > 2015);
+  const runStart = thin.length ? Math.min(...thin.map((r) => r.year)) : null;
 
   const s = drawStack("#area", series, BANDS, palette, { w: 960, h: 380 },
-    { provisional: runStart ? [runStart] : null });
+    { provisional: runStart });
   attachHover(s, series, palette, group);
   drawLine(group.index);
   drawStack("#prov", group.by_country.map((r) => ({ year: r.year, ...r.source })),
     SOURCES, DATA.palette.sources, { w: 960, h: 200 });
+  drawMosaic(group);
+  drawMultiples(group);
 
   const latest = group.index[group.index.length - 1];
   const solid = [...group.index].reverse().find((r) => (r[shareKey] ?? 0) >= PROVISIONAL_BELOW);
   $("#caption").textContent = solid
     ? `Coverage is solid through ${solid.year}, when ${pct(solid[shareKey])} of ` +
       `${byPop ? "the people" : "the countries"} in this group could be placed on the ` +
-      `left–right axis. By ${latest.year} that falls to ${pct(latest[shareKey])}, which is ` +
-      `why later years are hatched.`
+      `left–right axis. By ${latest.year} that falls to ${pct(latest[shareKey])}, ` +
+      `which is why later years are hatched.`
     : "Coverage in this group is too thin for the shares to be read confidently.";
   writeHash();
 }
 
 /* ---------- boot ---------- */
 
-fetch("orientation.json")
-  .then((r) => r.json())
+Promise.resolve(
+  window.__PENDULUM__ || fetch("orientation.json").then((r) => r.json())
+)
   .then((data) => {
     DATA = data;
     readHash();
@@ -283,6 +439,20 @@ fetch("orientation.json")
         render();
       });
     }
+
+    const slider = $("#year");
+    const years = DATA.groups.world.cross.map((r) => r.year);
+    slider.min = Math.min(...years);
+    slider.max = Math.max(...years);
+    state.year = Math.min(Math.max(state.year, +slider.min), +slider.max);
+    slider.value = state.year;
+    $("#year-out").textContent = state.year;
+    slider.addEventListener("input", () => {
+      state.year = +slider.value;
+      $("#year-out").textContent = state.year;
+      drawMosaic(DATA.groups[state.group]);
+      writeHash();
+    });
 
     $("#sources").innerHTML = DATA.meta.sources.map((s) => `<li>${s}</li>`).join("");
     render();

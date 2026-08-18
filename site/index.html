@@ -67,6 +67,38 @@
     </figure>
   </section>
 
+  <section class="panel">
+    <h2>Ideology crossed with regime type</h2>
+    <p class="sub">
+      Left and right tell you what a government wants. They tell you nothing about
+      whether the people under it chose it. Every block below is a share of the group's
+      population, so the area of a block is the answer: how many people live under a
+      right&#8209;wing electoral autocracy, or a left&#8209;wing liberal democracy.
+      Regime classification is V&#8209;Dem's, via Our World in Data.
+    </p>
+    <div class="control control-year">
+      <label for="year">Year <output id="year-out"></output></label>
+      <input type="range" id="year" min="1975" max="2025" step="1" value="2023">
+    </div>
+    <figure class="chart">
+      <svg id="mosaic" viewBox="0 0 960 340" role="img"></svg>
+      <div class="readout" id="mosaic-readout" hidden></div>
+    </figure>
+    <p class="caption" id="mosaic-caption"></p>
+  </section>
+
+  <section class="panel">
+    <h2>The same thing over time</h2>
+    <p class="sub">
+      Each panel is one regime type. Heights are shares of the whole group, so the four
+      panels together account for everyone &mdash; a panel growing means more of the world
+      lives that way.
+    </p>
+    <figure class="chart">
+      <svg id="multiples" viewBox="0 0 960 260" role="img"></svg>
+    </figure>
+  </section>
+
   <section class="panel notes">
     <h2>Reading this honestly</h2>
     <dl>

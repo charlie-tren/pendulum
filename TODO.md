@@ -97,10 +97,10 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
 
 - [ ] V6. Map or cartogram with a year scrubber.
 - [ ] V7. Country detail on click — that country's own history as a strip.
-- [ ] V9. **Cross ideology with regime type** (V-Dem Regimes of the World, via
-      OWID, current to 2025). "How many people live under right-wing
-      autocracies" is a better question than either axis alone, and the data is
-      already fetched. Strongest remaining feature.
+- [x] V9. Ideology crossed with regime type. Mosaic with a year slider where
+      block AREA is the share of people, plus small multiples over time. V-Dem
+      Regimes of the World via OWID, codes confirmed against the dataset's own
+      metadata rather than assumed.
 - [ ] V10. The nuanced spectrum view. V-Party's continuous score is already
       carried through the pipeline as `score` but nothing renders it yet.
 - [ ] S6. Dark mode is implemented via prefers-color-scheme but untested on a

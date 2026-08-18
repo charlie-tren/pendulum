@@ -16,10 +16,10 @@ css = (SITE / "style.css").read_text(encoding="utf-8")
 js = (SITE / "app.js").read_text(encoding="utf-8")
 data = json.loads((SITE / "orientation.json").read_text(encoding="utf-8"))
 
-# swap the fetch for an inlined constant so the file works from file://
-marker = 'fetch("orientation.json")\n  .then((r) => r.json())\n  .then((data) => {'
-assert marker in js, "boot block not found — did app.js change?"
-js = js.replace(marker, "Promise.resolve(window.__PENDULUM__)\n  .then((data) => {")
+# app.js already prefers window.__PENDULUM__ over fetch, so nothing to rewrite —
+# but assert that contract still holds rather than silently shipping a file that
+# tries to fetch from file:// and renders blank.
+assert "window.__PENDULUM__ || fetch(" in js, "boot block changed — standalone would break"
 
 html = html.replace('<link rel="stylesheet" href="style.css">', f"<style>\n{css}\n</style>")
 html = html.replace(
