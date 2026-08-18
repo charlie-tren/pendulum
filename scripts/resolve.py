@@ -6,8 +6,13 @@ Resolution chain, most authoritative first:
   2. V-Party v2      expert survey, election-years forward-filled, ends 2019
   3. carry-forward   V-Party's rating of a party, applied to later years where
                      DPI still records that same party in power
-  4. uncoded         genuinely no left-right reading (absolute monarchies,
-                     non-party states). A real answer, not a hole.
+  4. hand_coded      our own coding, from data/seed/hand_coded.csv, each row
+                     carrying a written basis and a verification date
+  5. no_reading      left-right genuinely does not apply: absolute monarchies,
+                     military governments, big-tent personality vehicles. A
+                     real answer.
+  6. unresolved      we simply lack data. Distinct from no_reading, and the
+                     two must not be drawn as one band.
 
 Every resolved point carries the source that produced it so the site can show
 its own coverage rather than implying uniform confidence.
@@ -27,6 +32,18 @@ DPI_BUCKET = {"Left": "left", "Center": "centre", "Right": "right"}
 ORD_BUCKET = {0: "left", 1: "left", 2: "left", 3: "centre",
               4: "right", 5: "right", 6: "right"}
 VPARTY_END = 2019
+HAND_BUCKET = {"-1": "left", "0": "centre", "1": "right", "no_reading": "no_reading"}
+
+
+def load_hand_coded(path: Path) -> dict:
+    """(entity, year) -> {bucket, basis}. Expanded from year ranges."""
+    out = {}
+    with open(path, encoding="utf-8") as fh:
+        for row in csv.DictReader(fh):
+            bucket = HAND_BUCKET[row["orientation"]]
+            for year in range(int(row["year_from"]), int(row["year_to"]) + 1):
+                out[(row["entity"], year)] = {"bucket": bucket, "basis": row["basis"]}
+    return out
 
 
 def norm_party(name: str) -> str:
@@ -50,6 +67,14 @@ def load_dpi(cmap: dict) -> list[dict]:
                 "party_key": norm_party(row["execme"]),
             })
     return out
+
+
+def load_aliases(path: Path) -> dict:
+    """(entity, normalised DPI party) -> normalised V-Party short name."""
+    import yaml
+    raw = yaml.safe_load(path.read_text(encoding="utf-8"))["aliases"] or {}
+    return {(entity, norm_party(dpi)): norm_party(vp)
+            for entity, pairs in raw.items() for dpi, vp in pairs.items()}
 
 
 def load_vparty(cmap: dict):
@@ -76,7 +101,9 @@ def load_vparty(cmap: dict):
     return annual, ratings
 
 
-def resolve(records: list[dict], annual: dict, ratings: dict) -> list[dict]:
+def resolve(records: list[dict], annual: dict, ratings: dict,
+            aliases: dict | None = None, hand: dict | None = None) -> list[dict]:
+    aliases, hand = aliases or {}, hand or {}
     for rec in records:
         key = (rec["entity"], rec["year"])
         if rec["bucket"]:
@@ -85,12 +112,19 @@ def resolve(records: list[dict], annual: dict, ratings: dict) -> list[dict]:
         elif key in annual:
             hit = annual[key]
             rec.update(bucket=hit["bucket"], score=hit["score"], source="vparty")
-        elif (rec["entity"], rec["party_key"]) in ratings and rec["party_key"]:
-            hit = ratings[(rec["entity"], rec["party_key"])]
+        elif rec["party_key"] and (
+                (rec["entity"], aliases.get((rec["entity"], rec["party_key"]),
+                                            rec["party_key"])) in ratings):
+            key = aliases.get((rec["entity"], rec["party_key"]), rec["party_key"])
+            hit = ratings[(rec["entity"], key)]
             if rec["year"] > hit["last_seen"]:
                 rec.update(bucket=hit["bucket"], score=hit["score"], source="carry_forward")
             else:
-                rec.update(bucket="uncoded", score=None, source="none")
+                rec.update(bucket="unresolved", score=None, source="unresolved")
+        elif key in hand:
+            hit = hand[key]
+            rec.update(bucket=hit["bucket"], score=None, basis=hit["basis"],
+                       source="no_reading" if hit["bucket"] == "no_reading" else "hand")
         else:
-            rec.update(bucket="uncoded", score=None, source="none")
+            rec.update(bucket="unresolved", score=None, source="unresolved")
     return records

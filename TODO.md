@@ -22,9 +22,12 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
       Personality-driven party systems — decide whether to defer to DPI or mark
       them contested on the site. Leaning: mark contested, it's more honest and
       more interesting.
-- [ ] D3. Extend **2024-2026** by hand on the 1 January convention. DPI stops at
-      2023 and this is the window people actually care about. Mark it as
-      hand-coded wherever it renders.
+- [~] D3. Hand-coding started: `data/seed/hand_coded.csv`, 18 rules covering
+      2020-2023, each with a written basis and a verification date. World
+      coverage 85% -> 89% of population; ASEAN 60% -> 75%.
+- [ ] D3b. Extend to **2024-2026**, past DPI's end. Same file, same discipline.
+- [ ] D3c. Second pass on the hand-coded rows — they are my calls, not
+      sourced. Charlie should review the `basis` column before this ships.
 - [x] D4. V-Party v2 wired in as a **fill layer**, not just a nuance layer.
       Answers "can we fill the grey band": yes. Uncoded population falls from
       ~25% to ~2% for 1975-2019. Residual is absolute monarchies and non-party
@@ -37,10 +40,14 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
       coverage, NOT a political event, and it will be read as a finding unless
       it is explicitly marked on the chart. See the provenance panel in the
       preview. **This is the most likely way the site misleads someone.**
-- [ ] D4d. Party aliases to recover the remaining big ones: DPI `AL` is
-      V-Party `BAL` (Bangladesh, 171m). Factual aliases only — a rename like
-      South Korea's LKP -> PPP is a judgement call and gets hand-coded and
-      flagged, not aliased silently.
+- [x] D4d. Party aliases added (`config/party_aliases.yaml`) — Bangladesh
+      AL/BAL and Uzbekistan LDP/OLDP. Everything else inspected and rejected as
+      a different party or a rename; those went to hand-coding instead.
+- [x] D4e. **Split `uncoded` into `no_reading` and `unresolved`.** They are
+      different claims. Saudi Arabia has no left-right reading because parties
+      are banned; the Philippines' PFP because it is a self-described big tent.
+      That is an answer. "We have no data" is not. Drawing them as one grey
+      band conflated the two.
 - [ ] D5. Manifesto Project API key + RILE for a continuous axis on the 67
       countries it covers.
 - [ ] D6. CHES for the second (GAL-TAN) axis, Europe only.

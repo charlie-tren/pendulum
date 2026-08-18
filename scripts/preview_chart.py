@@ -4,11 +4,14 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import yaml
+
 ROOT = Path(__file__).resolve().parents[1]
 DATA = json.loads((ROOT / "data" / "out" / "orientation.json").read_text(encoding="utf-8"))
 
-BANDS = [("left", "#c0392b", "Left"), ("centre", "#b0a44f", "Centre"),
-         ("right", "#2c5f8a", "Right"), ("uncoded", "#cfcfcf", "No left-right code")]
+PALETTE = yaml.safe_load((ROOT / "config" / "palette.yaml").read_text(encoding="utf-8"))
+BANDS = [(k, PALETTE["buckets"][k]["colour"], PALETTE["buckets"][k]["label"])
+         for k in ("left", "centre", "right", "no_reading", "unresolved")]
 W, H, PAD = 900, 300, {"l": 46, "r": 12, "t": 14, "b": 30}
 
 
@@ -58,8 +61,8 @@ for gk, title, note in [
                   f'{legend()}{stacked(g["by_population"])}')
 
 # provenance panel - which source resolved each year
-SRC = [("dpi", "#4a6fa5", "DPI"), ("vparty", "#7aa06b", "V-Party"),
-       ("carry_forward", "#d4a55c", "Carry-forward"), ("none", "#cfcfcf", "Unresolved")]
+SRC = [(k, PALETTE["sources"][k]["colour"], PALETTE["sources"][k]["label"])
+       for k in ("dpi", "vparty", "carry_forward", "hand", "no_reading", "unresolved")]
 w = DATA["groups"]["world"]["by_country"]
 years = [r["year"] for r in w]
 x0, x1 = min(years), max(years)
@@ -91,8 +94,8 @@ html = f"""<title>Pendulum — data preview</title>
 <h1 style="font-size:24px;margin:0">Pendulum — pipeline preview</h1>
 <p style="font:14px/1.6 system-ui;color:#555">
 Database of Political Institutions 2023 (IDB), CC-BY 4.0, 1975&ndash;2023.
-Population from Our World in Data / UN WPP. Red=left and blue=right follows the
-international convention, which is inverted relative to US media.</p>
+Population from Our World in Data / UN WPP. Blue=left and red=right follows the US
+convention, which is inverted relative to most of the world.</p>
 {"".join(panels)}
 </div>"""
 (ROOT / "site" / "preview.html").write_text(html, encoding="utf-8")

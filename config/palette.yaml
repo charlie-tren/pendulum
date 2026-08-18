@@ -1,0 +1,35 @@
+buckets:
+  left:
+    colour: '#2f6fb2'
+    label: Left
+  centre:
+    colour: '#7d5ba6'
+    label: Centre
+  right:
+    colour: '#c33c3c'
+    label: Right
+  no_reading:
+    colour: '#9a9a9a'
+    label: Left-right does not apply
+  unresolved:
+    colour: '#dcdcdc'
+    label: No data
+sources:
+  dpi:
+    colour: '#5b6b7a'
+    label: DPI
+  vparty:
+    colour: '#8a9a5b'
+    label: V-Party
+  carry_forward:
+    colour: '#c9a227'
+    label: Carry-forward
+  hand:
+    colour: '#b5651d'
+    label: Hand-coded
+  no_reading:
+    colour: '#9a9a9a'
+    label: Not applicable
+  unresolved:
+    colour: '#dcdcdc'
+    label: No data

@@ -1,0 +1,18 @@
+# DPI party abbreviation -> V-Party short name, where the two datasets are
+# naming the SAME party differently.
+#
+# Factual identity only. A party that RENAMED or reconstituted itself is a
+# judgement call and belongs in data/seed/hand_coded.csv with a flag, not here
+# — otherwise a rebrand silently inherits an old ideology score.
+aliases:
+  Bangladesh:
+    AL: BAL          # Awami League = Bangladesh Awami League
+  Uzbekistan:
+    LDP: OLDP        # Uzbekistan Liberal Democratic Party (O'zLiDeP)
+
+# Considered and REJECTED as aliases — these are different parties, or
+# renames, and are hand-coded instead:
+#   Kenya UDA        - formed 2021, no V-Party lineage
+#   Philippines PFP  - Marcos's party, formed 2018, not the Liberal Party
+#   South Korea Minjoo / PPP - renamed lineages, judgement not identity
+#   Zambia UPND, Madagascar TGV, Sri Lanka MEP, Malaysia PH, DRC UDPS

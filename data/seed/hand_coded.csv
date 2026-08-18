@@ -1,0 +1,19 @@
+entity,year_from,year_to,dpi_party,orientation,basis,verified
+Ethiopia,2020,2023,PB,0,"Prosperity Party: economic liberalism + civic nationalism + moderate progressivism; position centre",2026-08-18
+Democratic Republic of Congo,2020,2023,UDPS,-1,"Union for Democracy and Social Progress: social democracy, centre-left",2026-08-18
+South Korea,2020,2021,Minjoo,-1,"Democratic Party of Korea (Moon Jae-in), liberal / centre-left",2026-08-18
+South Korea,2022,2023,PPP,1,"People Power Party (Yoon Suk-yeol), conservative",2026-08-18
+Malaysia,2021,2021,PN,1,"Perikatan Nasional (Muhyiddin), Malay-nationalist conservative",2026-08-18
+Malaysia,2022,2022,BN,1,"Barisan Nasional / UMNO (Ismail Sabri), conservative",2026-08-18
+Malaysia,2023,2023,PH,-1,"Pakatan Harapan (Anwar), reformist centre-left",2026-08-18
+Italy,2020,2021,independent,0,"Conte II then Draghi national-unity governments; technocratic, no partisan lean",2026-08-18
+Italy,2022,2022,independent,0,"Draghi to Oct 2022; DPI convention codes 1 January, so 2022 is still Draghi",2026-08-18
+Thailand,2020,2023,independent,1,"Prayut government, Palang Pracharath-led royalist-military conservative coalition",2026-08-18
+Philippines,2023,2023,PFP,no_reading,"Partido Federal ng Pilipinas is self-described big tent, spanning populism to self-declared socialism; no coherent left-right position",2026-08-18
+Kenya,2023,2023,UDA,no_reading,"United Democratic Alliance has no consistent left-right placement; bottom-up economics inside a broadly conservative coalition",2026-08-18
+Saudi Arabia,2020,2023,independent,no_reading,"Absolute monarchy, political parties banned",2026-08-18
+Afghanistan,2021,2023,independent,no_reading,"Taliban emirate; no party system",2026-08-18
+Myanmar,2021,2023,independent,no_reading,"Military junta following the 2021 coup",2026-08-18
+Sudan,2020,2023,,no_reading,"Transitional then military rule; no party government",2026-08-18
+Yemen,2020,2023,,no_reading,"Civil war; no single effective national government",2026-08-18
+Egypt,2020,2023,independent,no_reading,"Sisi government; no meaningful party competition. DPI's FJP entry for 2020 looks stale",2026-08-18

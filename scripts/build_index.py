@@ -21,13 +21,14 @@ from pathlib import Path
 import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from resolve import load_dpi, load_vparty, resolve  # noqa: E402
+from resolve import (load_aliases, load_dpi, load_hand_coded, load_vparty,  # noqa: E402
+                     resolve)
 
 ROOT = Path(__file__).resolve().parents[1]
 RAW, OUT, CFG = ROOT / "data" / "raw", ROOT / "data" / "out", ROOT / "config"
 
-SOURCES = ["dpi", "vparty", "carry_forward", "none"]
-CATEGORIES = ["left", "centre", "right", "uncoded"]
+SOURCES = ["dpi", "vparty", "carry_forward", "hand", "no_reading", "unresolved"]
+CATEGORIES = ["left", "centre", "right", "no_reading", "unresolved"]
 SCORE = {"left": -1.0, "centre": 0.0, "right": 1.0}
 
 
@@ -79,8 +80,8 @@ def aggregate(records, pop, members) -> dict:
                         **{k: round(w[k] / total_pop, 6) if total_pop else None
                            for k in CATEGORIES}})
         # mean orientation across CODED countries only, both weightings
-        coded_n = n - c["uncoded"]
-        coded_p = total_pop - w["uncoded"]
+        coded_n = n - c["no_reading"] - c["unresolved"]
+        coded_p = total_pop - w["no_reading"] - w["unresolved"]
         index.append({
             "year": year,
             "coded_share_countries": round(coded_n / n, 6) if n else None,
@@ -106,7 +107,9 @@ def main() -> int:
     cmap = yaml.safe_load((CFG / "country_map.yaml").read_text(encoding="utf-8"))
     groups = yaml.safe_load((CFG / "country_groups.yaml").read_text(encoding="utf-8"))["groups"]
     pop = load_population()
-    records = resolve(load_dpi(cmap), *load_vparty(cmap))
+    records = resolve(load_dpi(cmap), *load_vparty(cmap),
+                      aliases=load_aliases(CFG / "party_aliases.yaml"),
+                      hand=load_hand_coded(ROOT / "data" / "seed" / "hand_coded.csv"))
 
     iso_to_entity = {}
     for row in csv.DictReader(open(RAW / "population.csv", encoding="utf-8-sig")):
