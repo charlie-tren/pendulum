@@ -43,7 +43,14 @@ function writeHash() {
     if (state[key] !== DEFAULTS[key]) params.set(key, state[key]);
   }
   const hash = params.toString();
-  history.replaceState(null, "", hash ? `#${hash}` : location.pathname + location.search);
+  try {
+    history.replaceState(null, "", hash ? `#${hash}` : location.pathname + location.search);
+  } catch (err) {
+    /* Sandboxed contexts (an about:srcdoc iframe, a file:// page in some
+       browsers) refuse replaceState with a SecurityError. Shareable URLs are a
+       convenience, not a feature the charts depend on, so lose them quietly
+       rather than taking the page down with them. */
+  }
 }
 
 /* ---------- shared chart geometry ---------- */
