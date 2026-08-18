@@ -73,6 +73,41 @@ def load_regimes():
     return out
 
 
+def country_runs(records, pop, regimes):
+    """Per-country timeline, run-length encoded.
+
+    Governments persist for years at a time, so storing runs rather than one
+    entry per country-year keeps the payload small enough to ship whole.
+    """
+    by_entity = defaultdict(list)
+    for rec in records:
+        by_entity[rec["entity"]].append(rec)
+
+    out = []
+    for entity, recs in sorted(by_entity.items()):
+        recs.sort(key=lambda r: r["year"])
+        runs = []
+        for rec in recs:
+            # a stale carried-forward name that no later layer confirmed is
+            # dropped rather than shown against someone else's government
+            party = "" if (rec.get("party_stale") and rec["source"] in
+                           ("unresolved", "no_reading")) else (rec["party"] or "")
+            key = (rec["bucket"], rec["source"], party,
+                   regimes.get((entity, rec["year"]), "unknown"))
+            if runs and runs[-1]["k"] == key and runs[-1]["y1"] == rec["year"] - 1:
+                runs[-1]["y1"] = rec["year"]
+            else:
+                runs.append({"k": key, "y0": rec["year"], "y1": rec["year"]})
+        latest = max((y for (e, y) in pop if e == entity), default=None)
+        out.append({
+            "entity": entity,
+            "pop": round(pop.get((entity, latest), 0)) if latest else 0,
+            "runs": [{"y0": r["y0"], "y1": r["y1"], "b": r["k"][0], "s": r["k"][1],
+                      "p": r["k"][2], "r": r["k"][3]} for r in runs],
+        })
+    return out
+
+
 def cross_tab(records, pop, members, regimes):
     """Population and country shares across the regime x ideology grid.
 
@@ -129,8 +164,13 @@ def extend_years(records, end=END_YEAR):
     parties = {r["entity"]: r["party"] for r in records if r["year"] == last}
     for year in range(last + 1, end + 1):
         for entity in entities:
+            # party_key stays empty so carry-forward cannot fire on a name that
+            # DPI never actually recorded for this year. `party` is kept only so
+            # a later layer can fall back to it, and any layer that resolves the
+            # year is expected to overwrite it with its own.
             records.append({"entity": entity, "year": year, "bucket": None,
-                            "party": parties.get(entity, ""), "party_key": ""})
+                            "party": parties.get(entity, ""), "party_key": "",
+                            "party_stale": True})
     return records
 
 
@@ -240,12 +280,19 @@ def main() -> int:
                 "Population: Our World in Data / UN WPP - historical to 2023, medium-variant projection for 2024-2026",
             ],
             "coverage": f"1975-{END_YEAR}",
+            # the regime series stops before the political one; the slider is
+            # capped from this rather than from a number typed into the JS
+            "regime_coverage_end": max(y for (_, y) in regimes),
             "note": ("no_reading means left-right genuinely does not apply - an absolute "
                      "monarchy, a military government, a big-tent personality vehicle. "
                      "unresolved means we lack data. They are different claims and are "
                      "never merged. Each year reports which source resolved it."),
         },
         "palette": yaml.safe_load((CFG / "palette.yaml").read_text(encoding="utf-8")),
+        "countries": country_runs(records, pop, regimes),
+        "members": {k: sorted(resolve_members(spec, iso_to_entity, continents, pop, entities)
+                              or entities)
+                    for k, spec in groups.items()},
         "groups": result,
     }
     blob = json.dumps(payload, separators=(",", ":"))

@@ -27,5 +27,9 @@ not_on_axis:
   - big tent
   - syncretic politics
 
-# Bucket thresholds on the averaged score.
-thresholds: {left_below: -0.25, right_above: 0.25}
+# Bucket thresholds on the averaged score. INCLUSIVE at the boundary, so a
+# party averaging exactly -0.25 (e.g. tagged both "centrism" and "centre-left",
+# as the US Democrats are) lands in left rather than centre. This matches how
+# DPI's three-bucket scheme treats social democrats, and keeps the two sources
+# from disagreeing purely on a rounding edge.
+thresholds: {left_at_or_below: -0.25, right_at_or_above: 0.25}

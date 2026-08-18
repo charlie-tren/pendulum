@@ -99,6 +99,24 @@
     </figure>
   </section>
 
+  <section class="panel">
+    <h2>One country at a time</h2>
+    <p class="sub">
+      Every year since 1975 as a single strip. The thin bar underneath shows which
+      source resolved each stretch, so a run of hand-coded or Wikidata-derived years
+      is visible rather than buried.
+    </p>
+    <div class="control">
+      <label for="country">Country</label>
+      <select id="country"></select>
+    </div>
+    <figure class="chart">
+      <svg id="strip" viewBox="0 0 960 130" role="img"></svg>
+      <div class="readout" id="strip-readout" hidden></div>
+    </figure>
+    <p class="caption" id="strip-caption"></p>
+  </section>
+
   <section class="panel notes">
     <h2>Reading this honestly</h2>
     <dl>

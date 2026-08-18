@@ -84,7 +84,8 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
       CC-BY means naming them is an obligation, not a courtesy.
 - [ ] S3. Methodology page — the 30-June rule, what 0 means, why the MA is
       trailing, what the seed data is and where it is judgement rather than source.
-- [ ] S4. Mobile. A 32-year x-axis on a phone is the hard case.
+- [x] S4. Mobile verified at 375px: no horizontal scroll, all panels render,
+      no console errors.
 - [ ] S5. Link out to OWID's democracy page rather than reimplementing it.
 
 ## Parked
@@ -96,7 +97,9 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
 ## Frontend — next
 
 - [ ] V6. Map or cartogram with a year scrubber.
-- [ ] V7. Country detail on click — that country's own history as a strip.
+- [x] V7. Country strip — every year since 1975 for one country, with a source
+      bar underneath and party names in place. Defaults to the largest country
+      in the selected group, so switching to the G7 lands on the United States.
 - [x] V9. Ideology crossed with regime type. Mosaic with a year slider where
       block AREA is the share of people, plus small multiples over time. V-Dem
       Regimes of the World via OWID, codes confirmed against the dataset's own
@@ -105,3 +108,14 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
       carried through the pipeline as `score` but nothing renders it yet.
 - [ ] S6. Dark mode is implemented via prefers-color-scheme but untested on a
       real dark display.
+
+## Found while building the Wikidata layer
+
+- [ ] **D9. Reconcile the DPI/Wikidata seam.** Wikidata calls the US Democratic
+      Party `centrism` where DPI calls it `Left`, so the US appears to drift
+      left-to-centre in 2024 with no election. Carry the DPI coding forward
+      whenever the governing party has not actually changed. Documented in
+      `docs/data-sources.md`.
+- [ ] D10. The slider is capped at 2025 from `meta.regime_coverage_end`, but the
+      political series runs to 2026. Decide whether the mosaic should show a
+      2026 column with the regime axis marked unknown, or stay capped.

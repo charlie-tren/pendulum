@@ -132,9 +132,12 @@ def resolve(records: list[dict], annual: dict, ratings: dict,
             rec.update(bucket=hit["bucket"], score=None, basis=hit["basis"],
                        source="no_reading" if hit["bucket"] == "no_reading" else "hand")
         elif key in wikidata:
-            bucket = wikidata[key]
-            rec.update(bucket=bucket, score=None,
-                       source="no_reading" if bucket == "no_reading" else "wikidata")
+            hit = wikidata[key]
+            # the DPI party name carried into extended years belongs to an
+            # earlier government; replace it rather than mislabel this one
+            rec.update(bucket=hit["bucket"], score=None,
+                       party=hit["party"] or rec["party"],
+                       source="no_reading" if hit["bucket"] == "no_reading" else "wikidata")
         else:
             rec.update(bucket="unresolved", score=None, source="unresolved")
     return records
@@ -150,28 +153,39 @@ def load_wikidata(path: Path, cfg_path: Path, rename: dict) -> dict:
 
     cfg = yaml.safe_load(cfg_path.read_text(encoding="utf-8"))
     scale, off_axis = cfg["scale"], set(cfg["not_on_axis"])
-    lo, hi = cfg["thresholds"]["left_below"], cfg["thresholds"]["right_above"]
+    lo = cfg["thresholds"]["left_at_or_below"]
+    hi = cfg["thresholds"]["right_at_or_above"]
 
-    terms: dict[tuple[str, int, int], list[str]] = {}
+    terms: dict[tuple[str, str, str, str], dict] = {}
     for row in json.loads(path.read_text(encoding="utf-8")):
         if "start" not in row:
             continue
         entity = rename.get(row["countryLabel"]["value"], row["countryLabel"]["value"])
-        start = int(row["start"]["value"][:4])
-        end = int(row["end"]["value"][:4]) if "end" in row else 2026
+        party = row.get("partyLabel", {}).get("value", "")
+        start = row["start"]["value"][:10]
+        end = row["end"]["value"][:10] if "end" in row else "9999-12-31"
         label = row["posLabel"]["value"]
         if label not in scale and label not in off_axis:
             raise ValueError(f"unmapped Wikidata alignment label: {label!r}")
-        terms.setdefault((entity, start, end), []).append(label)
+        slot = terms.setdefault((entity, start, end, party), {"labels": [], "party": party})
+        slot["labels"].append(label)
 
-    out: dict[tuple[str, int], str] = {}
-    for (entity, start, end), labels in sorted(terms.items()):
-        on = [scale[x] for x in labels if x in scale]
+    # Assign to years by the project's 1 January convention: a term owns year Y
+    # only if it was already in office on 1 January of Y. A government formed in
+    # September 2024 therefore counts from 2025, exactly as DPI would have it.
+    # Terms are applied in start order so a later one overwrites an earlier one.
+    out: dict[tuple[str, int], dict] = {}
+    for (entity, start, end, _party), slot in sorted(terms.items(), key=lambda kv: kv[0][1]):
+        on = [scale[x] for x in slot["labels"] if x in scale]
         if on:
             mean = sum(on) / len(on)
-            bucket = "left" if mean < lo else ("right" if mean > hi else "centre")
+            bucket = "left" if mean <= lo else ("right" if mean >= hi else "centre")
         else:
             bucket = "no_reading"
-        for year in range(start, min(end, 2026) + 1):
-            out[(entity, year)] = bucket
+        first = int(start[:4]) + (0 if start[5:10] == "01-01" else 1)
+        last = int(end[:4]) if end != "9999-12-31" else 2026
+        if end != "9999-12-31" and end[5:10] < "01-01":
+            last -= 1
+        for year in range(max(first, 1975), min(last, 2026) + 1):
+            out[(entity, year)] = {"bucket": bucket, "party": slot["party"]}
     return out

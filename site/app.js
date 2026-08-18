@@ -1,7 +1,7 @@
 /* Pendulum — static frontend. No framework, no build step, no dependencies.
    Charts are hand-rolled SVG so this still runs in five years. */
 
-const DEFAULTS = { group: "world", weight: "by_population", year: 2023 };
+const DEFAULTS = { group: "world", weight: "by_population", year: 2023, country: null };
 const BANDS = ["left", "centre", "right", "no_reading", "unresolved"];
 const SOURCES = ["dpi", "vparty", "carry_forward", "hand", "wikidata", "no_reading", "unresolved"];
 const REGIME_ORDER = ["closed_autocracy", "electoral_autocracy",
@@ -32,11 +32,14 @@ function readHash() {
   if (group && DATA.groups[group]) state.group = group;
   if (weight === "by_country" || weight === "by_population") state.weight = weight;
   if (Number.isInteger(year)) state.year = year;
+  const country = params.get("country");
+  if (country && DATA.countries.some((c) => c.entity === country)) state.country = country;
 }
 
 function writeHash() {
   const params = new URLSearchParams();
-  for (const key of ["group", "weight", "year"]) {
+  for (const key of ["group", "weight", "year", "country"]) {
+    if (key === "country" && state.country === defaultCountry(state.group)) continue;
     if (state[key] !== DEFAULTS[key]) params.set(key, state[key]);
   }
   const hash = params.toString();
@@ -327,6 +330,98 @@ function drawMultiples(group) {
   });
 }
 
+/* ---------- one country, as a strip of years ---------- */
+
+/* The largest country in the selected group, so switching to the G7 lands on
+   the United States rather than stranding the panel on a country not in it. */
+function defaultCountry(groupKey) {
+  const members = new Set(DATA.members[groupKey] || []);
+  const pool = DATA.countries.filter((c) => members.has(c.entity));
+  const best = (pool.length ? pool : DATA.countries)
+    .reduce((a, b) => (b.pop > a.pop ? b : a), { pop: -1, entity: null });
+  return best.entity;
+}
+
+function populateCountries(group) {
+  const members = new Set(DATA.members[state.group] || []);
+  const pool = DATA.countries.filter((c) => members.has(c.entity));
+  const list = (pool.length ? pool : DATA.countries).slice()
+    .sort((a, b) => a.entity.localeCompare(b.entity));
+  const select = $("#country");
+  select.innerHTML = list.map((c) => `<option value="${c.entity}">${c.entity}</option>`).join("");
+  if (!list.some((c) => c.entity === state.country)) state.country = defaultCountry(state.group);
+  select.value = state.country;
+}
+
+function drawCountry() {
+  const svg = $("#strip");
+  const readout = $("#strip-readout");
+  svg.innerHTML = "";
+  readout.hidden = true;
+  const rec = DATA.countries.find((c) => c.entity === state.country);
+  if (!rec) return;
+
+  const box = { w: 960, h: 130 };
+  const pad = { l: 4, r: 4, t: 8, b: 28 };
+  const iw = box.w - pad.l - pad.r;
+  const [y0, y1] = [1975, DATA.groups.world.by_country.slice(-1)[0].year];
+  const cw = iw / (y1 - y0 + 1);
+  const barH = 56;
+  const srcH = 9;
+
+  for (const run of rec.runs) {
+    const x = pad.l + (run.y0 - y0) * cw;
+    const w = (run.y1 - run.y0 + 1) * cw;
+    const bucket = DATA.palette.buckets[run.b];
+    const rect = svgEl("rect", {
+      x: x.toFixed(1), y: pad.t, width: Math.max(w - 0.6, 0.6).toFixed(1), height: barH,
+      fill: bucket.colour, class: "mosaic-cell",
+    });
+    rect.addEventListener("pointerenter", () => {
+      const span = run.y0 === run.y1 ? `${run.y0}` : `${run.y0}–${run.y1}`;
+      readout.innerHTML =
+        `<b>${span}</b>` +
+        `<div class="row"><span><i style="background:${bucket.colour}"></i>${bucket.label}</span></div>` +
+        (run.p ? `<div class="row"><span>${run.p}</span></div>` : "") +
+        `<div class="prov">${DATA.palette.regimes[run.r].label}<br>` +
+        `via ${DATA.palette.sources[run.s].label}</div>`;
+      readout.hidden = false;
+    });
+    svg.appendChild(rect);
+
+    svg.appendChild(svgEl("rect", {
+      x: x.toFixed(1), y: pad.t + barH + 5, width: Math.max(w - 0.6, 0.6).toFixed(1),
+      height: srcH, fill: DATA.palette.sources[run.s].colour, opacity: 0.9,
+    }));
+
+    if (w > 46) {
+      const t = svgEl("text", {
+        x: (x + 5).toFixed(1), y: pad.t + 18, "font-size": 11.5, "font-weight": 600,
+        fill: run.b === "no_reading" || run.b === "unresolved" ? "var(--ink-soft)" : "#fff",
+      });
+      t.textContent = run.p ? run.p.slice(0, Math.floor(w / 7)) : "";
+      svg.appendChild(t);
+    }
+  }
+  svg.onpointerleave = () => { readout.hidden = true; };
+
+  for (let yr = 1980; yr <= y1; yr += 10) {
+    const t = svgEl("text", {
+      x: (pad.l + (yr - y0) * cw).toFixed(1), y: box.h - 8, "font-size": 11,
+      fill: "var(--ink-faint)", "text-anchor": "middle",
+    });
+    t.textContent = yr;
+    svg.appendChild(t);
+  }
+
+  const flips = rec.runs.filter((r, i) =>
+    i > 0 && ["left", "centre", "right"].includes(r.b) &&
+    ["left", "centre", "right"].includes(rec.runs[i - 1].b) && r.b !== rec.runs[i - 1].b).length;
+  $("#strip-caption").textContent =
+    `${state.country} changed the political direction of its government ` +
+    `${flips} ${flips === 1 ? "time" : "times"} between 1975 and ${y1}.`;
+}
+
 /* ---------- hover on the headline chart ---------- */
 
 function attachHover(s, series, palette, group) {
@@ -402,6 +497,8 @@ function render() {
     SOURCES, DATA.palette.sources, { w: 960, h: 200 });
   drawMosaic(group);
   drawMultiples(group);
+  populateCountries(group);
+  drawCountry();
 
   const latest = group.index[group.index.length - 1];
   const solid = [...group.index].reverse().find((r) => (r[shareKey] ?? 0) >= PROVISIONAL_BELOW);
@@ -440,10 +537,19 @@ Promise.resolve(
       });
     }
 
+    state.country = state.country || defaultCountry(state.group);
+    $("#country").addEventListener("change", (e) => {
+      state.country = e.target.value;
+      drawCountry();
+      writeHash();
+    });
+
     const slider = $("#year");
     const years = DATA.groups.world.cross.map((r) => r.year);
     slider.min = Math.min(...years);
-    slider.max = Math.max(...years);
+    // regime data stops before the political series; the slider is capped from
+    // the data rather than a hardcoded year
+    slider.max = DATA.meta.regime_coverage_end;
     state.year = Math.min(Math.max(state.year, +slider.min), +slider.max);
     slider.value = state.year;
     $("#year-out").textContent = state.year;

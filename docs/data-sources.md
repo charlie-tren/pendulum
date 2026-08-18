@@ -85,3 +85,38 @@ window a 2026 site most wants to show.
 regime type, not ideology. Arden has the ideology and the population weighting
 but only for one year and won't share the data. Nobody has the intersection.
 That intersection is the project.
+
+## Wikidata layer — how it is queried, and what it gets wrong
+
+Added 2026-08-18 to extend past DPI's 2023 end. Three bugs were found and fixed
+while building it, all of which produced plausible-looking wrong answers:
+
+1. **Pooled party memberships.** The naive query joins a head of government to
+   *every* party they have ever belonged to. Macron returned Renaissance, the
+   Socialist Party and En Marche at once, so France averaged to a nonsense
+   position and was labelled "Union for a Popular Movement" — Chirac's party —
+   in 2025. Fixed by requiring the P102 membership statement's own date
+   qualifiers to overlap the term.
+2. **Wrong year assignment.** Terms were being credited to their start year,
+   which contradicts the 1 January convention used everywhere else. A
+   government formed in September 2024 was claiming 2024. Fixed by assigning a
+   term to year Y only if it was already in office on 1 January of Y. This is
+   what makes UK 2024 read Conservative and UK 2025 read Labour, correctly.
+3. **Stale party labels on extended years.** `extend_years` carries DPI's last
+   known party name into 2024-2026 so later layers have somewhere to land. When
+   Wikidata then resolved the year, the label was not being overwritten, so the
+   UK's 2024 Labour win rendered as "left — Conservative". Fixed, and unresolved
+   years now drop the carried name rather than showing someone else's.
+
+### Known seam: DPI and Wikidata disagree
+
+Wikidata tags the US Democratic Party as `centrism`; DPI codes it `Left`. Since
+DPI wins up to 2023 and Wikidata takes over from 2024, the United States can
+appear to move left-to-centre with no election in between. That is a source
+disagreement, not a political event.
+
+It is visible rather than hidden — the country strip shows a source bar under
+every run, and the headline chart's hover names the source mix. But it is a real
+limitation, and the honest fix is a reconciliation pass that carries DPI's
+coding forward whenever the governing party has not actually changed. Logged as
+TODO D9.
