@@ -14,15 +14,19 @@ from __future__ import annotations
 
 import csv
 import json
+import sys
 from collections import defaultdict
 from pathlib import Path
 
 import yaml
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from resolve import load_dpi, load_vparty, resolve  # noqa: E402
+
 ROOT = Path(__file__).resolve().parents[1]
 RAW, OUT, CFG = ROOT / "data" / "raw", ROOT / "data" / "out", ROOT / "config"
 
-BUCKET = {"Left": "left", "Center": "centre", "Right": "right"}
+SOURCES = ["dpi", "vparty", "carry_forward", "none"]
 CATEGORIES = ["left", "centre", "right", "uncoded"]
 SCORE = {"left": -1.0, "centre": 0.0, "right": 1.0}
 
@@ -44,23 +48,6 @@ def load_population() -> dict[tuple[str, int], float]:
     return pop
 
 
-def load_dpi(cmap: dict) -> list[dict]:
-    rename, drop = cmap["rename"], set(cmap["drop"])
-    out = []
-    with open(RAW / "dpi2023.csv", encoding="utf-8-sig") as fh:
-        for row in csv.DictReader(fh):
-            name = row["countryname"]
-            if name in drop:
-                continue
-            out.append({
-                "entity": rename.get(name, name),
-                "year": year_of(row["year"]),
-                "bucket": BUCKET.get(row["execrlc"], "uncoded"),
-                "party": row["execme"],
-            })
-    return out
-
-
 def aggregate(records, pop, members) -> dict:
     """Shares by year for one country group, under both weightings."""
     by_year = defaultdict(list)
@@ -74,9 +61,11 @@ def aggregate(records, pop, members) -> dict:
         recs = by_year[year]
         c = {k: 0.0 for k in CATEGORIES}
         w = {k: 0.0 for k in CATEGORIES}
+        src = {k: 0.0 for k in SOURCES}
         missing_pop = 0
         for rec in recs:
             c[rec["bucket"]] += 1
+            src[rec["source"]] += 1
             p = pop.get((rec["entity"], year))
             if p is None:
                 missing_pop += 1
@@ -84,6 +73,7 @@ def aggregate(records, pop, members) -> dict:
             w[rec["bucket"]] += p
         n, total_pop = len(recs), sum(w.values())
         counts.append({"year": year, "n": n, "missing_pop": missing_pop,
+                       "source": {k: round(src[k] / n, 6) for k in SOURCES},
                        **{k: round(c[k] / n, 6) for k in CATEGORIES}})
         weights.append({"year": year, "pop": round(total_pop),
                         **{k: round(w[k] / total_pop, 6) if total_pop else None
@@ -116,7 +106,7 @@ def main() -> int:
     cmap = yaml.safe_load((CFG / "country_map.yaml").read_text(encoding="utf-8"))
     groups = yaml.safe_load((CFG / "country_groups.yaml").read_text(encoding="utf-8"))["groups"]
     pop = load_population()
-    records = load_dpi(cmap)
+    records = resolve(load_dpi(cmap), *load_vparty(cmap))
 
     iso_to_entity = {}
     for row in csv.DictReader(open(RAW / "population.csv", encoding="utf-8-sig")):
@@ -140,13 +130,20 @@ def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     payload = {
         "meta": {
-            "source": "Database of Political Institutions 2023 (IDB), CC-BY 4.0",
-            "source_url": "https://doi.org/10.60966/8tx1xs4i",
+            "sources": [
+                "Database of Political Institutions 2023 (IDB), CC-BY 4.0 "
+                "https://doi.org/10.60966/8tx1xs4i",
+                "V-Party v2 (V-Dem Institute, 2022) - fills country-years DPI leaves blank, "
+                "ends 2019",
+            ],
             "population": "Our World in Data / UN WPP",
             "coverage": "1975-2023",
             "built": "2026-08-18",
-            "note": ("`uncoded` means DPI records no left-right orientation for that "
-                     "executive. It is a real category, not missing data to be hidden."),
+            "note": ("`uncoded` means no source gives this executive a left-right reading "
+                     "- typically an absolute monarchy or a non-party military government. "
+                     "It is a real category, never renormalised away. Each year also "
+                     "reports which source resolved it, so the site can show its own "
+                     "coverage instead of implying uniform confidence."),
         },
         "groups": result,
     }

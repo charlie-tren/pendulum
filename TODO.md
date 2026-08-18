@@ -25,14 +25,29 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
 - [ ] D3. Extend **2024-2026** by hand on the 1 January convention. DPI stops at
       2023 and this is the window people actually care about. Mark it as
       hand-coded wherever it renders.
-- [ ] D4. V-Party v2 for the nuanced spectrum. Note it stops ~2019 — decide
-      whether to show a truncated nuanced view or interpolate forward from the
-      seed. **Do not silently interpolate.**
+- [x] D4. V-Party v2 wired in as a **fill layer**, not just a nuance layer.
+      Answers "can we fill the grey band": yes. Uncoded population falls from
+      ~25% to ~2% for 1975-2019. Residual is absolute monarchies and non-party
+      military governments — a real answer, not a hole.
+- [x] D4b. Party-name carry-forward past V-Party's 2019 end, where DPI still
+      records the same party in power. Recovers Indonesia, Turkey, Uganda,
+      Romania and others for 2020-2023.
+- [ ] **D4c. Annotate the 2020 coverage cliff.** V-Party ends in 2019, so the
+      uncoded band jumps ~2% -> ~15% at 2020. That is an artefact of data
+      coverage, NOT a political event, and it will be read as a finding unless
+      it is explicitly marked on the chart. See the provenance panel in the
+      preview. **This is the most likely way the site misleads someone.**
+- [ ] D4d. Party aliases to recover the remaining big ones: DPI `AL` is
+      V-Party `BAL` (Bangladesh, 171m). Factual aliases only — a rename like
+      South Korea's LKP -> PPP is a judgement call and gets hand-coded and
+      flagged, not aliased silently.
 - [ ] D5. Manifesto Project API key + RILE for a continuous axis on the 67
       countries it covers.
 - [ ] D6. CHES for the second (GAL-TAN) axis, Europe only.
 - [x] D7. Population weights joined. All 183 DPI countries resolve to OWID
       entities via `config/country_map.yaml`; 8 historical states dropped.
+- [x] D8a. Provenance emitted per group-year (`source` block: dpi / vparty /
+      carry_forward / none) and rendered in the preview.
 - [ ] D8. One provenance record per series: source, version, retrieved date,
       licence, coverage end. Rendered on the site, not buried.
 

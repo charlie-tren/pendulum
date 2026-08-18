@@ -44,16 +44,47 @@ def legend():
 panels = []
 for gk, title, note in [
     ("world", "World — share of population by government orientation",
-     "The grey band is the finding: about a quarter of humanity has no left-right code in DPI at all."),
-    ("g7", "G7 — share of population", "Full coverage, so the grey band vanishes."),
+     "Grey is now ~2% for 1975–2019, down from ~25% on DPI alone. The step up in 2020 is "
+     "<b>not a political event</b> — it is V-Party's coverage ending in 2019. It must be "
+     "annotated on the real site or it reads as a finding."),
     ("asean", "ASEAN — share of population",
-     "Why the grey band must stay. Renormalise it away and ASEAN reads as 100% left-wing, "
-     "on the strength of Vietnam and Laos alone."),
+     "Was 18% coded on DPI alone, which rendered ASEAN as 100% left-wing off Vietnam and Laos. "
+     "Now 60%, with Indonesia resolved as left via V-Party."),
+    ("g7", "G7 — share of population", "Fully coded throughout. No grey at all."),
 ]:
     g = DATA["groups"][gk]
     panels.append(f'<h2 style="font:600 17px system-ui;margin:26px 0 2px">{title}</h2>'
                   f'<p style="font:14px/1.5 system-ui;color:#555;margin:0 0 8px">{note}</p>'
                   f'{legend()}{stacked(g["by_population"])}')
+
+# provenance panel - which source resolved each year
+SRC = [("dpi", "#4a6fa5", "DPI"), ("vparty", "#7aa06b", "V-Party"),
+       ("carry_forward", "#d4a55c", "Carry-forward"), ("none", "#cfcfcf", "Unresolved")]
+w = DATA["groups"]["world"]["by_country"]
+years = [r["year"] for r in w]
+x0, x1 = min(years), max(years)
+iw, ih = W - PAD["l"] - PAD["r"], H - PAD["t"] - PAD["b"]
+sx = lambda y: PAD["l"] + (y - x0) / (x1 - x0) * iw
+sy = lambda v: PAD["t"] + (1 - v) * ih
+parts, base = [], [0.0] * len(w)
+for key, colour, _ in SRC:
+    top = [base[i] + w[i]["source"][key] for i in range(len(w))]
+    pts = ([f"{sx(w[i]['year']):.1f},{sy(top[i]):.1f}" for i in range(len(w))] +
+           [f"{sx(w[i]['year']):.1f},{sy(base[i]):.1f}" for i in range(len(w) - 1, -1, -1)])
+    parts.append(f'<polygon points="{" ".join(pts)}" fill="{colour}"/>')
+    base = top
+for y in range(1980, x1 + 1, 10):
+    parts.append(f'<text x="{sx(y):.0f}" y="{H-10}" font-size="11" fill="#666" '
+                 f'text-anchor="middle">{y}</text>')
+leg = "".join(f'<span style="display:inline-flex;align-items:center;gap:6px;margin-right:18px">'
+              f'<span style="width:13px;height:13px;background:{c};display:inline-block;'
+              f'border-radius:2px"></span>{lab}</span>' for _, c, lab in SRC)
+panels.append('<h2 style="font:600 17px system-ui;margin:26px 0 2px">Provenance — which '
+              'source resolved each country-year</h2>'
+              '<p style="font:14px/1.5 system-ui;color:#555;margin:0 0 8px">The V-Party cliff at '
+              '2020 is plain here. Carry-forward partially covers it; the rest needs hand-coding.</p>'
+              f'<div style="font-size:13px;margin:6px 0 14px">{leg}</div>'
+              f'<svg viewBox="0 0 {W} {H}" width="100%">{"".join(parts)}</svg>')
 
 html = f"""<title>Pendulum — data preview</title>
 <div style="max-width:940px;margin:32px auto;padding:0 18px;font-family:system-ui">
