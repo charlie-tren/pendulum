@@ -95,19 +95,19 @@ def aggregate(records, pop, members):
                 w[rec["bucket"]] += p
         n, total = len(recs), sum(w.values())
         counts.append({"year": year, "n": n,
-                       "source": {k: round(src[k] / n, 6) for k in SOURCES},
-                       **{k: round(c[k] / n, 6) for k in CATEGORIES}})
+                       "source": {k: round(src[k] / n, 4) for k in SOURCES},
+                       **{k: round(c[k] / n, 4) for k in CATEGORIES}})
         weights.append({"year": year, "pop": round(total),
-                        **{k: round(w[k] / total, 6) if total else None
+                        **{k: round(w[k] / total, 4) if total else None
                            for k in CATEGORIES}})
         cn = n - c["no_reading"] - c["unresolved"]
         cp = total - w["no_reading"] - w["unresolved"]
         index.append({
             "year": year,
-            "coded_share_countries": round(cn / n, 6) if n else None,
-            "coded_share_pop": round(cp / total, 6) if total else None,
-            "mean_by_country": round(sum(SCORE[k] * c[k] for k in SCORE) / cn, 6) if cn else None,
-            "mean_by_population": round(sum(SCORE[k] * w[k] for k in SCORE) / cp, 6) if cp else None,
+            "coded_share_countries": round(cn / n, 4) if n else None,
+            "coded_share_pop": round(cp / total, 4) if total else None,
+            "mean_by_country": round(sum(SCORE[k] * c[k] for k in SCORE) / cn, 4) if cn else None,
+            "mean_by_population": round(sum(SCORE[k] * w[k] for k in SCORE) / cp, 4) if cp else None,
         })
     return {"by_country": counts, "by_population": weights, "index": index}
 
@@ -117,7 +117,7 @@ def trailing_ma(series, key, window=3):
     vals = [row[key] for row in series]
     for i, row in enumerate(series):
         chunk = [v for v in vals[max(0, i - window + 1): i + 1] if v is not None]
-        row[f"{key}_ma{window}"] = (round(sum(chunk) / len(chunk), 6)
+        row[f"{key}_ma{window}"] = (round(sum(chunk) / len(chunk), 4)
                                     if i >= window - 1 and len(chunk) == window else None)
 
 
@@ -161,6 +161,8 @@ def main() -> int:
         agg = aggregate(records, pop, members)
         trailing_ma(agg["index"], "mean_by_country")
         trailing_ma(agg["index"], "mean_by_population")
+        agg["by_country"] = [{**r, "source": {k: v for k, v in r["source"].items() if v}}
+                             for r in agg["by_country"]]
         result[key] = {"label": spec["label"], "note": spec.get("note"),
                        "n_members": len(members) if members else len(entities), **agg}
 
