@@ -35,11 +35,8 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
 - [x] D4b. Party-name carry-forward past V-Party's 2019 end, where DPI still
       records the same party in power. Recovers Indonesia, Turkey, Uganda,
       Romania and others for 2020-2023.
-- [ ] **D4c. Annotate the 2020 coverage cliff.** V-Party ends in 2019, so the
-      uncoded band jumps ~2% -> ~15% at 2020. That is an artefact of data
-      coverage, NOT a political event, and it will be read as a finding unless
-      it is explicitly marked on the chart. See the provenance panel in the
-      preview. **This is the most likely way the site misleads someone.**
+- [x] **D4c. Coverage cliff handled.** Years below 80% resolved are hatched,
+      labelled provisional, and the caption names the last solid year.
 - [x] D4d. Party aliases added (`config/party_aliases.yaml`) — Bangladesh
       AL/BAL and Uzbekistan LDP/OLDP. Everything else inspected and rejected as
       a different party or a rename; those went to hand-coding instead.
