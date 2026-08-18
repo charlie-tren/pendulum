@@ -1,7 +1,7 @@
 :root {
   --ink: #1a1c1f;
   --ink-soft: #5a6068;
-  --ink-faint: #8b9199;
+  --ink-faint: #767d86;
   --rule: #e2e5e9;
   --bg: #fbfbfa;
   --panel: #ffffff;
@@ -152,7 +152,7 @@ a { color: var(--accent); }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --ink: #e9ecf0; --ink-soft: #a7aeb8; --ink-faint: #7b828c;
+    --ink: #e9ecf0; --ink-soft: #a7aeb8; --ink-faint: #98a0aa;
     --rule: #2b2f36; --bg: #131519; --panel: #1a1d22; --accent: #6ea8e0;
   }
   .segmented button[aria-checked="true"] { background: var(--accent); color: #0f1114; }
@@ -173,3 +173,39 @@ input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-of
 
 .mosaic-cell { cursor: default; }
 .mosaic-cell:hover { filter: brightness(1.12); }
+
+/* ---- hierarchy ----
+   Seven identical cards gave the headline chart and a provenance footnote the
+   same weight. The lead panel now carries the page and the quiet one recedes. */
+.panel-lead {
+  padding: 26px 26px 22px;
+  border-color: color-mix(in srgb, var(--accent) 26%, var(--rule));
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 28px rgba(0,0,0,0.05);
+}
+.panel-lead h2 { font-size: 22px; }
+.panel-quiet { background: transparent; border-style: dashed; }
+.panel-quiet h2 { font-size: 17px; color: var(--ink-soft); }
+
+/* ---- loading ----
+   The data is about a megabyte. Empty cards look broken; say what is happening. */
+.loading-note { display: none; }
+body.loading main > .panel, body.loading .controls { display: none; }
+body.loading .loading-note {
+  display: block; color: var(--ink-faint); font-size: 15px; padding: 40px 0 80px;
+}
+
+/* ---- charts ----
+   Charts are drawn at container pixel scale, so height comes from the viewBox
+   and must not be overridden here. */
+.chart svg { width: 100%; height: auto; }
+
+/* ---- mobile ----
+   Panels get their inner padding back at the smallest sizes so charts, which
+   measure their own container, do not end up needlessly narrow. */
+@media (max-width: 640px) {
+  .panel-lead { padding: 18px 14px 14px; box-shadow: none; }
+  .panel-lead h2 { font-size: 19px; }
+  .legend { gap: 4px 14px; font-size: 13px; }
+  .control-year { max-width: none; }
+  h1 { margin-bottom: 4px; }
+}

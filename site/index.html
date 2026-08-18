@@ -3,11 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Pendulum — how the world is governed</title>
+<title>Pendulum: how the world is governed</title>
 <meta name="description" content="How the world's governments have moved along the political spectrum since 1975, counted by country and by population.">
 <link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='5' r='2.4' fill='%235a6068'/%3E%3Cpath d='M16 6 L9 24' stroke='%235a6068' stroke-width='2' fill='none'/%3E%3Ccircle cx='8' cy='26' r='5' fill='%232f6fb2'/%3E%3C/svg%3E">
 </head>
-<body>
+<body class="loading">
 <header class="wrap">
   <h1>Pendulum</h1>
   <p class="standfirst">
@@ -32,11 +33,11 @@
     </div>
   </section>
 
-  <section class="panel">
+  <section class="panel panel-lead">
     <h2 id="chart-title"></h2>
     <div class="legend" id="legend"></div>
     <figure class="chart">
-      <svg id="area" viewBox="0 0 960 380" preserveAspectRatio="none" role="img"></svg>
+      <svg id="area" role="img"></svg>
       <div class="readout" id="readout" hidden></div>
     </figure>
     <p class="caption" id="caption"></p>
@@ -50,11 +51,11 @@
       Countries with no left&ndash;right reading are excluded here rather than counted as centre.
     </p>
     <figure class="chart">
-      <svg id="line" viewBox="0 0 960 240" preserveAspectRatio="none" role="img"></svg>
+      <svg id="line" role="img"></svg>
     </figure>
   </section>
 
-  <section class="panel">
+  <section class="panel panel-quiet">
     <h2>Where each figure comes from</h2>
     <p class="sub">
       No single dataset covers the whole world for the whole period. This shows which
@@ -63,7 +64,7 @@
     </p>
     <div class="legend" id="legend-src"></div>
     <figure class="chart">
-      <svg id="prov" viewBox="0 0 960 200" preserveAspectRatio="none" role="img"></svg>
+      <svg id="prov" role="img"></svg>
     </figure>
   </section>
 
@@ -80,8 +81,9 @@
       <label for="year">Year <output id="year-out"></output></label>
       <input type="range" id="year" min="1975" max="2025" step="1" value="2023">
     </div>
+    <div class="legend" id="legend-mosaic"></div>
     <figure class="chart">
-      <svg id="mosaic" viewBox="0 0 960 340" role="img"></svg>
+      <svg id="mosaic" role="img"></svg>
       <div class="readout" id="mosaic-readout" hidden></div>
     </figure>
     <p class="caption" id="mosaic-caption"></p>
@@ -91,11 +93,11 @@
     <h2>The same thing over time</h2>
     <p class="sub">
       Each panel is one regime type. Heights are shares of the whole group, so the four
-      panels together account for everyone &mdash; a panel growing means more of the world
+      panels together account for everyone. A panel growing means more of the world
       lives that way.
     </p>
     <figure class="chart">
-      <svg id="multiples" viewBox="0 0 960 260" role="img"></svg>
+      <svg id="multiples" role="img"></svg>
     </figure>
   </section>
 
@@ -110,8 +112,9 @@
       <label for="country">Country</label>
       <select id="country"></select>
     </div>
+    <div class="legend" id="legend-strip"></div>
     <figure class="chart">
-      <svg id="strip" viewBox="0 0 960 130" role="img"></svg>
+      <svg id="strip" role="img"></svg>
       <div class="readout" id="strip-readout" hidden></div>
     </figure>
     <p class="caption" id="strip-caption"></p>
@@ -143,6 +146,7 @@
       </dd>
     </dl>
   </section>
+  <p class="loading-note">Loading the data.</p>
 </main>
 
 <footer class="wrap">

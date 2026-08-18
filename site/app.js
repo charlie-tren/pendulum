@@ -1,4 +1,4 @@
-/* Pendulum — static frontend. No framework, no build step, no dependencies.
+/* Pendulum: static frontend. No framework, no build step, no dependencies.
    Charts are hand-rolled SVG so this still runs in five years. */
 
 const DEFAULTS = { group: "world", weight: "by_population", year: 2023, country: null };
@@ -13,13 +13,36 @@ const PROVISIONAL_BELOW = 0.8;
 const state = { ...DEFAULTS };
 let DATA = null;
 
+/* Charts are drawn in the container's own CSS pixels rather than a fixed
+   960-wide viewBox. With a fixed viewBox everything scales with the container,
+   so at 375px wide an 11px axis label rendered at 3.5px and the whole thing was
+   unreadable on a phone. Measuring first costs a layout read and makes every
+   font size mean what it says. */
+const clamp = (lo, v, hi) => Math.max(lo, Math.min(v, hi));
+
+function boxFor(svgId, ratio, minH, maxH) {
+  const svg = document.querySelector(svgId);
+  const measured = Math.round(svg.parentElement.getBoundingClientRect().width);
+  const w = measured > 40 ? measured
+    : Math.round(clamp(280, document.documentElement.clientWidth - 76, 920));
+  return { w, h: Math.round(clamp(minH, w * ratio, maxH)) };
+}
+
+function describe(svg, text) {
+  const title = svgEl("title");
+  title.textContent = text;
+  svg.insertBefore(title, svg.firstChild);
+  svg.setAttribute("aria-label", text);
+  svg.setAttribute("role", "img");
+}
+
 const $ = (sel) => document.querySelector(sel);
 const svgEl = (name, attrs = {}) => {
   const node = document.createElementNS("http://www.w3.org/2000/svg", name);
   for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
   return node;
 };
-const pct = (v) => (v == null ? "—" : `${(v * 100).toFixed(v * 100 < 10 ? 1 : 0)}%`);
+const pct = (v) => (v == null ? "n/a" : `${(v * 100).toFixed(v * 100 < 10 ? 1 : 0)}%`);
 const sum = (obj) => Object.values(obj || {}).reduce((a, b) => a + b, 0);
 
 /* ---------- URL state. The default is never written to the URL. ---------- */
@@ -107,7 +130,7 @@ function hatchDefs(svg) {
 
 /* ---------- stacked area ---------- */
 
-function drawStack(svgId, series, keys, palette, box, { provisional = null } = {}) {
+function drawStack(svgId, series, keys, palette, box, { provisional = null, label = "" } = {}) {
   const svg = $(svgId);
   svg.innerHTML = "";
   svg.setAttribute("viewBox", `0 0 ${box.w} ${box.h}`);
@@ -134,19 +157,20 @@ function drawStack(svgId, series, keys, palette, box, { provisional = null } = {
       x1: from, x2: from, y1: pad.t, y2: pad.t + s.ih,
       stroke: "var(--ink-faint)", "stroke-width": 1, "stroke-dasharray": "3 3",
     }));
-    const label = svgEl("text", {
+    const flag = svgEl("text", {
       x: from + 6, y: pad.t + 14, "font-size": 11, fill: "var(--ink-faint)",
     });
-    label.textContent = "provisional";
-    svg.appendChild(label);
+    flag.textContent = "provisional";
+    svg.appendChild(flag);
   }
+  if (label) describe(svg, label);
   return s;
 }
 
 /* ---------- index line ---------- */
 
 function drawLine(series) {
-  const box = { w: 960, h: 240 };
+  const box = boxFor("#line", 0.26, 175, 240);
   const svg = $("#line");
   svg.innerHTML = "";
   svg.setAttribute("viewBox", `0 0 ${box.w} ${box.h}`);
@@ -177,6 +201,8 @@ function drawLine(series) {
   };
   path(key, "var(--ink-faint)", 1.4, 0.55);
   path(`${key}_ma3`, "var(--ink)", 2.4, 1);
+  describe(svg, "Line chart of mean government position, minus one for wholly left " +
+                "to plus one for wholly right, with a three-year trailing average.");
 
   for (const [v, text] of [[0.98, "right"], [0.02, "left"]]) {
     const t = svgEl("text", {
@@ -206,7 +232,8 @@ function drawMosaic(group) {
     return;
   }
 
-  const box = { w: 960, h: 340 };
+  const box = boxFor("#mosaic", 0.36, 270, 340);
+  svg.setAttribute("viewBox", `0 0 ${box.w} ${box.h}`);
   const pad = { l: 4, r: 4, t: 6, b: 46 };
   const iw = box.w - pad.l - pad.r;
   const ih = box.h - pad.t - pad.b;
@@ -267,6 +294,8 @@ function drawMosaic(group) {
     x += w + gap;
   }
   svg.onpointerleave = () => { readout.hidden = true; };
+  describe(svg, `Mosaic for ${row.year}. Column width is the share of people under each ` +
+                `regime type; block height is the ideology split within it.`);
 
   const ranked = [];
   for (const col of cols) {
@@ -292,20 +321,28 @@ function drawMultiples(group) {
   const series = group.cross || [];
   if (!series.length) return;
 
-  const box = { w: 960, h: 260 };
-  const pad = { l: 4, r: 4, t: 24, b: 26 };
   const panels = REGIME_ORDER.filter((r) => r !== "unknown");
+  const probe = boxFor("#multiples", 0.27, 180, 260);
+  // four panels side by side become 72px wide on a phone, which is unreadable;
+  // below this width they wrap to a 2x2 grid instead
+  const cols = probe.w < 560 ? 2 : 4;
+  const rows = panels.length / cols;
+  const box = { w: probe.w, h: rows === 1 ? probe.h : Math.round(probe.h * 1.55) };
+  svg.setAttribute("viewBox", `0 0 ${box.w} ${box.h}`);
+  const pad = { l: 4, r: 4, t: 24, b: 26 };
   const gap = 16;
-  const pw = (box.w - pad.l - pad.r - gap * (panels.length - 1)) / panels.length;
-  const ih = box.h - pad.t - pad.b;
+  const rowGap = 30;
+  const pw = (box.w - pad.l - pad.r - gap * (cols - 1)) / cols;
+  const ih = (box.h - pad.t - pad.b - rowGap * (rows - 1)) / rows;
   const years = series.map((r) => r.year);
   const [y0, y1] = [Math.min(...years), Math.max(...years)];
   const ymax = Math.max(...series.flatMap((r) => panels.map((p) => sum(r.cells[p]))), 0.05);
 
   panels.forEach((regime, i) => {
-    const ox = pad.l + i * (pw + gap);
+    const ox = pad.l + (i % cols) * (pw + gap);
+    const oy = pad.t + Math.floor(i / cols) * (ih + rowGap);
     const sx = (yr) => ox + ((yr - y0) / (y1 - y0)) * pw;
-    const sy = (v) => pad.t + ih - (v / ymax) * ih;
+    const sy = (v) => oy + ih - (v / ymax) * ih;
 
     let base = series.map(() => 0);
     for (const band of BANDS) {
@@ -318,23 +355,25 @@ function drawMultiples(group) {
       base = top;
     }
     svg.appendChild(svgEl("line", {
-      x1: ox, x2: ox + pw, y1: pad.t + ih, y2: pad.t + ih,
+      x1: ox, x2: ox + pw, y1: oy + ih, y2: oy + ih,
       stroke: "var(--rule)", "stroke-width": 1,
     }));
     const title = svgEl("text", {
-      x: ox, y: pad.t - 9, "font-size": 12.5, fill: "var(--ink-soft)", "font-weight": 600,
+      x: ox, y: oy - 9, "font-size": 12.5, fill: "var(--ink-soft)", "font-weight": 600,
     });
     title.textContent = DATA.palette.regimes[regime].short;
     svg.appendChild(title);
     for (const yr of [y0, y1]) {
       const t = svgEl("text", {
-        x: sx(yr), y: box.h - 8, "font-size": 11, fill: "var(--ink-faint)",
+        x: sx(yr), y: oy + ih + 15, "font-size": 11, fill: "var(--ink-faint)",
         "text-anchor": yr === y0 ? "start" : "end",
       });
       t.textContent = yr;
       svg.appendChild(t);
     }
   });
+  describe(svg, `Ideology composition within each regime type, ${y0} to ${y1}, ` +
+                `as a share of the whole group.`);
 }
 
 /* ---------- one country, as a strip of years ---------- */
@@ -368,7 +407,8 @@ function drawCountry() {
   const rec = DATA.countries.find((c) => c.entity === state.country);
   if (!rec) return;
 
-  const box = { w: 960, h: 130 };
+  const box = boxFor("#strip", 0.14, 108, 140);
+  svg.setAttribute("viewBox", `0 0 ${box.w} ${box.h}`);
   const pad = { l: 4, r: 4, t: 8, b: 28 };
   const iw = box.w - pad.l - pad.r;
   const [y0, y1] = [1975, DATA.groups.world.by_country.slice(-1)[0].year];
@@ -420,6 +460,9 @@ function drawCountry() {
     t.textContent = yr;
     svg.appendChild(t);
   }
+
+  describe(svg, `${state.country}, every year from 1975 to ${y1}, coloured by the ` +
+                `political direction of its government.`);
 
   const flips = rec.runs.filter((r, i) =>
     i > 0 && ["left", "centre", "right"].includes(r.b) &&
@@ -482,12 +525,13 @@ function render() {
   const byPop = state.weight === "by_population";
 
   $("#chart-title").textContent = byPop
-    ? `${group.label} — share of people by how their country is governed`
-    : `${group.label} — share of countries by government`;
+    ? `${group.label}: share of people by how their country is governed`
+    : `${group.label}: share of countries by government`;
   $("#group-hint").textContent = group.n_members ? `${group.n_members} countries` : "";
 
   $("#legend").innerHTML = BANDS.map((k) =>
     `<span><i style="background:${palette[k].colour}"></i>${palette[k].label}</span>`).join("");
+  $("#legend-mosaic").innerHTML = $("#legend-strip").innerHTML = $("#legend").innerHTML;
   $("#legend-src").innerHTML = SOURCES.map((k) =>
     `<span><i style="background:${DATA.palette.sources[k].colour}"></i>` +
     `${DATA.palette.sources[k].label}</span>`).join("");
@@ -496,12 +540,18 @@ function render() {
   const thin = group.index.filter((r) => (r[shareKey] ?? 1) < PROVISIONAL_BELOW && r.year > 2015);
   const runStart = thin.length ? Math.min(...thin.map((r) => r.year)) : null;
 
-  const s = drawStack("#area", series, BANDS, palette, { w: 960, h: 380 },
-    { provisional: runStart });
+  const s = drawStack("#area", series, BANDS, palette,
+    boxFor("#area", 0.42, 230, 380), {
+      provisional: runStart,
+      label: `Stacked area showing the share of ${byPop ? "people" : "countries"} in ` +
+             `${group.label} governed from the left, centre and right, ` +
+             `${series[0].year} to ${series[series.length - 1].year}.`,
+    });
   attachHover(s, series, palette, group);
   drawLine(group.index);
   drawStack("#prov", group.by_country.map((r) => ({ year: r.year, ...r.source })),
-    SOURCES, DATA.palette.sources, { w: 960, h: 200 });
+    SOURCES, DATA.palette.sources, boxFor("#prov", 0.20, 130, 190),
+    { label: "Which data source resolved each country-year, over time." });
   drawMosaic(group);
   drawMultiples(group);
   populateCountries(group);
@@ -568,7 +618,20 @@ Promise.resolve(
     });
 
     $("#sources").innerHTML = DATA.meta.sources.map((s) => `<li>${s}</li>`).join("");
+    document.body.classList.remove("loading");
     render();
+
+    /* Charts are sized from the container, so they have to be redrawn when it
+       changes. Width only: mobile browsers fire resize on every address-bar
+       collapse, and redrawing six charts for that is wasted work. */
+    let last = window.innerWidth;
+    let timer = null;
+    window.addEventListener("resize", () => {
+      if (window.innerWidth === last) return;
+      last = window.innerWidth;
+      clearTimeout(timer);
+      timer = setTimeout(render, 150);
+    });
   })
   .catch((err) => {
     $("#chart-title").textContent = "Could not load the data.";
