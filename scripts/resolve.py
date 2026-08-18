@@ -8,10 +8,14 @@ Resolution chain, most authoritative first:
                      DPI still records that same party in power
   4. hand_coded      our own coding, from data/seed/hand_coded.csv, each row
                      carrying a written basis and a verification date
-  5. no_reading      left-right genuinely does not apply: absolute monarchies,
+  5. wikidata       Wikidata P1387 party alignment joined to dated head-of-
+                     government terms. Broadest and most current source, but
+                     crowd-maintained, so it ranks below the academic ones and
+                     only fills what they leave empty.
+  6. no_reading      left-right genuinely does not apply: absolute monarchies,
                      military governments, big-tent personality vehicles. A
                      real answer.
-  6. unresolved      we simply lack data. Distinct from no_reading, and the
+  7. unresolved      we simply lack data. Distinct from no_reading, and the
                      two must not be drawn as one band.
 
 Every resolved point carries the source that produced it so the site can show
@@ -20,6 +24,7 @@ its own coverage rather than implying uniform confidence.
 from __future__ import annotations
 
 import csv
+import json
 import re
 from pathlib import Path
 
@@ -102,8 +107,9 @@ def load_vparty(cmap: dict):
 
 
 def resolve(records: list[dict], annual: dict, ratings: dict,
-            aliases: dict | None = None, hand: dict | None = None) -> list[dict]:
-    aliases, hand = aliases or {}, hand or {}
+            aliases: dict | None = None, hand: dict | None = None,
+            wikidata: dict | None = None) -> list[dict]:
+    aliases, hand, wikidata = aliases or {}, hand or {}, wikidata or {}
     for rec in records:
         key = (rec["entity"], rec["year"])
         if rec["bucket"]:
@@ -125,6 +131,47 @@ def resolve(records: list[dict], annual: dict, ratings: dict,
             hit = hand[key]
             rec.update(bucket=hit["bucket"], score=None, basis=hit["basis"],
                        source="no_reading" if hit["bucket"] == "no_reading" else "hand")
+        elif key in wikidata:
+            bucket = wikidata[key]
+            rec.update(bucket=bucket, score=None,
+                       source="no_reading" if bucket == "no_reading" else "wikidata")
         else:
             rec.update(bucket="unresolved", score=None, source="unresolved")
     return records
+
+
+def load_wikidata(path: Path, cfg_path: Path, rename: dict) -> dict:
+    """(entity, year) -> bucket, from dated head-of-government terms.
+
+    Terms without a start date are skipped — an undated term cannot be placed
+    on a timeline, and guessing one would be fabrication.
+    """
+    import yaml
+
+    cfg = yaml.safe_load(cfg_path.read_text(encoding="utf-8"))
+    scale, off_axis = cfg["scale"], set(cfg["not_on_axis"])
+    lo, hi = cfg["thresholds"]["left_below"], cfg["thresholds"]["right_above"]
+
+    terms: dict[tuple[str, int, int], list[str]] = {}
+    for row in json.loads(path.read_text(encoding="utf-8")):
+        if "start" not in row:
+            continue
+        entity = rename.get(row["countryLabel"]["value"], row["countryLabel"]["value"])
+        start = int(row["start"]["value"][:4])
+        end = int(row["end"]["value"][:4]) if "end" in row else 2026
+        label = row["posLabel"]["value"]
+        if label not in scale and label not in off_axis:
+            raise ValueError(f"unmapped Wikidata alignment label: {label!r}")
+        terms.setdefault((entity, start, end), []).append(label)
+
+    out: dict[tuple[str, int], str] = {}
+    for (entity, start, end), labels in sorted(terms.items()):
+        on = [scale[x] for x in labels if x in scale]
+        if on:
+            mean = sum(on) / len(on)
+            bucket = "left" if mean < lo else ("right" if mean > hi else "centre")
+        else:
+            bucket = "no_reading"
+        for year in range(start, min(end, 2026) + 1):
+            out[(entity, year)] = bucket
+    return out

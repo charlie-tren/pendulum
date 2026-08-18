@@ -1,0 +1,31 @@
+# Wikidata P1387 "political alignment" labels -> a numeric position.
+# Enumerated from the actual query result 2026-08-18, not guessed — every
+# label present in the data has an entry here, and an unknown label is a hard
+# error in the loader rather than a silent drop.
+#
+# A party often carries several alignment statements. They are averaged and
+# then bucketed, so centre-left + left resolves left, and centre-left +
+# centre-right resolves centre. `big tent` and `syncretic politics` are not
+# points on the axis: if a party's ONLY statements are those, it resolves to
+# no_reading, which is the honest reading of a catch-all party.
+scale:
+  far-left politics: -2.0
+  radical left: -2.0
+  left-wing: -1.0
+  centre-left: -0.5
+  centrism: 0.0
+  moderate: 0.0
+  centre-right: 0.5
+  right-wing: 1.0
+  national conservatism: 1.0
+  right-libertarianism: 1.0
+  far-right: 2.0
+  right-wing extremism: 2.0
+  alt-right: 2.0
+
+not_on_axis:
+  - big tent
+  - syncretic politics
+
+# Bucket thresholds on the averaged score.
+thresholds: {left_below: -0.25, right_above: 0.25}

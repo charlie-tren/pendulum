@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pendulum — how the world is governed</title>
+<meta name="description" content="How the world's governments have moved along the political spectrum since 1975, counted by country and by population.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="wrap">
+  <h1>Pendulum</h1>
+  <p class="standfirst">
+    Most charts of world politics count countries, which makes Tuvalu equal to India.
+    This one lets you count people instead.
+  </p>
+</header>
+
+<main class="wrap">
+  <section class="controls" aria-label="Chart controls">
+    <div class="control">
+      <label for="group">Countries</label>
+      <select id="group"></select>
+      <span class="hint" id="group-hint"></span>
+    </div>
+    <div class="control">
+      <span class="label">Each country counts</span>
+      <div class="segmented" role="radiogroup" aria-label="Weighting">
+        <button type="button" data-weight="by_population" role="radio" aria-checked="true">by its population</button>
+        <button type="button" data-weight="by_country" role="radio" aria-checked="false">equally</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2 id="chart-title"></h2>
+    <div class="legend" id="legend"></div>
+    <figure class="chart">
+      <svg id="area" viewBox="0 0 960 380" preserveAspectRatio="none" role="img"></svg>
+      <div class="readout" id="readout" hidden></div>
+    </figure>
+    <p class="caption" id="caption"></p>
+  </section>
+
+  <section class="panel">
+    <h2>Balance of the coded world</h2>
+    <p class="sub">
+      Mean position of governments that have one, from &minus;1 (all left) to +1 (all right).
+      The pale line is the year; the solid line is a three-year trailing average.
+      Countries with no left&ndash;right reading are excluded here rather than counted as centre.
+    </p>
+    <figure class="chart">
+      <svg id="line" viewBox="0 0 960 240" preserveAspectRatio="none" role="img"></svg>
+    </figure>
+  </section>
+
+  <section class="panel">
+    <h2>Where each figure comes from</h2>
+    <p class="sub">
+      No single dataset covers the whole world for the whole period. This shows which
+      source resolved each country-year, so you can see where the numbers are solid and
+      where they are thin.
+    </p>
+    <div class="legend" id="legend-src"></div>
+    <figure class="chart">
+      <svg id="prov" viewBox="0 0 960 200" preserveAspectRatio="none" role="img"></svg>
+    </figure>
+  </section>
+
+  <section class="panel notes">
+    <h2>Reading this honestly</h2>
+    <dl>
+      <dt>Two kinds of grey</dt>
+      <dd>
+        <b>Left&ndash;right does not apply</b> is an answer: Saudi Arabia bans political
+        parties, and the Philippines' governing party describes itself as a big tent
+        spanning populism to self-declared socialism. <b>No data</b> is an admission.
+        They are never merged, and neither is ever hidden by rescaling the rest to 100%.
+      </dd>
+      <dt>Colours follow the American convention</dt>
+      <dd>Blue for left, red for right. Most of the world uses the opposite.</dd>
+      <dt>Recent years are provisional</dt>
+      <dd>
+        The academic sources end in 2023. Later years lean on Wikidata and hand-coding
+        and are marked as provisional wherever coverage falls below 80%. Treat movement
+        in those years as a gap in the data, not a swing in the world.
+      </dd>
+      <dt>A year means 1 January</dt>
+      <dd>
+        The party of the chief executive on 1 January, following the Database of
+        Political Institutions. A government that takes office in March counts from the
+        following year.
+      </dd>
+    </dl>
+  </section>
+</main>
+
+<footer class="wrap">
+  <h2>Sources</h2>
+  <ul id="sources"></ul>
+  <p class="fine">
+    Built from open data. Errors are mine, not the sources'.
+    <a href="https://github.com/charlie-tren/pendulum">Code and data</a>.
+  </p>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

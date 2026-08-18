@@ -1,58 +1,376 @@
-# Country groups for the toggle. ISO-3166 alpha-3.
-# Membership is political and changes — each group carries an `as_of`.
-# Small enough to hand-maintain; review annually.
-
 groups:
   world:
-    label: "All countries"
-    note: "Everything the source data covers. Default view."
+    label: All countries
+    note: Everything the source data covers. Default view.
     members: ALL
-
   seed15:
-    label: "Original 15"
-    note: >
-      The hand-coded set from the source spreadsheet. Kept so the sourced
-      data can be diffed against the original judgement calls.
-    as_of: 2026-08-18
-    members: [IND, USA, IDN, BRA, JPN, PHL, DEU, THA, GBR, FRA, ZAF, ITA, COL, KOR, ESP]
+    label: Original 15
+    note: 'The hand-coded set from the source spreadsheet. Kept so the sourced data can be diffed
+      against the original judgement calls.
 
+      '
+    as_of: 2026-08-18
+    members:
+    - IND
+    - USA
+    - IDN
+    - BRA
+    - JPN
+    - PHL
+    - DEU
+    - THA
+    - GBR
+    - FRA
+    - ZAF
+    - ITA
+    - COL
+    - KOR
+    - ESP
   g7:
-    label: "G7"
+    label: G7
     as_of: 2026-08-18
-    members: [USA, GBR, FRA, DEU, ITA, JPN, CAN]
-
+    members:
+    - USA
+    - GBR
+    - FRA
+    - DEU
+    - ITA
+    - JPN
+    - CAN
   g20:
-    label: "G20"
-    note: "Excludes the EU and African Union bloc seats, which have no single government."
+    label: G20
+    note: Excludes the EU and African Union bloc seats, which have no single government.
     as_of: 2026-08-18
-    members: [ARG, AUS, BRA, CAN, CHN, FRA, DEU, IND, IDN, ITA, JPN, MEX,
-              RUS, SAU, ZAF, KOR, TUR, GBR, USA]
-
+    members:
+    - ARG
+    - AUS
+    - BRA
+    - CAN
+    - CHN
+    - FRA
+    - DEU
+    - IND
+    - IDN
+    - ITA
+    - JPN
+    - MEX
+    - RUS
+    - SAU
+    - ZAF
+    - KOR
+    - TUR
+    - GBR
+    - USA
   eu:
-    label: "European Union"
+    label: European Union
     as_of: 2026-08-18
-    members: [AUT, BEL, BGR, HRV, CYP, CZE, DNK, EST, FIN, FRA, DEU, GRC,
-              HUN, IRL, ITA, LVA, LTU, LUX, MLT, NLD, POL, PRT, ROU, SVK,
-              SVN, ESP, SWE]
-
+    members:
+    - AUT
+    - BEL
+    - BGR
+    - HRV
+    - CYP
+    - CZE
+    - DNK
+    - EST
+    - FIN
+    - FRA
+    - DEU
+    - GRC
+    - HUN
+    - IRL
+    - ITA
+    - LVA
+    - LTU
+    - LUX
+    - MLT
+    - NLD
+    - POL
+    - PRT
+    - ROU
+    - SVK
+    - SVN
+    - ESP
+    - SWE
   oecd:
-    label: "OECD"
+    label: OECD
     as_of: 2026-08-18
-    members: [AUS, AUT, BEL, CAN, CHL, COL, CRI, CZE, DNK, EST, FIN, FRA,
-              DEU, GRC, HUN, ISL, IRL, ISR, ITA, JPN, KOR, LVA, LTU, LUX,
-              MEX, NLD, NZL, NOR, POL, PRT, SVK, SVN, ESP, SWE, CHE, TUR,
-              GBR, USA]
-
+    members:
+    - AUS
+    - AUT
+    - BEL
+    - CAN
+    - CHL
+    - COL
+    - CRI
+    - CZE
+    - DNK
+    - EST
+    - FIN
+    - FRA
+    - DEU
+    - GRC
+    - HUN
+    - ISL
+    - IRL
+    - ISR
+    - ITA
+    - JPN
+    - KOR
+    - LVA
+    - LTU
+    - LUX
+    - MEX
+    - NLD
+    - NZL
+    - NOR
+    - POL
+    - PRT
+    - SVK
+    - SVN
+    - ESP
+    - SWE
+    - CHE
+    - TUR
+    - GBR
+    - USA
   brics:
-    label: "BRICS+"
-    note: >
-      Founding five plus the 2024 expansion, plus Indonesia (Jan 2025).
-      Saudi Arabia was invited but has not formally acceded — excluded.
-    as_of: 2026-08-18
-    members: [BRA, RUS, IND, CHN, ZAF, EGY, ETH, IRN, ARE, IDN]
+    label: BRICS+
+    note: 'Founding five plus the 2024 expansion, plus Indonesia (Jan 2025). Saudi Arabia was
+      invited but has not formally acceded — excluded.
 
-  asean:
-    label: "ASEAN"
-    note: "Timor-Leste acceded as the 11th member in October 2025."
+      '
     as_of: 2026-08-18
-    members: [BRN, KHM, IDN, LAO, MYS, MMR, PHL, SGP, THA, VNM, TLS]
+    members:
+    - BRA
+    - RUS
+    - IND
+    - CHN
+    - ZAF
+    - EGY
+    - ETH
+    - IRN
+    - ARE
+    - IDN
+  asean:
+    label: ASEAN
+    note: Timor-Leste acceded as the 11th member in October 2025.
+    as_of: 2026-08-18
+    members:
+    - BRN
+    - KHM
+    - IDN
+    - LAO
+    - MYS
+    - MMR
+    - PHL
+    - SGP
+    - THA
+    - VNM
+    - TLS
+  africa:
+    label: Africa
+    note: Resolved from OWID continent mapping at build time.
+    as_of: '2026-08-18'
+    continent: Africa
+    members: CONTINENT
+  asia:
+    label: Asia
+    note: Resolved from OWID continent mapping at build time.
+    as_of: '2026-08-18'
+    continent: Asia
+    members: CONTINENT
+  europe:
+    label: Europe
+    note: Resolved from OWID continent mapping at build time.
+    as_of: '2026-08-18'
+    continent: Europe
+    members: CONTINENT
+  north_america:
+    label: North America
+    note: Resolved from OWID continent mapping at build time.
+    as_of: '2026-08-18'
+    continent: North America
+    members: CONTINENT
+  south_america:
+    label: South America
+    note: Resolved from OWID continent mapping at build time.
+    as_of: '2026-08-18'
+    continent: South America
+    members: CONTINENT
+  oceania:
+    label: Oceania
+    note: Resolved from OWID continent mapping at build time.
+    as_of: '2026-08-18'
+    continent: Oceania
+    members: CONTINENT
+  nato:
+    label: NATO
+    note: 32 members including Finland (2023) and Sweden (2024).
+    as_of: '2026-08-18'
+    members:
+    - ALB
+    - BEL
+    - BGR
+    - CAN
+    - HRV
+    - CZE
+    - DNK
+    - EST
+    - FIN
+    - FRA
+    - DEU
+    - GRC
+    - HUN
+    - ISL
+    - ITA
+    - LVA
+    - LTU
+    - LUX
+    - MNE
+    - NLD
+    - MKD
+    - NOR
+    - POL
+    - PRT
+    - ROU
+    - SVK
+    - SVN
+    - ESP
+    - SWE
+    - TUR
+    - GBR
+    - USA
+  african_union:
+    label: African Union
+    note: Excludes Western Sahara, which has no OWID population series in this build.
+    as_of: '2026-08-18'
+    members:
+    - DZA
+    - AGO
+    - BEN
+    - BWA
+    - BFA
+    - BDI
+    - CMR
+    - CPV
+    - CAF
+    - TCD
+    - COM
+    - COG
+    - COD
+    - CIV
+    - DJI
+    - EGY
+    - GNQ
+    - ERI
+    - SWZ
+    - ETH
+    - GAB
+    - GMB
+    - GHA
+    - GIN
+    - GNB
+    - KEN
+    - LSO
+    - LBR
+    - LBY
+    - MDG
+    - MWI
+    - MLI
+    - MRT
+    - MUS
+    - MAR
+    - MOZ
+    - NAM
+    - NER
+    - NGA
+    - RWA
+    - STP
+    - SEN
+    - SYC
+    - SLE
+    - SOM
+    - ZAF
+    - SSD
+    - SDN
+    - TZA
+    - TGO
+    - TUN
+    - UGA
+    - ZMB
+    - ZWE
+  arab_league:
+    label: Arab League
+    as_of: '2026-08-18'
+    members:
+    - DZA
+    - BHR
+    - COM
+    - DJI
+    - EGY
+    - IRQ
+    - JOR
+    - KWT
+    - LBN
+    - LBY
+    - MRT
+    - MAR
+    - OMN
+    - QAT
+    - SAU
+    - SOM
+    - SDN
+    - SYR
+    - TUN
+    - ARE
+    - YEM
+  nordics:
+    label: Nordics
+    as_of: '2026-08-18'
+    members:
+    - DNK
+    - FIN
+    - ISL
+    - NOR
+    - SWE
+  anglosphere:
+    label: Anglosphere
+    note: Six English-speaking democracies with closely related party systems.
+    as_of: '2026-08-18'
+    members:
+    - AUS
+    - CAN
+    - IRL
+    - NZL
+    - GBR
+    - USA
+  latin_america:
+    label: Latin America
+    as_of: '2026-08-18'
+    members:
+    - ARG
+    - BOL
+    - BRA
+    - CHL
+    - COL
+    - CRI
+    - CUB
+    - DOM
+    - ECU
+    - SLV
+    - GTM
+    - HND
+    - MEX
+    - NIC
+    - PAN
+    - PRY
+    - PER
+    - URY
+    - VEN
+  top20_pop:
+    label: 20 most populous
+    note: Resolved at build time from the population data, per year. The membership CHANGES over
+      time, which is the point — it tracks where people actually live.
+    as_of: '2026-08-18'
+    members: TOP20_POP

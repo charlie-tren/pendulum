@@ -68,22 +68,21 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
 
 ## V — viz
 
-- [ ] V1. Stacked area, share of world population by government orientation,
-      over time. **This is the headline chart and the thing nobody else has.**
-- [ ] V2. The index line (mean orientation) with a trailing 3-year MA.
-- [ ] V3. Group toggle: World / G7 / G20 / OECD / EU / BRICS+ / ASEAN / Original 15.
-- [ ] V4. Weighting toggle: one country one vote vs one person one vote.
+- [x] V1. Stacked area, population-weighted, is the headline chart.
+- [x] V2. Index line with trailing 3-year MA.
+- [x] V3. Group toggle, 21 groups: World, six continents, G7, G20, EU, OECD,
+      NATO, African Union, Arab League, BRICS+, ASEAN, Nordics, Anglosphere,
+      Latin America, 20 most populous, and the original 15.
+- [x] V4. Weighting toggle.
 - [ ] V5. Spectrum toggle: 3-bucket (left/centre/right) vs the V-Party
       multi-dimensional view.
 - [ ] V6. Map or cartogram, one year at a time, with a year scrubber.
 - [ ] V7. Country detail on click: that country's own history as a strip.
-- [ ] V8. Deep links — every toggle state in the URL so a view is shareable.
-      **Never write the default state to the URL.**
+- [x] V8. Deep links via hash; default state is never written. Verified.
 
 ## S — ship
 
-- [ ] S1. Open on the headline chart with a default already selected. No
-      "choose a country" landing screen, no empty first paint.
+- [x] S1. Opens on World, population-weighted.
 - [ ] S2. Attribution page: V-Dem, OWID, DPI, Manifesto, CHES, with licences.
       CC-BY means naming them is an obligation, not a courtesy.
 - [ ] S3. Methodology page — the 30-June rule, what 0 means, why the MA is
@@ -96,3 +95,16 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
 - Regime type (democracy/autocracy) as a *second* axis crossed with ideology —
   "how many people live under right-wing autocracies" is a better question than
   either axis alone. Parked only because it doubles the build.
+
+## Frontend — next
+
+- [ ] V6. Map or cartogram with a year scrubber.
+- [ ] V7. Country detail on click — that country's own history as a strip.
+- [ ] V9. **Cross ideology with regime type** (V-Dem Regimes of the World, via
+      OWID, current to 2025). "How many people live under right-wing
+      autocracies" is a better question than either axis alone, and the data is
+      already fetched. Strongest remaining feature.
+- [ ] V10. The nuanced spectrum view. V-Party's continuous score is already
+      carried through the pipeline as `score` but nothing renders it yet.
+- [ ] S6. Dark mode is implemented via prefers-color-scheme but untested on a
+      real dark display.

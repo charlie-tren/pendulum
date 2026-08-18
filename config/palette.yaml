@@ -27,6 +27,9 @@ sources:
   hand:
     colour: '#b5651d'
     label: Hand-coded
+  wikidata:
+    colour: '#6d8f9c'
+    label: Wikidata
   no_reading:
     colour: '#9a9a9a'
     label: Not applicable

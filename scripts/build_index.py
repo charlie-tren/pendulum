@@ -1,14 +1,14 @@
 """Build the orientation series the site reads.
 
-Inputs : data/raw/dpi2023.csv, data/raw/population.csv, config/*.yaml
+Inputs : data/raw/{dpi2023,population,continents}.csv, vparty.RData,
+         wikidata_hog.json, config/*.yaml
 Output : data/out/orientation.json
 
-Two weightings are emitted for every country group: one country one vote,
-and one person one vote. `uncoded` is a first-class category in both. It is
-never dropped and the shares are never renormalised to exclude it — about a
-quarter of the world's population has no left-right code in DPI, and that
-absence is concentrated in the Global South. Hiding it would turn a
-Western-weighted sample into a claim about "the world".
+Two weightings are emitted for every country group: one country one vote, and
+one person one vote. `no_reading` and `unresolved` are first-class categories
+and the shares are never renormalised to exclude them. `no_reading` is an
+answer - an absolute monarchy has no left-right position. `unresolved` is an
+admission. Merging them would dress up a gap as a finding.
 """
 from __future__ import annotations
 
@@ -21,36 +21,60 @@ from pathlib import Path
 import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from resolve import (load_aliases, load_dpi, load_hand_coded, load_vparty,  # noqa: E402
-                     resolve)
+from resolve import (load_aliases, load_dpi, load_hand_coded,  # noqa: E402
+                     load_vparty, load_wikidata, resolve)
 
 ROOT = Path(__file__).resolve().parents[1]
-RAW, OUT, CFG = ROOT / "data" / "raw", ROOT / "data" / "out", ROOT / "config"
+RAW, OUT, CFG, SEED = (ROOT / "data" / "raw", ROOT / "data" / "out",
+                       ROOT / "config", ROOT / "data" / "seed")
 
-SOURCES = ["dpi", "vparty", "carry_forward", "hand", "no_reading", "unresolved"]
 CATEGORIES = ["left", "centre", "right", "no_reading", "unresolved"]
+SOURCES = ["dpi", "vparty", "carry_forward", "hand", "wikidata",
+           "no_reading", "unresolved"]
 SCORE = {"left": -1.0, "centre": 0.0, "right": 1.0}
+END_YEAR = 2026
 
 
-def year_of(raw: str) -> int:
-    return int(str(raw)[:4])
-
-
-def load_population() -> dict[tuple[str, int], float]:
-    pop: dict[tuple[str, int], float] = {}
-    with open(RAW / "population.csv", encoding="utf-8-sig") as fh:
+def load_population():
+    """Historical to 2023, UN WPP medium projection beyond. The projection is
+    used only for weighting country-years we already resolve politically, and
+    a 2026 population estimate is not a controversial number - but it IS a
+    projection, and the site should say so rather than imply a census."""
+    pop = {}
+    with open(RAW / "pop_proj.csv", encoding="utf-8-sig") as fh:
         for row in csv.DictReader(fh):
             if not row["code"] or row["code"].startswith("OWID"):
                 continue
+            value = row["population_historical"] or row["population_projection__projected"]
             try:
-                pop[(row["entity"], int(row["year"]))] = float(row["population_historical"])
+                pop[(row["entity"], int(row["year"]))] = float(value)
             except ValueError:
                 continue
     return pop
 
 
-def aggregate(records, pop, members) -> dict:
-    """Shares by year for one country group, under both weightings."""
+def load_continents():
+    out = {}
+    with open(RAW / "continents.csv", encoding="utf-8-sig") as fh:
+        for row in csv.DictReader(fh):
+            out[row["entity"]] = row["owid_region"]
+    return out
+
+
+def extend_years(records, end=END_YEAR):
+    """DPI stops at 2023. Create empty country-years past it so the later
+    layers (hand-coding, Wikidata) have somewhere to land."""
+    last = max(r["year"] for r in records)
+    entities = {r["entity"] for r in records if r["year"] == last}
+    parties = {r["entity"]: r["party"] for r in records if r["year"] == last}
+    for year in range(last + 1, end + 1):
+        for entity in entities:
+            records.append({"entity": entity, "year": year, "bucket": None,
+                            "party": parties.get(entity, ""), "party_key": ""})
+    return records
+
+
+def aggregate(records, pop, members):
     by_year = defaultdict(list)
     for rec in records:
         if members is not None and rec["entity"] not in members:
@@ -63,39 +87,33 @@ def aggregate(records, pop, members) -> dict:
         c = {k: 0.0 for k in CATEGORIES}
         w = {k: 0.0 for k in CATEGORIES}
         src = {k: 0.0 for k in SOURCES}
-        missing_pop = 0
         for rec in recs:
             c[rec["bucket"]] += 1
             src[rec["source"]] += 1
             p = pop.get((rec["entity"], year))
-            if p is None:
-                missing_pop += 1
-                continue
-            w[rec["bucket"]] += p
-        n, total_pop = len(recs), sum(w.values())
-        counts.append({"year": year, "n": n, "missing_pop": missing_pop,
+            if p is not None:
+                w[rec["bucket"]] += p
+        n, total = len(recs), sum(w.values())
+        counts.append({"year": year, "n": n,
                        "source": {k: round(src[k] / n, 6) for k in SOURCES},
                        **{k: round(c[k] / n, 6) for k in CATEGORIES}})
-        weights.append({"year": year, "pop": round(total_pop),
-                        **{k: round(w[k] / total_pop, 6) if total_pop else None
+        weights.append({"year": year, "pop": round(total),
+                        **{k: round(w[k] / total, 6) if total else None
                            for k in CATEGORIES}})
-        # mean orientation across CODED countries only, both weightings
-        coded_n = n - c["no_reading"] - c["unresolved"]
-        coded_p = total_pop - w["no_reading"] - w["unresolved"]
+        cn = n - c["no_reading"] - c["unresolved"]
+        cp = total - w["no_reading"] - w["unresolved"]
         index.append({
             "year": year,
-            "coded_share_countries": round(coded_n / n, 6) if n else None,
-            "coded_share_pop": round(coded_p / total_pop, 6) if total_pop else None,
-            "mean_by_country": round(sum(SCORE[k] * c[k] for k in SCORE) / coded_n, 6)
-                               if coded_n else None,
-            "mean_by_population": round(sum(SCORE[k] * w[k] for k in SCORE) / coded_p, 6)
-                                  if coded_p else None,
+            "coded_share_countries": round(cn / n, 6) if n else None,
+            "coded_share_pop": round(cp / total, 6) if total else None,
+            "mean_by_country": round(sum(SCORE[k] * c[k] for k in SCORE) / cn, 6) if cn else None,
+            "mean_by_population": round(sum(SCORE[k] * w[k] for k in SCORE) / cp, 6) if cp else None,
         })
     return {"by_country": counts, "by_population": weights, "index": index}
 
 
-def trailing_ma(series: list[dict], key: str, window: int = 3) -> None:
-    """Add a TRAILING moving average in place. Never centred — no peeking at t+1."""
+def trailing_ma(series, key, window=3):
+    """Trailing, never centred. A centred mean would peek at t+1."""
     vals = [row[key] for row in series]
     for i, row in enumerate(series):
         chunk = [v for v in vals[max(0, i - window + 1): i + 1] if v is not None]
@@ -103,63 +121,82 @@ def trailing_ma(series: list[dict], key: str, window: int = 3) -> None:
                                     if i >= window - 1 and len(chunk) == window else None)
 
 
+def resolve_members(spec, iso_to_entity, continents, pop, entities):
+    kind = spec["members"]
+    if kind == "ALL":
+        return None
+    if kind == "CONTINENT":
+        return {e for e in entities if continents.get(e) == spec["continent"]}
+    if kind == "TOP20_POP":
+        latest = max(y for (_, y) in pop)
+        ranked = sorted(((pop.get((e, latest), 0), e) for e in entities), reverse=True)
+        return {e for _, e in ranked[:20]}
+    return {iso_to_entity[c] for c in kind if c in iso_to_entity}
+
+
 def main() -> int:
     cmap = yaml.safe_load((CFG / "country_map.yaml").read_text(encoding="utf-8"))
     groups = yaml.safe_load((CFG / "country_groups.yaml").read_text(encoding="utf-8"))["groups"]
-    pop = load_population()
-    records = resolve(load_dpi(cmap), *load_vparty(cmap),
-                      aliases=load_aliases(CFG / "party_aliases.yaml"),
-                      hand=load_hand_coded(ROOT / "data" / "seed" / "hand_coded.csv"))
+    pop, continents = load_population(), load_continents()
+
+    records = extend_years(load_dpi(cmap))
+    records = resolve(
+        records, *load_vparty(cmap),
+        aliases=load_aliases(CFG / "party_aliases.yaml"),
+        hand=load_hand_coded(SEED / "hand_coded.csv"),
+        wikidata=load_wikidata(RAW / "wikidata_hog.json",
+                               CFG / "wikidata_positions.yaml", cmap["vparty_rename"]),
+    )
+    entities = {r["entity"] for r in records}
 
     iso_to_entity = {}
-    for row in csv.DictReader(open(RAW / "population.csv", encoding="utf-8-sig")):
-        if row["code"] and not row["code"].startswith("OWID"):
-            iso_to_entity.setdefault(row["code"], row["entity"])
+    with open(RAW / "population.csv", encoding="utf-8-sig") as fh:
+        for row in csv.DictReader(fh):
+            if row["code"] and not row["code"].startswith("OWID"):
+                iso_to_entity.setdefault(row["code"], row["entity"])
 
-    result, unresolved = {}, {}
+    result = {}
     for key, spec in groups.items():
-        if spec["members"] == "ALL":
-            members = None
-        else:
-            members = {iso_to_entity[c] for c in spec["members"] if c in iso_to_entity}
-            missing = [c for c in spec["members"] if c not in iso_to_entity]
-            if missing:
-                unresolved[key] = missing
+        members = resolve_members(spec, iso_to_entity, continents, pop, entities)
         agg = aggregate(records, pop, members)
         trailing_ma(agg["index"], "mean_by_country")
         trailing_ma(agg["index"], "mean_by_population")
-        result[key] = {"label": spec["label"], **agg}
+        result[key] = {"label": spec["label"], "note": spec.get("note"),
+                       "n_members": len(members) if members else len(entities), **agg}
 
     OUT.mkdir(parents=True, exist_ok=True)
     payload = {
         "meta": {
             "sources": [
-                "Database of Political Institutions 2023 (IDB), CC-BY 4.0 "
-                "https://doi.org/10.60966/8tx1xs4i",
-                "V-Party v2 (V-Dem Institute, 2022) - fills country-years DPI leaves blank, "
-                "ends 2019",
+                "Database of Political Institutions 2023 (IDB), CC-BY 4.0, 1975-2023",
+                "V-Party v2 (V-Dem Institute, 2022), party positions to ~2019",
+                "Wikidata P1387 party alignment joined to dated head-of-government terms",
+                "Hand-coded rows in data/seed/hand_coded.csv, each with a written basis",
+                "Population: Our World in Data / UN WPP - historical to 2023, medium-variant projection for 2024-2026",
             ],
-            "population": "Our World in Data / UN WPP",
-            "coverage": "1975-2023",
-            "built": "2026-08-18",
-            "note": ("`uncoded` means no source gives this executive a left-right reading "
-                     "- typically an absolute monarchy or a non-party military government. "
-                     "It is a real category, never renormalised away. Each year also "
-                     "reports which source resolved it, so the site can show its own "
-                     "coverage instead of implying uniform confidence."),
+            "coverage": f"1975-{END_YEAR}",
+            "note": ("no_reading means left-right genuinely does not apply - an absolute "
+                     "monarchy, a military government, a big-tent personality vehicle. "
+                     "unresolved means we lack data. They are different claims and are "
+                     "never merged. Each year reports which source resolved it."),
         },
+        "palette": yaml.safe_load((CFG / "palette.yaml").read_text(encoding="utf-8")),
         "groups": result,
     }
-    (OUT / "orientation.json").write_text(json.dumps(payload, indent=1), encoding="utf-8")
-
-    if unresolved:
-        print("WARNING unresolved ISO codes:", unresolved)
-    size = (OUT / "orientation.json").stat().st_size
-    print(f"wrote data/out/orientation.json  {size:,} bytes  {len(result)} groups")
-    for key in result:
-        idx = result[key]["index"][-1]
-        print(f"  {key:8s} 2023  coded {idx['coded_share_pop']:.0%} of pop  "
-              f"mean(by pop) {idx['mean_by_population']:+.3f}")
+    blob = json.dumps(payload, separators=(",", ":"))
+    (OUT / "orientation.json").write_text(blob, encoding="utf-8")
+    # the site is served as static files; give it its own copy rather than
+    # making the page reach up out of its directory
+    (ROOT / "site" / "orientation.json").write_text(blob, encoding="utf-8")
+    print(f"wrote data/out/orientation.json  "
+          f"{(OUT / 'orientation.json').stat().st_size:,} bytes  {len(result)} groups")
+    for key in ("world", "g20", "africa", "asia", "europe"):
+        idx = result[key]["index"]
+        for year in (2023, END_YEAR):
+            row = next((r for r in idx if r["year"] == year), None)
+            if row and row["coded_share_pop"]:
+                print(f"  {key:8s} {year}  coded {row['coded_share_pop']:.0%} of pop  "
+                      f"mean {row['mean_by_population']:+.3f}")
     return 0
 
 
