@@ -1,4 +1,4 @@
-# pendulum — Claude Code instructions
+# Pendulum — Claude Code instructions
 
 Read at the start of every session. Keep it short enough to actually be read.
 

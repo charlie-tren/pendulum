@@ -4,8 +4,7 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
 
 ## Blocking
 
-- [ ] **Name the project.** Everything below says `pendulum` as a placeholder.
-      Renaming is `git mv` plus one sed. Do it before the first push.
+- [x] **Name the project.** Pendulum.
 - [ ] **Decide the deployment target.** Cloudflare Pages on a subdomain (the
       Chronoscape pattern) or a subdirectory of `charlie-tren.github.io` (the
       Photocopy pattern). Chronoscape's split-project problem is an argument

@@ -1,6 +1,4 @@
-# pendulum
-
-*Working name — see the naming options before this gets pushed anywhere.*
+# Pendulum
 
 How the world's governments have moved along the political spectrum since the
 1970s, and how many people live under each kind of government.
