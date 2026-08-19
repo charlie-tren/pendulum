@@ -7,9 +7,6 @@ const SOURCES = ["dpi", "vparty", "carry_forward", "hand", "wikidata", "no_readi
 const REGIME_ORDER = ["closed_autocracy", "electoral_autocracy",
                       "electoral_democracy", "liberal_democracy", "unknown"];
 const SPECTRUM = ["f0", "f1", "f2", "f3", "f4", "f5", "f6", "uncovered"];
-/* Below this share of the group resolved, a year is drawn as provisional.
-   Movement in a thinly-covered year is usually the data changing, not the world. */
-const PROVISIONAL_BELOW = 0.8;
 
 const state = { ...DEFAULTS };
 let DATA = null;
@@ -142,30 +139,14 @@ function axes(svg, s, { ticks = [0, 0.5, 1], fmt = pct, step = 10 } = {}) {
   }
 }
 
-function hatchDefs(svg) {
-  const defs = svgEl("defs");
-  const pattern = svgEl("pattern", {
-    id: "provisional", width: 6, height: 6,
-    patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)",
-  });
-  pattern.appendChild(svgEl("rect", { width: 6, height: 6, fill: "var(--panel)", opacity: 0.55 }));
-  pattern.appendChild(svgEl("line", {
-    x1: 0, y1: 0, x2: 0, y2: 6, stroke: "var(--panel)", "stroke-width": 3.5,
-  }));
-  defs.appendChild(pattern);
-  svg.appendChild(defs);
-}
-
 /* ---------- stacked area ---------- */
 
-function drawStack(svgId, series, keys, palette, box,
-                   { provisional = null, label = "", max = 1 } = {}) {
+function drawStack(svgId, series, keys, palette, box, { label = "", max = 1 } = {}) {
   const svg = $(svgId);
   svg.innerHTML = "";
   svg.setAttribute("viewBox", `0 0 ${box.w} ${box.h}`);
   const pad = { l: 44, r: 10, t: 10, b: 26 };
   const s = scales(series, box, pad);
-  hatchDefs(svg);
   axes(svg, s, max === 1 ? {} : { ticks: [0, max / 2, max] });
 
   let base = series.map(() => 0);
@@ -178,28 +159,6 @@ function drawStack(svgId, series, keys, palette, box,
     base = top;
   }
 
-  if (provisional) {
-    const from = s.x(provisional) - (s.iw / (s.y1 - s.y0)) / 2;
-    svg.appendChild(svgEl("rect", {
-      x: from, y: pad.t, width: s.box.w - pad.r - from, height: s.ih, fill: "url(#provisional)",
-    }));
-    svg.appendChild(svgEl("line", {
-      x1: from, x2: from, y1: pad.t, y2: pad.t + s.ih,
-      stroke: "var(--ink-faint)", "stroke-width": 1, "stroke-dasharray": "3 3",
-    }));
-    /* Left-aligning this ran the word off the plot and it rendered as
-       "provision". Right-align it inside the hatched region, or outside to the
-       left when the region is too narrow to hold it. */
-    const LABEL_W = 58;
-    const right = s.box.w - pad.r;
-    const roomInside = right - from > LABEL_W + 10;
-    const flag = svgEl("text", {
-      x: (roomInside ? right - 6 : from - 6), y: pad.t + 14,
-      "text-anchor": "end", "font-size": 11, fill: "var(--ink-faint)",
-    });
-    flag.textContent = "provisional";
-    svg.appendChild(flag);
-  }
   if (label) describe(svg, label);
   return s;
 }
@@ -388,21 +347,14 @@ function drawMosaic(group) {
 function drawSpectrum(group) {
   const series = (group.spectrum || {})[state.weight] || [];
   if (!series.length) return;
-  drawStack("#spectrum", series, SPECTRUM, DATA.palette.spectrum,
+  const s = drawStack("#spectrum", series, SPECTRUM, DATA.palette.spectrum,
     boxFor("#spectrum", 0.30, 200, 300),
     { label: `Share of the group by the governing party's position on a seven-point ` +
              `scale, ${series[0].year} to ${series[series.length - 1].year}.` });
+  attachHover(s, series, DATA.palette.spectrum, {
+    svgId: "#spectrum", readoutId: "#spectrum-readout", keys: SPECTRUM,
+  });
 
-  const first = series[0];
-  const last = series[series.length - 1];
-  const share = (row, keys) => keys.reduce((a, k) => a + (row[k] || 0), 0);
-  const leftFirst = share(first, ["f0", "f1", "f2"]);
-  const leftLast = share(last, ["f0", "f1", "f2"]);
-  $("#spectrum-caption").textContent =
-    `Left of centre covered ${pct(leftFirst)} of ` +
-    `${state.weight === "by_population" ? "this group's people" : "the countries here"} ` +
-    `in ${first.year} and ${pct(leftLast)} in ${last.year}. Seven-point ratings are ` +
-    `V-Party's own, covering 178 countries and ending in 2019.`;
 }
 
 /* ---------- the world in one year ----------
@@ -479,7 +431,8 @@ function buildRegimeTabs() {
   const tabs = $("#regime-tabs");
   tabs.innerHTML = REGIME_ORDER.filter((r) => r !== "unknown").map((r) =>
     `<button type="button" role="radio" data-regime="${r}" ` +
-    `aria-checked="${r === state.regime}">${DATA.palette.regimes[r].short}</button>`).join("");
+    `aria-checked="${r === state.regime}" title="${DATA.palette.regimes[r].note || ""}">` +
+    `${DATA.palette.regimes[r].short}</button>`).join("");
   for (const btn of tabs.querySelectorAll("button")) {
     btn.addEventListener("click", () => {
       state.regime = btn.dataset.regime;
@@ -497,9 +450,6 @@ function drawRegime(group) {
   const series = cross.map((r) => ({ year: r.year, ...(r.cells[state.regime] || {}) }));
   if (!series.length) return;
   const label = DATA.palette.regimes[state.regime].short;
-
-  const shareKey = state.weight === "by_population" ? "coded_share_pop" : "coded_share_countries";
-  const thin = group.index.filter((r) => (r[shareKey] ?? 1) < PROVISIONAL_BELOW && r.year > 2015);
   /* All four regimes share one y scale, so switching tabs compares like with
      like instead of rescaling under the reader. */
   const max = Math.max(...cross.flatMap((r) =>
@@ -507,7 +457,6 @@ function drawRegime(group) {
 
   drawStack("#regime", series, BANDS, DATA.palette.buckets,
     boxFor("#regime", 0.34, 210, 320), {
-      provisional: thin.length ? Math.min(...thin.map((r) => r.year)) : null,
       max,
       label: `${label} as a share of the group, split by the ideology of their ` +
              `governments, ${series[0].year} to ${series[series.length - 1].year}.`,
@@ -525,15 +474,16 @@ function drawRegime(group) {
 
 /* ---------- hover on the headline chart ---------- */
 
-function attachHover(s, series, palette, group) {
-  const svg = $("#area");
-  const readout = $("#readout");
+function attachHover(s, series, palette, opts = {}) {
+  const { svgId = "#area", readoutId = "#readout", keys = BANDS, group = null } = opts;
+  const svg = $(svgId);
+  const readout = $(readoutId);
   const marker = svgEl("line", {
     y1: s.pad.t, y2: s.pad.t + s.ih, stroke: "var(--ink)",
     "stroke-width": 1, "stroke-opacity": 0.35, visibility: "hidden",
   });
   svg.appendChild(marker);
-  const counts = group.by_country;
+  const counts = group ? group.by_country : null;
 
   const show = (evt) => {
     const rect = svg.getBoundingClientRect();
@@ -546,13 +496,13 @@ function attachHover(s, series, palette, group) {
     marker.setAttribute("x2", s.x(year));
     marker.setAttribute("visibility", "visible");
 
-    const countRow = counts.find((r) => r.year === year) || {};
+    const countRow = (counts && counts.find((r) => r.year === year)) || {};
     const src = Object.entries(countRow.source || {})
       .filter(([, v]) => v >= 0.02)
       .sort((a, b) => b[1] - a[1])
       .map(([k, v]) => `${DATA.palette.sources[k].label} ${Math.round(v * 100)}%`)
       .join(" · ");
-    const rows = BANDS.filter((k) => (row[k] || 0) > 0.001).map((k) =>
+    const rows = keys.filter((k) => (row[k] || 0) > 0.001).map((k) =>
       `<div class="row"><span><i style="background:${shade(palette[k])}"></i>` +
       `${palette[k].label}</span><span>${pct(row[k])}</span></div>`);
     readout.innerHTML = `<b>${year}</b>${rows.join("")}` +
@@ -641,6 +591,11 @@ function render() {
     `<span><i style="background:${shade(palette[k])}"></i>${palette[k].label}</span>`).join("");
   $("#legend-mosaic").innerHTML = $("#legend-regime").innerHTML =
     $("#legend-map").innerHTML = $("#legend").innerHTML;
+  $("#legend-regime-defs").innerHTML = REGIME_ORDER.filter((r) => r !== "unknown")
+    .map((r) => {
+      const g = DATA.palette.regimes[r];
+      return `<span class="explained" title="${g.note}" tabindex="0">${g.short}</span>`;
+    }).join("");
   $("#legend-spectrum").innerHTML = SPECTRUM.map((k) =>
     `<span><i style="background:${shade(DATA.palette.spectrum[k])}"></i>` +
     `${DATA.palette.spectrum[k].label}</span>`).join("");
@@ -650,18 +605,13 @@ function render() {
            `<i style="background:${shade(s)}"></i>${s.label}</span>`;
   }).join("");
 
-  const shareKey = byPop ? "coded_share_pop" : "coded_share_countries";
-  const thin = group.index.filter((r) => (r[shareKey] ?? 1) < PROVISIONAL_BELOW && r.year > 2015);
-  const runStart = thin.length ? Math.min(...thin.map((r) => r.year)) : null;
-
   const s = drawStack("#area", series, BANDS, palette,
     boxFor("#area", 0.42, 230, 380), {
-      provisional: runStart,
       label: `Stacked area showing the share of ${byPop ? "people" : "countries"} in ` +
              `${group.label} governed from the left, centre and right, ` +
              `${series[0].year} to ${series[series.length - 1].year}.`,
     });
-  attachHover(s, series, palette, group);
+  attachHover(s, series, palette, { group });
   drawLine(group.index);
   drawStack("#prov", group.by_country.map((r) => ({ year: r.year, ...r.source })),
     SOURCES, DATA.palette.sources, boxFor("#prov", 0.20, 130, 190),
@@ -673,14 +623,11 @@ function render() {
   buildRegimeTabs();
   drawRegime(group);
 
-  const latest = group.index[group.index.length - 1];
-  const solid = [...group.index].reverse().find((r) => (r[shareKey] ?? 0) >= PROVISIONAL_BELOW);
-  $("#caption").textContent = solid
-    ? `Coverage is solid through ${solid.year}, when ${pct(solid[shareKey])} of ` +
-      `${byPop ? "the people" : "the countries"} in this group could be placed on the ` +
-      `left–right axis. By ${latest.year} that falls to ${pct(latest[shareKey])}, ` +
-      `which is why later years are hatched.`
-    : "Coverage in this group is too thin for the shares to be read confidently.";
+  const last = series[series.length - 1];
+  const unit = byPop ? "of the world's people" : "of countries";
+  $("#caption").textContent =
+    `In ${last.year}, ${pct(last.left)} ${unit} lived under a government of the left and ` +
+    `${pct(last.right)} under one of the right.`;
   writeHash();
 }
 
@@ -761,6 +708,12 @@ Promise.all([
     });
   })
   .catch((err) => {
-    $("#chart-title").textContent = "Could not load the data.";
+    // Distinguish a failed fetch from a failed render: reporting "could not
+    // load the data" when the data loaded fine sends the next person hunting
+    // in the wrong place.
+    $("#chart-title").textContent = DATA
+      ? "The data loaded but the charts could not be drawn."
+      : "Could not load the data.";
+    document.body.classList.remove("loading");
     console.error(err);
   });

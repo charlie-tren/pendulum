@@ -295,3 +295,12 @@ h1 { display: flex; align-items: center; gap: 14px; }
    supports. */
 .play[aria-pressed="true"] { background: var(--ink); color: var(--panel); border-color: var(--ink); }
 .play[aria-pressed="true"] svg { margin-left: 0; }
+
+/* Scroll without a visible bar: the map still swipes on a phone, but the bar
+   itself sat under the chart and read as chrome. */
+.chart-wide { scrollbar-width: none; -ms-overflow-style: none; }
+.chart-wide::-webkit-scrollbar { display: none; }
+
+/* Regime definitions under the mosaic key: plain words, each explaining itself. */
+.legend-regimes { gap: 6px 16px; font-size: 13px; margin: -2px 0 12px; }
+.legend-regimes .explained { color: var(--ink-faint); }

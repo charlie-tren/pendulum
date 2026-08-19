@@ -58,9 +58,8 @@
   <section class="panel">
     <h2>Left and right on balance</h2>
     <p class="sub">
-      Mean position of the governments that have one, from &minus;1 for wholly left to
-      +1 for wholly right. The faint line is each year on its own; the heavy line is a
-      three-year trailing average.
+      &minus;1 is wholly left, +1 wholly right. Faint line each year, heavy line a
+      three-year average.
     </p>
     <figure class="chart">
       <svg id="line" role="img"></svg>
@@ -79,6 +78,7 @@
       </div>
     </div>
     <div class="legend" id="legend-mosaic"></div>
+    <div class="legend legend-regimes" id="legend-regime-defs"></div>
     <figure class="chart">
       <svg id="mosaic" role="img"></svg>
       <div class="readout" id="mosaic-readout" hidden></div>
@@ -87,16 +87,17 @@
   </section>
 
   <section class="panel">
-    <h2>A finer spectrum</h2>
+    <h2>Seven points, not three</h2>
     <div class="legend" id="legend-spectrum"></div>
     <figure class="chart">
       <svg id="spectrum" role="img"></svg>
+      <div class="readout" id="spectrum-readout" hidden></div>
     </figure>
-    <p class="caption" id="spectrum-caption"></p>
+    
   </section>
 
   <section class="panel">
-    <h2>The world in one year</h2>
+    <h2>The world, year by year</h2>
     <div class="control control-year">
       <label for="map-year">Year <output id="map-year-out"></output></label>
       <div class="scrub">
@@ -116,10 +117,6 @@
 
   <section class="panel">
     <h2>Regimes over time</h2>
-    <p class="sub">
-      One regime type at a time, as a share of the whole group. A chart that grows means
-      more of the world lives that way.
-    </p>
     <div class="segmented segmented-wide" id="regime-tabs" role="radiogroup" aria-label="Regime type"></div>
     <div class="legend" id="legend-regime"></div>
     <figure class="chart">
@@ -143,31 +140,18 @@
   <section class="panel notes">
     <h2>Notes on the data</h2>
     <dl>
-      <dt>Two kinds of missing</dt>
+      <dt>What the greys mean</dt>
       <dd>
-        <b>Left&ndash;right does not apply</b> is a finding rather than a gap. Saudi Arabia
-        bans political parties; the governing party of the Philippines describes itself as
-        a big tent spanning populism to self-declared socialism. <b>No data</b> records the
-        absence of a usable source. The two are reported separately, and neither is
-        removed by rescaling the remainder to 100%.
+        Mid grey: left and right do not apply, because the country has no party politics.
+        Pale grey: no source places it that year. The two are kept apart, and neither is
+        scaled away to make the rest add to 100%.
       </dd>
-      <dt>Colour convention</dt>
+      <dt>Colour</dt>
+      <dd>Blue is left, red is right, following American usage. Most of the world uses the reverse.</dd>
+      <dt>Dating</dt>
       <dd>
-        Blue denotes the left and red the right, following American usage. Most of the
-        world uses the reverse.
-      </dd>
-      <dt>Provisional years</dt>
-      <dd>
-        The Database of Political Institutions ends in 2023. From 2024 the series relies on
-        Wikidata and hand-coding, which together resolve about half the world's population,
-        so those years are hatched. Movement across them reflects coverage rather than
-        political change.
-      </dd>
-      <dt>Dating convention</dt>
-      <dd>
-        A country is recorded under the party of its chief executive on 1 January,
-        following the Database of Political Institutions. A government formed in March is
-        counted from the following year.
+        A country counts under the party of its chief executive on 1 January. A government
+        formed in March counts from the next year.
       </dd>
     </dl>
   </section>
@@ -178,8 +162,7 @@
   <h2>Sources</h2>
   <ul id="sources"></ul>
   <p class="fine">
-    Built from open data. Errors are mine, not the sources'.
-    <a href="https://github.com/charlie-tren/pendulum">Code and data</a>.
+Built from open data. <a href="https://github.com/charlie-tren/pendulum">Code and data</a>.
   </p>
 </footer>
 

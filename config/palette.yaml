@@ -57,18 +57,24 @@ regimes:
   closed_autocracy:
     label: Closed autocracy
     short: Closed autocracies
+    note: No multiparty elections for the chief executive or the legislature.
   electoral_autocracy:
     label: Electoral autocracy
     short: Electoral autocracies
+    note: Multiparty elections are held, but they fall short of free and fair.
   electoral_democracy:
     label: Electoral democracy
     short: Electoral democracies
+    note: Meaningful, free and fair multiparty elections.
   liberal_democracy:
     label: Liberal democracy
     short: Liberal democracies
+    note: Free and fair elections, plus individual and minority rights, equality before the law
+      and real checks on the executive.
   unknown:
     label: Regime not classified
     short: Not classified
+    note: V-Dem does not classify this country-year.
 note: 'colour is the light-theme value. colour_dark, where present, replaces it under prefers-color-scheme:
   dark.'
 spectrum:

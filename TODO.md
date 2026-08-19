@@ -237,3 +237,16 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
       for it but they are dropped, because no modern OWID population series
       exists for a state that no longer exists. Deciding what a world map should
       show for a dissolved country is a design question, not a data one.
+
+## Copy and interaction round, 2026-08-19
+
+- [x] Hatching removed entirely, along with the coverage caption. 80% coverage
+      is sound data and marking it provisional read as a disclaimer.
+- [x] Headline caption now states a fact rather than explaining the method.
+- [x] Regime names explain themselves on hover, on the tabs and in a key under
+      the mosaic.
+- [x] Spectrum chart is hoverable, showing the year and the full breakdown.
+- [x] Panels retitled: "The world, year by year" and "Seven points, not three".
+- [x] Notes cut from four entries to three and roughly halved.
+- [x] Scrollbars hidden on the sideways-scrolling map.
+- [x] Boot catch no longer reports a load failure when the failure was in render.
