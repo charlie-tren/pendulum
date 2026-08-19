@@ -157,8 +157,15 @@ function drawStack(svgId, series, keys, palette, box, { provisional = null, labe
       x1: from, x2: from, y1: pad.t, y2: pad.t + s.ih,
       stroke: "var(--ink-faint)", "stroke-width": 1, "stroke-dasharray": "3 3",
     }));
+    /* Left-aligning this ran the word off the plot and it rendered as
+       "provision". Right-align it inside the hatched region, or outside to the
+       left when the region is too narrow to hold it. */
+    const LABEL_W = 58;
+    const right = s.box.w - pad.r;
+    const roomInside = right - from > LABEL_W + 10;
     const flag = svgEl("text", {
-      x: from + 6, y: pad.t + 14, "font-size": 11, fill: "var(--ink-faint)",
+      x: (roomInside ? right - 6 : from - 6), y: pad.t + 14,
+      "text-anchor": "end", "font-size": 11, fill: "var(--ink-faint)",
     });
     flag.textContent = "provisional";
     svg.appendChild(flag);
