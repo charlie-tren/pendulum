@@ -5,6 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pendulum: how the world is governed</title>
 <meta name="description" content="How the world's governments have moved along the political spectrum since 1975, counted by country and by population.">
+<link rel="canonical" href="https://charlietrenorden.com/pendulum/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Charlie Trenorden">
+<meta property="og:title" content="Pendulum: who governs the world's eight billion people">
+<meta property="og:description" content="Fifty years of governments, counted by the people who live under them rather than by country. Left, right and centre across 177 countries since 1975.">
+<meta property="og:url" content="https://charlietrenorden.com/pendulum/">
+<meta property="og:image" content="https://charlietrenorden.com/pendulum/og-card.png">
+<meta property="og:image:width" content="2400">
+<meta property="og:image:height" content="1260">
+<meta property="og:image:alt" content="Pendulum: the share of the world's people governed from the left, centre and right, 1975 to 2025.">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="style.css">
 <link rel="icon" href="logo.svg" type="image/svg+xml">
 </head>
@@ -133,6 +144,11 @@
       No single dataset covers the whole world for the whole period. This shows which
       source resolved each country-year.
     </p>
+    <p class="sub">
+      For the democratic side of this, rather than the left-right side,
+      <a href="https://ourworldindata.org/democracy" rel="noopener">Our World in Data's
+      democracy page</a> is better than anything here.
+    </p>
     <div class="legend" id="legend-src"></div>
     <figure class="chart">
       <svg id="prov" role="img"></svg>
@@ -148,6 +164,8 @@
         <b class="c-left">Blue</b> is left, <b class="c-right">red</b> is right, following
         American usage. Most of the world uses the reverse.
       </dd>
+      <dt>The sources disagree</dt>
+      <dd id="agreement"></dd>
       <dt>Why it starts in 1975</dt>
       <dd>
         The Database of Political Institutions, which supplies most of the series, starts

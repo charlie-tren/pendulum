@@ -120,3 +120,36 @@ every run, and the headline chart's hover names the source mix. But it is a real
 limitation, and the honest fix is a reconciliation pass that carries DPI's
 coding forward whenever the governing party has not actually changed. Logged as
 TODO D9.
+
+## Two sources looked at and not used, 2026-08-19
+
+### Chapel Hill Expert Survey (CHES)
+
+**Obtainable, deliberately not built.** The trend file downloads without
+registration, despite the project site's own links 404ing: the real files sit on
+GitHub releases.
+
+    https://github.com/chesdata/chesdata.github.io/releases/download/ches-trend/1999-2024_CHES_dataset_meansV2.csv
+
+Downloaded to `data/raw/ches_trend.csv` and inspected: 1,441 rows, seven waves
+1999 to 2024, 28 countries, carrying `lrgen` and `lrecon` on a 0-10 left-right
+scale and `galtan` for the liberal-to-authoritarian axis.
+
+Two reasons it is not wired in. It covers 28 European countries, about a tenth
+of world population, so a GAL-TAN panel built on it would describe Europe while
+sitting on a site whose whole argument is counting everyone. And CHES rates
+parties without saying which of them governs, so using it at all means matching
+its party names to the governing party from DPI or V-Party across 28 countries,
+which is a feature rather than a data fill. The file is in place if that gets
+built.
+
+### Manifesto Project (MARPOR)
+
+**Blocked, and needs Charlie.** The API and the bulk download both require a
+free account, and registering one is not something to do on his behalf. Nothing
+else stands in the way: the RILE score would give a continuous left-right axis
+back to 1945 for 67 countries, which is a genuinely better spine for the older
+decades than anything currently in use.
+
+To unblock: register at https://manifesto-project.wzb.eu, then put the API key
+somewhere the build can read it.

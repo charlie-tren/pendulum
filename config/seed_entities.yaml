@@ -1,15 +1,13 @@
-# Sovereign states that no source in the chain creates a row for, so nothing can
-# ever fill them. DPI never covered either: they appear only inside the dropped
-# "Serbia and Montenegro" union, which ended in June 2006.
-#
-# Seeding makes an empty country-year that V-Party, Wikidata or hand-coding can
-# then resolve. Only for states that genuinely govern themselves: Palestine,
-# Puerto Rico, Western Sahara, New Caledonia, Greenland and the Falklands also
-# have geometry and no row, and are left out on purpose.
 seed:
   Serbia:
-    from: 2006
+    from: 1975
     note: Independent since the dissolution of the state union in June 2006.
   Montenegro:
-    from: 2006
+    from: 1975
     note: Independent since the referendum of May 2006.
+  Russia:
+    from: 1975
+    to: 1991
+    note: 'DPI carries no Russia row before 1992: those years sit under its "Soviet Union" entry,
+      which is dropped as a historical state. Seeding the gap lets the hand-coded Soviet rows
+      reach it.'

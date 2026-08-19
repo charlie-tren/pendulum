@@ -846,8 +846,20 @@ Promise.all([
       syncYear(key);
     }
 
+    const ag = DATA.meta.agreement;
+    if (ag) {
+      $("#agreement").textContent =
+        `Where the Database of Political Institutions and V-Party both place the same ` +
+        `country in the same year, they agree ${Math.round(ag.agree_share * 100)}% of the ` +
+        `time, across ${ag.compared.toLocaleString()} country-years. DPI reads the world ` +
+        `slightly further left because it rarely uses its centre category. The chart ` +
+        `prefers DPI and falls back to V-Party, so that choice moves the numbers.`;
+    }
+
     $("#sources").innerHTML = DATA.meta.sources.map((s) =>
-      `<li><a href="${s.url}" rel="noopener">${s.name}</a>. ${s.detail}</li>`).join("");
+      `<li><a href="${s.url}" rel="noopener">${s.name}</a>, ${s.publisher}. ` +
+      `${s.role.trim()}<span class="terms">${s.coverage}. ${s.licence}. ` +
+      `Retrieved ${s.retrieved}.</span></li>`).join("");
     document.body.classList.remove("loading");
     render();
 

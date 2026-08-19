@@ -361,3 +361,6 @@ h1:hover .mark .bob-r, h1:focus-within .mark .bob-r { animation: cradle-right 1.
   h1:focus-within .mark .bob-l, h1:focus-within .mark .bob-r { animation: none; }
 }
 
+
+/* Licence and retrieval date sit under each source, quieter than the role. */
+footer .terms { display: block; color: var(--ink-faint); font-size: 12.5px; margin-top: 2px; }

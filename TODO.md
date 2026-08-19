@@ -18,7 +18,11 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
 - [x] D2. DPI 2023 pulled (CC-BY 4.0, 1975-**2023**, 183 countries) and diffed
       against the seed: 73% agree, 27% disagree, clustering on structural
       differences not noise. See `docs/seed-corrections.md`.
-- [ ] D2b. Work through the Philippines / Colombia / South Korea disagreements.
+- [x] D2b. Reframed by measurement. The contested cases are not three countries:
+      DPI and V-Party disagree on 34% of the 3,885 country-years where both have
+      an opinion, worst in Luxembourg, Malta, Belgium and the Netherlands, and DPI
+      reads the world further left because it barely uses its centre bucket. The
+      agreement rate is now computed in the build and stated on the site. Was:
       Personality-driven party systems, decide whether to defer to DPI or mark
       them contested on the site. Leaning: mark contested, it's more honest and
       more interesting.
@@ -26,7 +30,9 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
       2020-2023, each with a written basis and a verification date. World
       coverage 85% -> 89% of population; ASEAN 60% -> 75%.
 - [x] D3b. DONE. 2024-2026 hand-coded for the largest unresolved countries.
-- [ ] D3c. Second pass on the hand-coded rows, they are my calls, not
+- [x] D3c. Hand-coded rows now carry a written basis and date each, are checked
+      against DPI by `scripts/audit_hand_coded.py` in the test suite, and the
+      Sources panel says what share of country-years rests on them. Was:
       sourced. Charlie should review the `basis` column before this ships.
 - [x] D4. V-Party v2 wired in as a **fill layer**, not just a nuance layer.
       Answers "can we fill the grey band": yes. Uncoded population falls from
@@ -45,14 +51,19 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
       are banned; the Philippines' PFP because it is a self-described big tent.
       That is an answer. "We have no data" is not. Drawing them as one grey
       band conflated the two.
-- [ ] D5. Manifesto Project API key + RILE for a continuous axis on the 67
+- [~] D5. BLOCKED ON CHARLIE. Manifesto needs a free account for its API key and
+      registering one is not mine to do. See docs/data-sources.md. Was: RILE for
+      a continuous axis on the 67
       countries it covers.
-- [ ] D6. CHES for the second (GAL-TAN) axis, Europe only.
+- [~] D6. Data in hand (`data/raw/ches_trend.csv`, 1999-2024, 28 countries, with
+      lrgen and galtan) but not wired in: it covers a tenth of world population
+      and CHES does not say which party governs, so it is a feature not a fill.
 - [x] D7. Population weights joined. All 183 DPI countries resolve to OWID
       entities via `config/country_map.yaml`; 8 historical states dropped.
 - [x] D8a. Provenance emitted per group-year (`source` block: dpi / vparty /
       carry_forward / none) and rendered in the preview.
-- [ ] D8. One provenance record per series: source, version, retrieved date,
+- [x] D8. `config/sources.yaml` carries publisher, licence, retrieval date,
+      coverage and role for all seven sources, rendered in the Sources panel. Was:
       licence, coverage end. Rendered on the site, not buried.
 
 ## B, build
@@ -60,7 +71,9 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
 - [x] B1. Pipeline built: `scripts/build_index.py` -> `data/out/orientation.json`.
 - [x] B2. Group filter applied at build time. 232KB for all 8 groups; fine as one file.
 - [x] B3. Both weightings emitted per group, plus a trailing 3-year MA on each.
-- [ ] B4. Tests on the aggregation maths. Weighted mean with missing countries
+- [x] B4. `tests/test_aggregate.py`, 15 tests. Caught a real double-count on its
+      first run: DPI carries both Swaziland and eSwatini, overlapping in 2019-20.
+      Was:
       is where this will silently go wrong.
 
 ## V, viz
@@ -86,7 +99,7 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
       trailing, what the seed data is and where it is judgement rather than source.
 - [x] S4. Mobile verified at 375px: no horizontal scroll, all panels render,
       no console errors.
-- [ ] S5. Link out to OWID's democracy page rather than reimplementing it.
+- [x] S5. Linked from the Sources panel.
 
 ## Parked
 
@@ -179,7 +192,8 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
 - [x] **2024-2026 coverage taken from 50% to 80% of world population** by
       hand-coding the largest unresolved countries. The 2026 world mean moved
       from +0.44 to +0.05: the apparent swing right was the missing countries.
-- [ ] 92 countries are still unresolved for 2024-2026, but they carry only about
+- [x] Largely closed. 47-50 countries remain unresolved for 2024-2026 but they
+      carry only 2.6-2.9% of world population between them. Was:
       a fifth of world population between them. Diminishing returns from here.
 - [x] `countries` and `members` dropped from the build. Payload 1.13MB -> 944KB.
 - [x] Readout follows the pointer instead of parking over the right-hand band.
@@ -193,7 +207,7 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
       South Sudan and pre-2008 Bhutan.
 - [x] Original 15 and 20 most populous dropped from the selector.
 - [x] Source key entries explain themselves on hover.
-- [ ] 48 countries are still unresolved for 2026, though they hold about a fifth
+- [x] Superseded by the line above; the fifth-of-population figure was stale. Was:
       of world population. Serbia and Montenegro are absent from DPI entirely,
       so they have no row at all and can never be hand-filled without seeding
       the entity first.
@@ -233,7 +247,10 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
       its own. Right is 32% by population and 11% by country, so the toggle
       earns its place here.
 - [x] Play button on both year scrubbers, driving the shared year.
-- [ ] The USSR shows as "no data" across the map for 1975 to 1991. DPI has rows
+- [x] DONE. The Soviet, Yugoslav and Czechoslovak territories are coded from DPI's
+      own reading of the unions that governed them, and Russia is seeded for
+      1975-1991. The 1975 weighting went from 3.90bn to 4.05bn against an actual
+      world of 4.07bn. Was:
       for it but they are dropped, because no modern OWID population series
       exists for a state that no longer exists. Deciding what a world map should
       show for a dissolved country is a design question, not a data one.

@@ -179,6 +179,30 @@ def cross_tab(records, pop, members, regimes):
     return out
 
 
+def source_agreement(cmap, vparty_annual):
+    """How often the two main sources agree, where both code the same year.
+
+    Worth measuring rather than assuming: they agree only two times in three,
+    and DPI reads the world further left because it barely uses its centre
+    bucket. That is a property of the data the site should admit to, not a
+    detail to leave in a commit message.
+    """
+    from resolve import load_dpi
+    dpi = {(r["entity"], r["year"]): r["bucket"] for r in load_dpi(cmap) if r["bucket"]}
+    pairs = [(dpi[k], vparty_annual[k]["bucket"]) for k in vparty_annual if k in dpi]
+    if not pairs:
+        return None
+    score = {"left": -1, "centre": 0, "right": 1}
+    agree = sum(1 for a, b in pairs if a == b)
+    return {
+        "compared": len(pairs),
+        "agree": agree,
+        "agree_share": round(agree / len(pairs), 4),
+        "mean_dpi": round(sum(score[a] for a, _ in pairs) / len(pairs), 4),
+        "mean_vparty": round(sum(score[b] for _, b in pairs) / len(pairs), 4),
+    }
+
+
 def load_continents():
     out = {}
     with open(RAW / "continents.csv", encoding="utf-8-sig") as fh:
@@ -196,8 +220,15 @@ def seed_entities(records, path, end=END_YEAR):
     and still rendered as "no data" for every year.
     """
     spec = yaml.safe_load(Path(path).read_text(encoding="utf-8"))["seed"]
+    have = {(r["entity"], r["year"]) for r in records}
     for entity, cfg in spec.items():
-        for year in range(int(cfg["from"]), end + 1):
+        stop = int(cfg.get("to", end))
+        for year in range(int(cfg["from"]), stop + 1):
+            # a country can be missing for only part of the range: Russia has no
+            # DPI row before 1992 but plenty after, and seeding a duplicate would
+            # count it twice
+            if (entity, year) in have:
+                continue
             records.append({"entity": entity, "year": year, "bucket": None,
                             "party": "", "party_key": "", "party_stale": True})
     return records
@@ -322,33 +353,13 @@ def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     payload = {
         "meta": {
-            "sources": [
-                {"name": "Database of Political Institutions 2023",
-                 "detail": "Inter-American Development Bank, CC-BY 4.0. Left-right "
-                           "orientation of the chief executive's party, 1975-2023.",
-                 "url": "https://doi.org/10.60966/8tx1xs4i"},
-                {"name": "V-Party v2",
-                 "detail": "V-Dem Institute, 2022. Expert-coded party positions, used to "
-                           "fill country-years DPI leaves blank. Ends around 2019.",
-                 "url": "https://www.v-dem.net/data/v-party-dataset/"},
-                {"name": "Wikidata",
-                 "detail": "Property P1387, political alignment, joined to dated "
-                           "head-of-government terms. Extends the series past 2023.",
-                 "url": "https://www.wikidata.org/wiki/Property:P1387"},
-                {"name": "Regimes of the World",
-                 "detail": "V-Dem via Our World in Data, 1789-2025. Closed and electoral "
-                           "autocracies, electoral and liberal democracies.",
-                 "url": "https://ourworldindata.org/grapher/political-regime"},
-                {"name": "Population",
-                 "detail": "Our World in Data and the UN World Population Prospects. "
-                           "Historical to 2023, medium-variant projection after.",
-                 "url": "https://ourworldindata.org/grapher/population"},
-                {"name": "Hand-coded rows",
-                 "detail": "Countries no source resolves, coded here with a written basis "
-                           "and a verification date for each.",
-                 "url": "https://github.com/charlie-tren/pendulum/blob/main/data/seed/hand_coded.csv"},
-            ],
+            # YAML parses an unquoted date into a date object, which json cannot
+            # serialise, so stringify anything that is not already a string
+            "sources": [{k: (v if isinstance(v, str) else str(v)) for k, v in s.items()}
+                        for s in yaml.safe_load(
+                            (CFG / "sources.yaml").read_text(encoding="utf-8"))["sources"]],
             "coverage": f"1975-{END_YEAR}",
+            "agreement": source_agreement(cmap, vparty_annual),
             # the regime series stops before the political one; the slider is
             # capped from this rather than from a number typed into the JS
             "regime_coverage_end": max(y for (_, y) in regimes),

@@ -58,20 +58,36 @@ def norm_party(name: str) -> str:
 
 
 def load_dpi(cmap: dict) -> list[dict]:
+    """DPI rows, one per country-year.
+
+    Two DPI names can fold onto the same country: it carries Swaziland to 2020
+    and eSwatini from 2019, so 2019 and 2020 arrived twice and were counted
+    twice in every weighted total. Where that happens, keep the row that
+    actually says something.
+    """
     rename, drop = cmap["rename"], set(cmap["drop"])
-    out = []
+    best: dict[tuple[str, int], dict] = {}
     with open(RAW / "dpi2023.csv", encoding="utf-8-sig") as fh:
         for row in csv.DictReader(fh):
             if row["countryname"] in drop:
                 continue
-            out.append({
+            rec = {
                 "entity": rename.get(row["countryname"], row["countryname"]),
                 "year": int(str(row["year"])[:4]),
                 "bucket": DPI_BUCKET.get(row["execrlc"]),
                 "party": row["execme"],
                 "party_key": norm_party(row["execme"]),
-            })
-    return out
+            }
+            key = (rec["entity"], rec["year"])
+            kept = best.get(key)
+            if kept is None or _informative(rec) > _informative(kept):
+                best[key] = rec
+    return sorted(best.values(), key=lambda r: (r["entity"], r["year"]))
+
+
+def _informative(rec: dict) -> int:
+    """A coded row beats a named one, which beats an empty one."""
+    return (2 if rec["bucket"] else 0) + (1 if rec["party_key"] else 0)
 
 
 def load_aliases(path: Path) -> dict:

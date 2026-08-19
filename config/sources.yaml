@@ -1,0 +1,74 @@
+# Every source the site stands on, with the terms it comes under and the date it
+# was pulled. Kept here rather than inline in the build so that refreshing a
+# source means updating one line, and so the licence is never lost track of.
+#
+# `retrieved` is when the file in data/raw was last downloaded, not when the
+# publisher last updated it. `coverage` is what the source itself spans, which
+# is usually narrower than what the site shows.
+sources:
+  - name: Database of Political Institutions 2023
+    publisher: Inter-American Development Bank
+    url: https://doi.org/10.60966/8tx1xs4i
+    licence: CC BY 4.0
+    retrieved: 2026-08-18
+    coverage: 1975 to 2023, about 180 countries
+    role: >
+      The spine. Codes the chief executive's party as left, right or centre.
+
+  - name: V-Party v2
+    publisher: V-Dem Institute
+    url: https://www.v-dem.net/data/v-party-dataset/
+    licence: Free for academic and non-commercial use, citation required
+    retrieved: 2026-08-18
+    coverage: elections to about 2019, 178 countries
+    role: >
+      Expert-coded party positions. Fills country-years DPI leaves blank, and
+      supplies the seven-point spectrum on its own.
+
+  - name: Wikidata
+    publisher: Wikimedia Foundation
+    url: https://www.wikidata.org/wiki/Property:P1387
+    licence: CC0
+    retrieved: 2026-08-19
+    coverage: dated head-of-government terms, 152 countries
+    role: >
+      Property P1387, political alignment, joined to dated terms of office.
+      This is what extends the series past DPI's 2023 end.
+
+  - name: Regimes of the World
+    publisher: V-Dem, via Our World in Data
+    url: https://ourworldindata.org/grapher/political-regime
+    licence: CC BY 4.0
+    retrieved: 2026-08-18
+    coverage: 1789 to 2025
+    role: >
+      Closed and electoral autocracies, electoral and liberal democracies.
+
+  - name: Population
+    publisher: Our World in Data, from the UN World Population Prospects
+    url: https://ourworldindata.org/grapher/population
+    licence: CC BY 4.0
+    retrieved: 2026-08-18
+    coverage: historical to 2023, medium-variant projection after
+    role: >
+      Every weight in the population view, taken per country and per year.
+
+  - name: Natural Earth
+    publisher: Natural Earth, via the natural-earth-vector repository
+    url: https://github.com/nvkelso/natural-earth-vector
+    licence: Public domain
+    retrieved: 2026-08-19
+    coverage: 1:110m country boundaries
+    role: >
+      Map geometry, projected at build time into plain SVG paths.
+
+  - name: Hand-coded rows
+    publisher: This project
+    url: https://github.com/charlie-tren/pendulum/blob/main/data/seed/hand_coded.csv
+    licence: CC BY 4.0
+    retrieved: 2026-08-19
+    coverage: country-years no source above resolves
+    role: >
+      My own coding, each row carrying a written basis and a verification date.
+      Checked against DPI by scripts/audit_hand_coded.py so it cannot silently
+      contradict the spine.
