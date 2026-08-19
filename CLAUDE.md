@@ -81,11 +81,16 @@ from "centrist". Full reasoning: `docs/seed-corrections.md`.
 
 ## Type
 
-Headings use **Spectral 600** via `--font-display` in `style.css`. It is the
-serif charlietrenorden.com already loads, so this adds no new family to the
-site and is usually cached before anyone arrives. The homepage is serif-led at
-weight 400 with italic accents; a bold system sans here read as a different
-site. Body text and all UI stay on the system sans stack, which suits a tool.
+Two faces, both serif, because charlietrenorden.com is serif-led at weight 400
+with italic accents and a bold system sans here read as a different site.
+
+- `--font-title`: **Instrument Serif**, the masthead only. One weight, drawn
+  for large sizes, small x-height, so it is set larger than a text serif would
+  be and goes spindly if used at heading sizes.
+- `--font-display`: **Spectral 600**, panel headings. Already loaded by the
+  homepage, so it adds nothing new to the site.
+
+Body text and all controls stay on the system sans stack, which suits a tool.
 
 `scripts/title_options.py` renders twelve candidates against the mark and the
 standfirst. Changing the title face is one line in `--font-display`.

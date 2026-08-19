@@ -12,6 +12,10 @@
      is usually already cached by the time anyone arrives here. Swapping the
      title face is a change to this one line. */
   --font-display: Spectral, Georgia, "Times New Roman", serif;
+  /* Display face for the masthead only. Instrument Serif ships one weight and
+     is drawn for large sizes; it goes weak and spindly at heading sizes, so
+     panel headings stay on Spectral. */
+  --font-title: "Instrument Serif", Georgia, "Times New Roman", serif;
 }
 
 * { box-sizing: border-box; }
@@ -28,11 +32,14 @@ body {
 
 header { padding: 18px 0 8px; }
 h1 {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: clamp(31px, 6.2vw, 47px);
-  letter-spacing: -0.018em;
-  margin: 0 0 8px;
+  font-family: var(--font-title);
+  font-weight: 400;
+  /* larger than the Spectral setting was: Instrument Serif has a small
+     x-height and needs the size to carry the same weight on the page */
+  font-size: clamp(36px, 7.2vw, 56px);
+  letter-spacing: -0.005em;
+  line-height: 1.02;
+  margin: 0 0 10px;
 }
 .standfirst {
   font-size: clamp(16px, 2.4vw, 19px);
