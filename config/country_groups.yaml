@@ -4,7 +4,7 @@ groups:
     note: Everything the source data covers. Default view.
     members: ALL
     article: 'the '
-    leans_as: world
+    leans_as: World
   g7:
     label: G7
     as_of: 2026-08-18

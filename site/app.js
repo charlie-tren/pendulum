@@ -2,7 +2,20 @@
    Charts are hand-rolled SVG so this still runs in five years. */
 
 const DEFAULTS = { group: "world", weight: "by_population", year: null,
-                   regime: null, missing: "include" };
+                   mapYear: null, regime: null, missing: "include" };
+
+/* The two year scrubbers are separate timelines. They used to share one year
+   and one player, so pressing play on either animated both, which is two
+   things moving when one was asked for. */
+const TIMELINES = {
+  // `btn` is the markup's data-play value, which is not the same string as the
+  // state key: looking the button up by the key found nothing, so the map's
+  // play button never showed that it was running.
+  year: { slider: "#year", out: "#year-out", btn: "year",
+          draw: () => drawMosaic(DATA.groups[state.group]) },
+  mapYear: { slider: "#map-year", out: "#map-year-out", btn: "map-year",
+             draw: () => drawMap() },
+};
 
 /* The most recent year every year-driven chart can render. The regime data
    stops before the political series, so this is the regime end, not the last
@@ -106,6 +119,8 @@ function readHash() {
   if (group && DATA.groups[group]) state.group = group;
   if (weight === "by_country" || weight === "by_population") state.weight = weight;
   if (Number.isInteger(year)) state.year = year;
+  const mapYear = parseInt(params.get("mapYear"), 10);
+  if (Number.isInteger(mapYear)) state.mapYear = mapYear;
   const regime = params.get("regime");
   if (regime && REGIME_ORDER.includes(regime)) state.regime = regime;
   if (params.get("missing") === "exclude") state.missing = "exclude";
@@ -113,9 +128,9 @@ function readHash() {
 
 function writeHash() {
   const params = new URLSearchParams();
-  for (const key of ["group", "weight", "year", "regime", "missing"]) {
+  for (const key of ["group", "weight", "year", "mapYear", "regime", "missing"]) {
     if (key === "regime" && state.regime === defaultRegime()) continue;
-    if (key === "year" && state.year === latestYear()) continue;
+    if ((key === "year" || key === "mapYear") && state[key] === latestYear()) continue;
     if (state[key] !== DEFAULTS[key]) params.set(key, state[key]);
   }
   const hash = params.toString();
@@ -502,7 +517,7 @@ function drawMap() {
 
   const counts = { left: 0, centre: 0, right: 0, no_reading: 0, unresolved: 0 };
   for (const [iso, d] of Object.entries(MAP.paths)) {
-    const bucket = bucketAt(iso, state.year);
+    const bucket = bucketAt(iso, state.mapYear);
     counts[bucket] += 1;
     const path = svgEl("path", {
       d, fill: shade(DATA.palette.buckets[bucket]),
@@ -514,7 +529,7 @@ function drawMap() {
       readout.innerHTML =
         `<b>${name}</b>` +
         `<div class="row"><span><i style="background:${shade(b)}"></i>${b.label}</span></div>` +
-        `<div class="prov">${state.year}</div>`;
+        `<div class="prov">${state.mapYear}</div>`;
       readout.hidden = false;
       placeReadout(readout, evt);
     };
@@ -524,11 +539,11 @@ function drawMap() {
   }
   svg.onpointerleave = () => { readout.hidden = true; };
 
-  describe(svg, `World map for ${state.year}, each country coloured by the political ` +
+  describe(svg, `World map for ${state.mapYear}, each country coloured by the political ` +
                 `direction of its government.`);
   const named = ["left", "centre", "right"]
     .map((k) => `${counts[k]} ${DATA.palette.buckets[k].label.toLowerCase()}`).join(", ");
-  $("#map-caption").textContent = `In ${state.year}: ${named}.`;
+  $("#map-caption").textContent = `In ${state.mapYear}: ${named}.`;
 }
 
 /* ---------- regimes over time, one at a time ---------- */
@@ -645,57 +660,54 @@ function attachHover(s, series, palette, opts = {}) {
 
 /* Two scrubbers, one year. The mosaic and the map sit far apart on the page, so
    each carries its own control, but they are the same piece of state. */
-function syncYear() {
-  for (const [id, out] of [["#year", "#year-out"], ["#map-year", "#map-year-out"]]) {
-    const el = $(id);
-    const year = clamp(+el.min, state.year, +el.max);
-    el.value = year;
-    $(out).textContent = year;
-  }
+function syncYear(key) {
+  const spec = TIMELINES[key];
+  const el = $(spec.slider);
+  const year = clamp(+el.min, state[key], +el.max);
+  state[key] = year;
+  el.value = year;
+  $(spec.out).textContent = year;
 }
 
-/* ---------- playing the timeline ----------
-   Both scrubbers drive the same year, so one player serves them. Touching a
-   slider stops playback: the person has taken over. */
+/* ---------- playing the timelines ----------
+   One player per scrubber, keyed by which state field it drives. Touching a
+   slider stops that timeline: the person has taken over. */
 
 const PLAY_MS = 320;
-let playTimer = null;
-
-function playing() { return playTimer !== null; }
-
 const ICON_PLAY = "M4 2.5v11l9-5.5z";
 const ICON_PAUSE = "M4 2.5h3.2v11H4zM8.8 2.5H12v11H8.8z";
+const timers = { year: null, mapYear: null };
 
-function setPlayButtons(on) {
-  for (const btn of document.querySelectorAll(".play")) {
-    btn.setAttribute("aria-pressed", String(on));
-    btn.setAttribute("aria-label", on ? "Pause the timeline" : "Play the timeline");
-    const path = btn.querySelector("path");
-    if (path) path.setAttribute("d", on ? ICON_PAUSE : ICON_PLAY);
+function setPlayButton(key, on) {
+  const btn = document.querySelector(`.play[data-play="${TIMELINES[key].btn}"]`);
+  if (!btn) return;
+  btn.setAttribute("aria-pressed", String(on));
+  btn.setAttribute("aria-label", on ? "Pause the timeline" : "Play the timeline");
+  const path = btn.querySelector("path");
+  if (path) path.setAttribute("d", on ? ICON_PAUSE : ICON_PLAY);
+}
+
+function stopPlay(key) {
+  if (timers[key] !== null) {
+    clearInterval(timers[key]);
+    timers[key] = null;
+    setPlayButton(key, false);
   }
 }
 
-function stopPlay() {
-  if (playTimer !== null) {
-    clearInterval(playTimer);
-    playTimer = null;
-    setPlayButtons(false);
-  }
-}
-
-function startPlay() {
-  const slider = $("#map-year");
-  const lo = +slider.min;
-  const hi = +slider.max;
-  // The page opens near the end of the range, so playing from there would give
-  // two or three years and then a jump back. Restart the run instead.
-  if (state.year > hi - 5) state.year = lo;
-  setPlayButtons(true);
-  playTimer = setInterval(() => {
-    state.year = state.year >= hi ? lo : state.year + 1;
-    syncYear();
-    drawMosaic(DATA.groups[state.group]);
-    drawMap();
+function startPlay(key) {
+  const spec = TIMELINES[key];
+  const el = $(spec.slider);
+  const lo = +el.min;
+  const hi = +el.max;
+  // the page opens near the end, so playing from there would give a frame or
+  // two and a jump back
+  if (state[key] > hi - 5) state[key] = lo;
+  setPlayButton(key, true);
+  timers[key] = setInterval(() => {
+    state[key] = state[key] >= hi ? lo : state[key] + 1;
+    syncYear(key);
+    spec.draw();
     writeHash();
   }, PLAY_MS);
 }
@@ -708,10 +720,10 @@ function render() {
   const palette = DATA.palette.buckets;
   const byPop = state.weight === "by_population";
 
-  $("#chart-title").textContent = byPop ? "How people are governed"
-                                        : "How countries are governed";
+  $("#chart-title").textContent = byPop ? "How People Are Governed"
+                                        : "How Countries Are Governed";
   $("#leans-title").textContent =
-    `Which way ${group.article}${group.leans_as || group.label} leans`;
+    `Which Way ${group.article}${group.leans_as || group.label} Leans`;
   $("#group-hint").textContent = group.n_members ? `${group.n_members} countries` : "";
 
   $("#legend").innerHTML = BANDS.map((k) =>
@@ -803,32 +815,32 @@ Promise.all([
     });
 
     for (const btn of document.querySelectorAll(".play")) {
-      btn.addEventListener("click", () => (playing() ? stopPlay() : startPlay()));
+      const key = btn.dataset.play === "map-year" ? "mapYear" : "year";
+      btn.addEventListener("click", () => (timers[key] ? stopPlay(key) : startPlay(key)));
     }
 
-    for (const [id, out] of [["#year", "#year-out"], ["#map-year", "#map-year-out"]]) {
-      const el = $(id);
+    for (const key of Object.keys(TIMELINES)) {
+      const el = $(TIMELINES[key].slider);
       el.addEventListener("input", () => {
-        stopPlay();
-        state.year = +el.value;
-        syncYear();
-        drawMosaic(DATA.groups[state.group]);
-        drawMap();
+        stopPlay(key);
+        state[key] = +el.value;
+        syncYear(key);
+        TIMELINES[key].draw();
         writeHash();
       });
     }
 
-    if (state.year == null) state.year = latestYear();
+    const mosaicYears = DATA.groups.world.cross.map((r) => r.year);
     const slider = $("#year");
-    const years = DATA.groups.world.cross.map((r) => r.year);
-    slider.min = Math.min(...years);
-    // regime data stops before the political series; the slider is capped from
-    // the data rather than a hardcoded year
+    slider.min = Math.min(...mosaicYears);
+    // regime data stops before the political series; capped from the data
     slider.max = DATA.meta.regime_coverage_end;
-    state.year = Math.min(Math.max(state.year, +slider.min), +slider.max);
     $("#map-year").min = DATA.map.year0;
     $("#map-year").max = DATA.map.year1;
-    syncYear();
+    for (const key of Object.keys(TIMELINES)) {
+      if (state[key] == null) state[key] = latestYear();
+      syncYear(key);
+    }
 
     $("#sources").innerHTML = DATA.meta.sources.map((s) =>
       `<li><a href="${s.url}" rel="noopener">${s.name}</a>. ${s.detail}</li>`).join("");
