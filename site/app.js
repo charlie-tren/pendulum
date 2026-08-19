@@ -2,7 +2,7 @@
    Charts are hand-rolled SVG so this still runs in five years. */
 
 const DEFAULTS = { group: "world", weight: "by_population", year: null,
-                   mapYear: null, regime: null, missing: "include" };
+                   mapYear: null, regime: null, missing: "exclude" };
 
 /* The two year scrubbers are separate timelines. They used to share one year
    and one player, so pressing play on either animated both, which is two
@@ -72,8 +72,10 @@ const shade = (entry) => (darkMedia.matches && entry.colour_dark) || entry.colou
 /* "Exclude" drops the two grey categories. Where the bands add to the whole
    group the remainder is rescaled, so the chart still reads as shares of the
    countries that have a reading. Where they do not, the bands are simply
-   hidden and the scale is left alone. The default keeps them: a reader has to
-   ask for this. */
+   hidden and the scale is left alone. This is the default: a grey band that
+   grows as the sources thin out is the first thing a reader sees otherwise,
+   and it reads as a finding rather than as an absence. "Include" puts it back
+   for anyone who wants to see how much is missing. */
 const MISSING = new Set(["no_reading", "unresolved", "uncovered"]);
 
 function dropMissing(series, keys, { rescale = true } = {}) {
@@ -124,7 +126,7 @@ function readHash() {
   if (Number.isInteger(mapYear)) state.mapYear = mapYear;
   const regime = params.get("regime");
   if (regime && REGIME_ORDER.includes(regime)) state.regime = regime;
-  if (params.get("missing") === "exclude") state.missing = "exclude";
+  if (params.get("missing") === "include") state.missing = "include";
 }
 
 function writeHash() {
@@ -727,18 +729,26 @@ function render() {
     `Which Way ${group.article}${group.leans_as || group.label} Leans`;
   $("#group-hint").textContent = group.n_members ? `${group.n_members} countries` : "";
 
-  $("#legend").innerHTML = BANDS.map((k) =>
-    `<span><i style="background:${shade(palette[k])}"></i>${palette[k].label}</span>`).join("");
-  $("#legend-mosaic").innerHTML = $("#legend-regime").innerHTML =
-    $("#legend-map").innerHTML = $("#legend").innerHTML;
+  /* Excluding hides the two grey bands, so their keys have to leave the legend
+     with them: a swatch for a colour that is nowhere on the chart reads as a
+     band the reader has failed to find. The map is the exception. Every country
+     has geometry whether or not it has a reading, so it is painted grey either
+     way and keeps the full key. */
+  const swatches = (keys, pal) => keys.map((k) =>
+    `<span><i style="background:${shade(pal[k])}"></i>${pal[k].label}</span>`).join("");
+  const bandKeys = state.missing === "exclude"
+    ? BANDS.filter((k) => !MISSING.has(k)) : BANDS;
+  $("#legend").innerHTML = $("#legend-mosaic").innerHTML =
+    $("#legend-regime").innerHTML = swatches(bandKeys, palette);
+  $("#legend-map").innerHTML = swatches(BANDS, palette);
   $("#legend-lines").innerHTML =
     '<span><svg class="swatch" viewBox="0 0 26 8"><line x1="1" y1="4" x2="25" y2="4" ' +
     'stroke="var(--ink-faint)" stroke-width="1.6" stroke-opacity=".7"/></svg>Yearly</span>' +
     '<span><svg class="swatch" viewBox="0 0 26 8"><line x1="1" y1="4" x2="25" y2="4" ' +
     'stroke="var(--ink)" stroke-width="3"/></svg>Three-year average</span>';
-  $("#legend-spectrum").innerHTML = SPECTRUM.map((k) =>
-    `<span><i style="background:${shade(DATA.palette.spectrum[k])}"></i>` +
-    `${DATA.palette.spectrum[k].label}</span>`).join("");
+  $("#legend-spectrum").innerHTML = swatches(
+    state.missing === "exclude" ? SPECTRUM.filter((k) => !MISSING.has(k)) : SPECTRUM,
+    DATA.palette.spectrum);
   $("#legend-src").innerHTML = SOURCES.map((k) => {
     const s = DATA.palette.sources[k];
     return `<span class="explained" title="${s.note || ""}" tabindex="0">` +
