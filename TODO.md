@@ -210,3 +210,21 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
 - [ ] Serbia and Montenegro have no row at all: DPI never covered them, so
       `extend_years` has nothing to extend. Filling them means seeding the
       entities before the resolver runs.
+
+## Seeding and the finer spectrum, 2026-08-19
+
+- [x] `config/seed_entities.yaml` creates rows for sovereign states no source in
+      the chain introduces. Serbia and Montenegro were the only two: both had
+      V-Party and Wikidata records and still rendered as "no data" for every
+      year, because the resolver can only fill a row that already exists.
+      Palestine, Puerto Rico, Western Sahara, New Caledonia, Greenland and the
+      Falklands also have geometry and no row, and are excluded on purpose.
+- [x] Serbia and Montenegro fully resolved 2006 to 2026, mostly from V-Party and
+      Wikidata, with four hand-coded rows closing the tail.
+- [x] Seven-point spectrum panel from V-Party's own ordinal, read directly from
+      the source rather than through the resolution chain. In the chain V-Party
+      only fills what DPI leaves blank, so taking the score from there would
+      describe a quarter of the world and call it the spectrum. Coverage is
+      93-99% of population and it stops at 2019 where V-Party does.
+- [ ] The spectrum panel could carry a weighting toggle like the others; it is
+      population-weighted only at the moment.

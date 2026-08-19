@@ -71,3 +71,29 @@ regimes:
     short: Not classified
 note: 'colour is the light-theme value. colour_dark, where present, replaces it under prefers-color-scheme:
   dark.'
+spectrum:
+  f0:
+    colour: '#16406f'
+    label: Far left
+  f1:
+    colour: '#2f6fb2'
+    label: Left
+  f2:
+    colour: '#6d9bd4'
+    label: Centre-left
+  f3:
+    colour: '#9042d4'
+    label: Centre
+  f4:
+    colour: '#dd8b8b'
+    label: Centre-right
+  f5:
+    colour: '#c33c3c'
+    label: Right
+  f6:
+    colour: '#8f2323'
+    label: Far right
+  uncovered:
+    colour: '#dcdcdc'
+    colour_dark: '#454b56'
+    label: Not rated

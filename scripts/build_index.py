@@ -39,6 +39,10 @@ REGIMES = {"0": "closed_autocracy", "1": "electoral_autocracy",
 REGIME_ORDER = ["closed_autocracy", "electoral_autocracy",
                 "electoral_democracy", "liberal_democracy", "unknown"]
 END_YEAR = 2026
+# V-Party's last election round. The finer spectrum stops here rather than
+# trailing a growing "not rated" band across years it never covered.
+SPECTRUM_END = 2019
+SPECTRUM_BANDS = [f"f{i}" for i in range(7)] + ["uncovered"]
 
 
 def load_population():
@@ -95,6 +99,39 @@ def map_series(records, iso_of):
     }
 
 
+def spectrum(records, pop, members, ordinals):
+    """Shares across V-Party's seven-point scale rather than three buckets.
+
+    Read straight from V-Party for every country-year it covers, NOT from the
+    resolution chain: in the chain V-Party only fills what DPI leaves blank, so
+    taking the score from there would describe a quarter of the world and call
+    it the spectrum.
+    """
+    by_year = defaultdict(list)
+    for rec in records:
+        if rec["year"] > SPECTRUM_END:
+            continue
+        if members is not None and rec["entity"] not in members:
+            continue
+        by_year[rec["year"]].append(rec)
+
+    out = []
+    for year in sorted(by_year):
+        w = {b: 0.0 for b in SPECTRUM_BANDS}
+        total = 0.0
+        for rec in by_year[year]:
+            p = pop.get((rec["entity"], year))
+            if p is None:
+                continue
+            hit = ordinals.get((rec["entity"], year))
+            w[f"f{hit['ord']}" if hit else "uncovered"] += p
+            total += p
+        if total:
+            out.append({"year": year, "pop": round(total),
+                        **{b: round(w[b] / total, 5) for b in SPECTRUM_BANDS}})
+    return out
+
+
 def cross_tab(records, pop, members, regimes):
     """Population and country shares across the regime x ideology grid.
 
@@ -141,6 +178,22 @@ def load_continents():
         for row in csv.DictReader(fh):
             out[row["entity"]] = row["owid_region"]
     return out
+
+
+def seed_entities(records, path, end=END_YEAR):
+    """Create empty country-years for states no source in the chain introduces.
+
+    The resolver can only fill a row that exists, and rows come from DPI. A
+    country DPI never covered is therefore unreachable however good the later
+    sources are: Serbia has a V-Party record and a Wikidata head of government,
+    and still rendered as "no data" for every year.
+    """
+    spec = yaml.safe_load(Path(path).read_text(encoding="utf-8"))["seed"]
+    for entity, cfg in spec.items():
+        for year in range(int(cfg["from"]), end + 1):
+            records.append({"entity": entity, "year": year, "bucket": None,
+                            "party": "", "party_key": "", "party_stale": True})
+    return records
 
 
 def extend_years(records, end=END_YEAR):
@@ -227,8 +280,10 @@ def main() -> int:
     pop, continents, regimes = load_population(), load_continents(), load_regimes()
 
     records = extend_years(load_dpi(cmap))
+    records = seed_entities(records, CFG / "seed_entities.yaml")
+    vparty_annual, vparty_ratings = load_vparty(cmap)
     records = resolve(
-        records, *load_vparty(cmap),
+        records, vparty_annual, vparty_ratings,
         aliases=load_aliases(CFG / "party_aliases.yaml"),
         hand=load_hand_coded(SEED / "hand_coded.csv"),
         wikidata=load_wikidata(RAW / "wikidata_hog.json",
@@ -247,6 +302,7 @@ def main() -> int:
         members = resolve_members(spec, iso_to_entity, continents, pop, entities)
         agg = aggregate(records, pop, members)
         agg["cross"] = cross_tab(records, pop, members, regimes)
+        agg["spectrum"] = spectrum(records, pop, members, vparty_annual)
         trailing_ma(agg["index"], "mean_by_country")
         trailing_ma(agg["index"], "mean_by_population")
         agg["by_country"] = [{**r, "source": {k: v for k, v in r["source"].items() if v}}

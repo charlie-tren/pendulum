@@ -6,6 +6,7 @@ const BANDS = ["left", "centre", "right", "no_reading", "unresolved"];
 const SOURCES = ["dpi", "vparty", "carry_forward", "hand", "wikidata", "no_reading", "unresolved"];
 const REGIME_ORDER = ["closed_autocracy", "electoral_autocracy",
                       "electoral_democracy", "liberal_democracy", "unknown"];
+const SPECTRUM = ["f0", "f1", "f2", "f3", "f4", "f5", "f6", "uncovered"];
 /* Below this share of the group resolved, a year is drawn as provisional.
    Movement in a thinly-covered year is usually the data changing, not the world. */
 const PROVISIONAL_BELOW = 0.8;
@@ -382,6 +383,27 @@ function drawMosaic(group) {
     : "";
 }
 
+/* ---------- the seven-point spectrum ---------- */
+
+function drawSpectrum(group) {
+  const series = group.spectrum || [];
+  if (!series.length) return;
+  drawStack("#spectrum", series, SPECTRUM, DATA.palette.spectrum,
+    boxFor("#spectrum", 0.30, 200, 300),
+    { label: `Share of the group by the governing party's position on a seven-point ` +
+             `scale, ${series[0].year} to ${series[series.length - 1].year}.` });
+
+  const first = series[0];
+  const last = series[series.length - 1];
+  const share = (row, keys) => keys.reduce((a, k) => a + (row[k] || 0), 0);
+  const leftFirst = share(first, ["f0", "f1", "f2"]);
+  const leftLast = share(last, ["f0", "f1", "f2"]);
+  $("#spectrum-caption").textContent =
+    `Left of centre covered ${pct(leftFirst)} of this group in ${first.year} and ` +
+    `${pct(leftLast)} in ${last.year}. Bands are V-Party's own ratings, not a ` +
+    `recoding of the three-bucket series above.`;
+}
+
 /* ---------- the world in one year ----------
    Geometry is projected at build time into plain SVG paths, so there is no
    mapping library here: this fills 176 shapes and stops. */
@@ -572,6 +594,9 @@ function render() {
     `<span><i style="background:${shade(palette[k])}"></i>${palette[k].label}</span>`).join("");
   $("#legend-mosaic").innerHTML = $("#legend-regime").innerHTML =
     $("#legend-map").innerHTML = $("#legend").innerHTML;
+  $("#legend-spectrum").innerHTML = SPECTRUM.map((k) =>
+    `<span><i style="background:${shade(DATA.palette.spectrum[k])}"></i>` +
+    `${DATA.palette.spectrum[k].label}</span>`).join("");
   $("#legend-src").innerHTML = SOURCES.map((k) => {
     const s = DATA.palette.sources[k];
     return `<span class="explained" title="${s.note || ""}" tabindex="0">` +
@@ -594,6 +619,7 @@ function render() {
   drawStack("#prov", group.by_country.map((r) => ({ year: r.year, ...r.source })),
     SOURCES, DATA.palette.sources, boxFor("#prov", 0.20, 130, 190),
     { label: "Which data source resolved each country-year, over time." });
+  drawSpectrum(group);
   drawMosaic(group);
   drawMap();
   if (!state.regime) state.regime = defaultRegime();
