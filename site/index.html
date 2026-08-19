@@ -41,11 +41,10 @@
       </div>
     </div>
     <div class="control">
-      <span class="label">Countries with no reading</span>
-      <div class="segmented" role="radiogroup" aria-label="Countries with no reading">
-        <button type="button" data-missing="include" role="radio" aria-checked="true">include</button>
-        <button type="button" data-missing="exclude" role="radio" aria-checked="false">exclude</button>
-      </div>
+      <label class="check">
+        <input type="checkbox" id="exclude-missing">
+        <span>Exclude countries without data</span>
+      </label>
     </div>
   </section>
 
@@ -60,7 +59,7 @@
   </section>
 
   <section class="panel">
-    <h2>Which way the world leans</h2>
+    <h2 id="leans-title">Which way the world leans</h2>
     <div class="legend legend-lines" id="legend-lines"></div>
     <figure class="chart">
       <svg id="line" role="img"></svg>
@@ -98,7 +97,7 @@
   </section>
 
   <section class="panel">
-    <h2>How the map has changed</h2>
+    <h2>How the world has changed</h2>
     <div class="control control-year">
       <label for="map-year">Year <output id="map-year-out"></output></label>
       <div class="scrub">

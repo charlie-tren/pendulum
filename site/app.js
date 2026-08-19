@@ -1,8 +1,13 @@
 /* Pendulum: static frontend. No framework, no build step, no dependencies.
    Charts are hand-rolled SVG so this still runs in five years. */
 
-const DEFAULTS = { group: "world", weight: "by_population", year: 2023,
+const DEFAULTS = { group: "world", weight: "by_population", year: null,
                    regime: null, missing: "include" };
+
+/* The most recent year every year-driven chart can render. The regime data
+   stops before the political series, so this is the regime end, not the last
+   year in the file. */
+const latestYear = () => DATA.meta.regime_coverage_end;
 const BANDS = ["left", "centre", "right", "no_reading", "unresolved"];
 const SOURCES = ["dpi", "vparty", "carry_forward", "hand", "wikidata", "no_reading", "unresolved"];
 const REGIME_ORDER = ["closed_autocracy", "electoral_autocracy",
@@ -110,6 +115,7 @@ function writeHash() {
   const params = new URLSearchParams();
   for (const key of ["group", "weight", "year", "regime", "missing"]) {
     if (key === "regime" && state.regime === defaultRegime()) continue;
+    if (key === "year" && state.year === latestYear()) continue;
     if (state[key] !== DEFAULTS[key]) params.set(key, state[key]);
   }
   const hash = params.toString();
@@ -704,6 +710,8 @@ function render() {
 
   $("#chart-title").textContent = byPop ? "How people are governed"
                                         : "How countries are governed";
+  $("#leans-title").textContent =
+    `Which way ${group.article}${group.leans_as || group.label} leans`;
   $("#group-hint").textContent = group.n_members ? `${group.n_members} countries` : "";
 
   $("#legend").innerHTML = BANDS.map((k) =>
@@ -712,7 +720,7 @@ function render() {
     $("#legend-map").innerHTML = $("#legend").innerHTML;
   $("#legend-lines").innerHTML =
     '<span><svg class="swatch" viewBox="0 0 26 8"><line x1="1" y1="4" x2="25" y2="4" ' +
-    'stroke="var(--ink-faint)" stroke-width="1.6" stroke-opacity=".7"/></svg>Each year</span>' +
+    'stroke="var(--ink-faint)" stroke-width="1.6" stroke-opacity=".7"/></svg>Yearly</span>' +
     '<span><svg class="swatch" viewBox="0 0 26 8"><line x1="1" y1="4" x2="25" y2="4" ' +
     'stroke="var(--ink)" stroke-width="3"/></svg>Three-year average</span>';
   $("#legend-spectrum").innerHTML = SPECTRUM.map((k) =>
@@ -787,15 +795,12 @@ Promise.all([
     }
 
 
-    for (const btn of document.querySelectorAll("[data-missing]")) {
-      btn.addEventListener("click", () => {
-        state.missing = btn.dataset.missing;
-        for (const b of document.querySelectorAll("[data-missing]")) {
-          b.setAttribute("aria-checked", String(b.dataset.missing === state.missing));
-        }
-        render();
-      });
-    }
+    const excl = $("#exclude-missing");
+    excl.checked = state.missing === "exclude";
+    excl.addEventListener("change", () => {
+      state.missing = excl.checked ? "exclude" : "include";
+      render();
+    });
 
     for (const btn of document.querySelectorAll(".play")) {
       btn.addEventListener("click", () => (playing() ? stopPlay() : startPlay()));
@@ -813,6 +818,7 @@ Promise.all([
       });
     }
 
+    if (state.year == null) state.year = latestYear();
     const slider = $("#year");
     const years = DATA.groups.world.cross.map((r) => r.year);
     slider.min = Math.min(...years);

@@ -3,6 +3,8 @@ groups:
     label: All countries
     note: Everything the source data covers. Default view.
     members: ALL
+    article: 'the '
+    leans_as: world
   g7:
     label: G7
     as_of: 2026-08-18
@@ -14,6 +16,7 @@ groups:
     - ITA
     - JPN
     - CAN
+    article: 'the '
   g20:
     label: G20
     note: Excludes the EU and African Union bloc seats, which have no single government.
@@ -38,6 +41,7 @@ groups:
     - TUR
     - GBR
     - USA
+    article: 'the '
   eu:
     label: European Union
     as_of: 2026-08-18
@@ -69,6 +73,7 @@ groups:
     - SVN
     - ESP
     - SWE
+    article: 'the '
   oecd:
     label: OECD
     as_of: 2026-08-18
@@ -111,6 +116,7 @@ groups:
     - TUR
     - GBR
     - USA
+    article: 'the '
   brics:
     label: BRICS+
     note: 'Founding five plus the 2024 expansion, plus Indonesia (Jan 2025). Saudi Arabia was
@@ -129,6 +135,7 @@ groups:
     - IRN
     - ARE
     - IDN
+    article: 'the '
   asean:
     label: ASEAN
     note: Timor-Leste acceded as the 11th member in October 2025.
@@ -145,42 +152,49 @@ groups:
     - THA
     - VNM
     - TLS
+    article: 'the '
   africa:
     label: Africa
     note: Resolved from OWID continent mapping at build time.
     as_of: '2026-08-18'
     continent: Africa
     members: CONTINENT
+    article: ''
   asia:
     label: Asia
     note: Resolved from OWID continent mapping at build time.
     as_of: '2026-08-18'
     continent: Asia
     members: CONTINENT
+    article: ''
   europe:
     label: Europe
     note: Resolved from OWID continent mapping at build time.
     as_of: '2026-08-18'
     continent: Europe
     members: CONTINENT
+    article: ''
   north_america:
     label: North America
     note: Resolved from OWID continent mapping at build time.
     as_of: '2026-08-18'
     continent: North America
     members: CONTINENT
+    article: ''
   south_america:
     label: South America
     note: Resolved from OWID continent mapping at build time.
     as_of: '2026-08-18'
     continent: South America
     members: CONTINENT
+    article: ''
   oceania:
     label: Oceania
     note: Resolved from OWID continent mapping at build time.
     as_of: '2026-08-18'
     continent: Oceania
     members: CONTINENT
+    article: ''
   nato:
     label: NATO
     note: 32 members including Finland (2023) and Sweden (2024).
@@ -218,6 +232,7 @@ groups:
     - TUR
     - GBR
     - USA
+    article: 'the '
   african_union:
     label: African Union
     note: Excludes Western Sahara, which has no OWID population series in this build.
@@ -277,6 +292,7 @@ groups:
     - UGA
     - ZMB
     - ZWE
+    article: 'the '
   arab_league:
     label: Arab League
     as_of: '2026-08-18'
@@ -302,6 +318,7 @@ groups:
     - TUN
     - ARE
     - YEM
+    article: 'the '
   nordics:
     label: Nordics
     as_of: '2026-08-18'
@@ -311,6 +328,7 @@ groups:
     - ISL
     - NOR
     - SWE
+    article: 'the '
   anglosphere:
     label: Anglosphere
     note: Six English-speaking democracies with closely related party systems.
@@ -322,6 +340,7 @@ groups:
     - NZL
     - GBR
     - USA
+    article: 'the '
   latin_america:
     label: Latin America
     as_of: '2026-08-18'
@@ -345,3 +364,4 @@ groups:
     - PER
     - URY
     - VEN
+    article: ''

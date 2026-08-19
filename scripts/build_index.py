@@ -315,6 +315,8 @@ def main() -> int:
         agg["by_country"] = [{**r, "source": {k: v for k, v in r["source"].items() if v}}
                              for r in agg["by_country"]]
         result[key] = {"label": spec["label"], "note": spec.get("note"),
+                       "article": spec.get("article", "the "),
+                       "leans_as": spec.get("leans_as", spec["label"]),
                        "n_members": len(members) if members else len(entities), **agg}
 
     OUT.mkdir(parents=True, exist_ok=True)
