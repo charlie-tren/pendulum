@@ -81,19 +81,19 @@ from "centrist". Full reasoning: `docs/seed-corrections.md`.
 
 ## Type
 
-Two faces, both serif, because charlietrenorden.com is serif-led at weight 400
-with italic accents and a bold system sans here read as a different site.
+Headings use the same serif stack charlietrenorden.com sets on its body:
+`Iowan Old Style, Palatino Linotype, Palatino, Georgia, Times New Roman, serif`.
+Title at 400, panel headings at 600, both through `--font-title` and
+`--font-display` in `style.css`.
 
-- `--font-title`: **Instrument Serif**, the masthead only. One weight, drawn
-  for large sizes, small x-height, so it is set larger than a text serif would
-  be and goes spindly if used at heading sizes.
-- `--font-display`: **Spectral 600**, panel headings. Already loaded by the
-  homepage, so it adds nothing new to the site.
+**No webfonts.** Earlier versions loaded Instrument Serif and Spectral from
+Google; using the stack the rest of the site already has means nothing to
+request, nothing swapping in late, and the project reads as part of the site
+rather than beside it. Body text and controls stay on the system sans, which
+suits a tool.
 
-Body text and all controls stay on the system sans stack, which suits a tool.
-
-`scripts/title_options.py` renders twelve candidates against the mark and the
-standfirst. Changing the title face is one line in `--font-display`.
+`scripts/title_options.py` renders candidates against the mark and the
+standfirst if this is ever revisited.
 
 ## Stack
 

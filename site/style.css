@@ -7,15 +7,12 @@
   --panel: #ffffff;
   --accent: #2f6fb2;
   --max: 960px;
-  /* Headings only. Spectral is the serif charlietrenorden.com already loads, so
-     this stays inside the site's type system rather than adding a family, and
-     is usually already cached by the time anyone arrives here. Swapping the
-     title face is a change to this one line. */
-  --font-display: Spectral, Georgia, "Times New Roman", serif;
-  /* Display face for the masthead only. Instrument Serif ships one weight and
-     is drawn for large sizes; it goes weak and spindly at heading sizes, so
-     panel headings stay on Spectral. */
-  --font-title: "Instrument Serif", Georgia, "Times New Roman", serif;
+  /* The same serif stack charlietrenorden.com sets on its body. No webfont at
+     all: nothing to request, nothing to swap in late, and the project reads as
+     part of the site rather than beside it. Title at 400, headings at 600. */
+  --font-title: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia,
+                "Times New Roman", serif;
+  --font-display: var(--font-title);
 }
 
 * { box-sizing: border-box; }
@@ -34,11 +31,11 @@ header { padding: 18px 0 8px; }
 h1 {
   font-family: var(--font-title);
   font-weight: 400;
-  /* larger than the Spectral setting was: Instrument Serif has a small
-     x-height and needs the size to carry the same weight on the page */
-  font-size: clamp(36px, 7.2vw, 56px);
-  letter-spacing: -0.005em;
-  line-height: 1.02;
+  /* smaller than the Instrument Serif setting: this stack has a far larger
+     x-height, so it carries the same presence at less size */
+  font-size: clamp(33px, 6.4vw, 50px);
+  letter-spacing: -0.015em;
+  line-height: 1.04;
   margin: 0 0 10px;
 }
 .standfirst {
@@ -228,7 +225,7 @@ body.loading .loading-note {
   padding: 6px 8px 6px 10px; margin-right: -8px; border-radius: 7px;
 }
 .home:hover { background: var(--panel); color: var(--ink); }
-.home .back { font-size: 15px; }
+.home .back { font-size: 15px; margin-left: 6px; }
 
 /* ---- wordmark ----
    The rods take currentColor so the mark follows the theme; the three bobs stay
