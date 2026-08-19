@@ -183,3 +183,17 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
       a fifth of world population between them. Diminishing returns from here.
 - [x] `countries` and `members` dropped from the build. Payload 1.13MB -> 944KB.
 - [x] Readout follows the pointer instead of parking over the right-hand band.
+
+## Map round, 2026-08-19
+
+- [x] World map with a year scrubber, sharing state with the mosaic.
+- [x] Geometry projected at build time; no mapping library on the site.
+- [x] Non-party states reclassified from "no data" to "does not apply". Nine
+      rows covering the Gulf monarchies, Brunei, Eswatini, Jordan, Belarus,
+      South Sudan and pre-2008 Bhutan.
+- [x] Original 15 and 20 most populous dropped from the selector.
+- [x] Source key entries explain themselves on hover.
+- [ ] 48 countries are still unresolved for 2026, though they hold about a fifth
+      of world population. Serbia and Montenegro are absent from DPI entirely,
+      so they have no row at all and can never be hand-filled without seeding
+      the entity first.
