@@ -181,5 +181,5 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
       from +0.44 to +0.05: the apparent swing right was the missing countries.
 - [ ] 92 countries are still unresolved for 2024-2026, but they carry only about
       a fifth of world population between them. Diminishing returns from here.
-- [ ] `countries` and `members` blocks are still emitted and unread since the
-      country strip went.
+- [x] `countries` and `members` dropped from the build. Payload 1.13MB -> 944KB.
+- [x] Readout follows the pointer instead of parking over the right-hand band.

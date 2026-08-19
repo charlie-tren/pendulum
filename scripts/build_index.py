@@ -73,41 +73,6 @@ def load_regimes():
     return out
 
 
-def country_runs(records, pop, regimes):
-    """Per-country timeline, run-length encoded.
-
-    Governments persist for years at a time, so storing runs rather than one
-    entry per country-year keeps the payload small enough to ship whole.
-    """
-    by_entity = defaultdict(list)
-    for rec in records:
-        by_entity[rec["entity"]].append(rec)
-
-    out = []
-    for entity, recs in sorted(by_entity.items()):
-        recs.sort(key=lambda r: r["year"])
-        runs = []
-        for rec in recs:
-            # a stale carried-forward name that no later layer confirmed is
-            # dropped rather than shown against someone else's government
-            party = "" if (rec.get("party_stale") and rec["source"] in
-                           ("unresolved", "no_reading")) else (rec["party"] or "")
-            key = (rec["bucket"], rec["source"], party,
-                   regimes.get((entity, rec["year"]), "unknown"))
-            if runs and runs[-1]["k"] == key and runs[-1]["y1"] == rec["year"] - 1:
-                runs[-1]["y1"] = rec["year"]
-            else:
-                runs.append({"k": key, "y0": rec["year"], "y1": rec["year"]})
-        latest = max((y for (e, y) in pop if e == entity), default=None)
-        out.append({
-            "entity": entity,
-            "pop": round(pop.get((entity, latest), 0)) if latest else 0,
-            "runs": [{"y0": r["y0"], "y1": r["y1"], "b": r["k"][0], "s": r["k"][1],
-                      "p": r["k"][2], "r": r["k"][3]} for r in runs],
-        })
-    return out
-
-
 def cross_tab(records, pop, members, regimes):
     """Population and country shares across the regime x ideology grid.
 
@@ -306,10 +271,6 @@ def main() -> int:
                      "never merged. Each year reports which source resolved it."),
         },
         "palette": yaml.safe_load((CFG / "palette.yaml").read_text(encoding="utf-8")),
-        "countries": country_runs(records, pop, regimes),
-        "members": {k: sorted(resolve_members(spec, iso_to_entity, continents, pop, entities)
-                              or entities)
-                    for k, spec in groups.items()},
         "groups": result,
     }
     blob = json.dumps(payload, separators=(",", ":"))

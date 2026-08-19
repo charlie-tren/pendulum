@@ -51,6 +51,25 @@ const sum = (obj) => Object.values(obj || {}).reduce((a, b) => a + b, 0);
 const darkMedia = window.matchMedia("(prefers-color-scheme: dark)");
 const shade = (entry) => (darkMedia.matches && entry.colour_dark) || entry.colour;
 
+/* Follow the pointer rather than parking in the top right, which is where the
+   right-hand band sits in most years: the readout covered the thing it was
+   describing. Measure after unhiding, and flip to the other side of the cursor
+   rather than running off the panel. On mobile the readout is static, below the
+   chart, so leave it alone. */
+function placeReadout(el, evt) {
+  if (getComputedStyle(el).position === "static") return;
+  const box = el.parentElement.getBoundingClientRect();
+  const pad = 14;
+  const w = el.offsetWidth;
+  const h = el.offsetHeight;
+  let x = evt.clientX - box.left + pad;
+  let y = evt.clientY - box.top + pad;
+  if (x + w > box.width - 6) x = evt.clientX - box.left - w - pad;
+  if (y + h > box.height - 6) y = evt.clientY - box.top - h - pad;
+  el.style.left = `${clamp(6, x, Math.max(6, box.width - w - 6))}px`;
+  el.style.top = `${clamp(6, y, Math.max(6, box.height - h - 6))}px`;
+}
+
 /* ---------- URL state. The default is never written to the URL. ---------- */
 
 function readHash() {
@@ -306,7 +325,7 @@ function drawMosaic(group) {
         fill: shade(DATA.palette.buckets[band]), class: "mosaic-cell",
       });
       const n = (row.counts[col.regime] || {})[band] || 0;
-      rect.addEventListener("pointerenter", () => {
+      const show = (evt) => {
         readout.innerHTML =
           `<b>${pct(v)} of people</b>` +
           `<div class="row"><span><i style="background:${shade(DATA.palette.buckets[band])}"></i>` +
@@ -315,7 +334,10 @@ function drawMosaic(group) {
           `<div class="prov">${Math.round(v * row.pop / 1e6)}m people · ` +
           `${n} ${n === 1 ? "country" : "countries"} · ${row.year}</div>`;
         readout.hidden = false;
-      });
+        placeReadout(readout, evt);
+      };
+      rect.addEventListener("pointerenter", show);
+      rect.addEventListener("pointermove", show);
       svg.appendChild(rect);
 
       if (w > 64 && h > 22) {
@@ -459,6 +481,7 @@ function attachHover(s, series, palette, group) {
         ? `<div class="prov">${(row.pop / 1e9).toFixed(2)}bn people</div>` : "") +
       (src ? `<div class="prov">${src}</div>` : "");
     readout.hidden = false;
+    placeReadout(readout, evt);
   };
   const hide = () => { readout.hidden = true; marker.setAttribute("visibility", "hidden"); };
   svg.addEventListener("pointermove", show);
