@@ -79,6 +79,17 @@ from "centrist". Full reasoning: `docs/seed-corrections.md`.
 /docs/        data-sources.md, seed-corrections.md.
 ```
 
+## Type
+
+Headings use **Spectral 600** via `--font-display` in `style.css`. It is the
+serif charlietrenorden.com already loads, so this adds no new family to the
+site and is usually cached before anyone arrives. The homepage is serif-led at
+weight 400 with italic accents; a bold system sans here read as a different
+site. Body text and all UI stay on the system sans stack, which suits a tool.
+
+`scripts/title_options.py` renders twelve candidates against the mark and the
+standfirst. Changing the title face is one line in `--font-display`.
+
 ## Stack
 
 Python for the pipeline, plain static HTML/CSS/JS for the site. No JS

@@ -7,6 +7,11 @@
   --panel: #ffffff;
   --accent: #2f6fb2;
   --max: 960px;
+  /* Headings only. Spectral is the serif charlietrenorden.com already loads, so
+     this stays inside the site's type system rather than adding a family, and
+     is usually already cached by the time anyone arrives here. Swapping the
+     title face is a change to this one line. */
+  --font-display: Spectral, Georgia, "Times New Roman", serif;
 }
 
 * { box-sizing: border-box; }
@@ -23,9 +28,11 @@ body {
 
 header { padding: 18px 0 8px; }
 h1 {
-  font-size: clamp(30px, 6vw, 44px);
-  letter-spacing: -0.02em;
-  margin: 0 0 6px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(31px, 6.2vw, 47px);
+  letter-spacing: -0.018em;
+  margin: 0 0 8px;
 }
 .standfirst {
   font-size: clamp(16px, 2.4vw, 19px);
@@ -95,7 +102,10 @@ select:focus-visible, .segmented button:focus-visible { outline: 2px solid var(-
   padding: 22px 22px 18px;
   margin: 0 0 22px;
 }
-.panel h2 { font-size: 19px; margin: 0 0 4px; letter-spacing: -0.01em; }
+.panel h2 {
+  font-family: var(--font-display); font-weight: 600;
+  font-size: 20px; margin: 0 0 4px; letter-spacing: -0.008em;
+}
 .sub, .caption {
   font-size: 14px;
   color: var(--ink-soft);
@@ -131,7 +141,8 @@ svg { display: block; width: 100%; height: auto; }
 
 /* ---- notes ---- */
 .notes dl { margin: 8px 0 0; }
-.notes dt { font-weight: 650; margin-top: 14px; }
+.notes dt { font-family: var(--font-display); font-weight: 600; font-size: 16px;
+            margin-top: 14px; }
 .notes dd { margin: 3px 0 0; color: var(--ink-soft); font-size: 15px; max-width: 62em; }
 
 footer { padding: 8px 0 60px; color: var(--ink-soft); }
@@ -182,7 +193,7 @@ input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-of
   border-color: color-mix(in srgb, var(--accent) 26%, var(--rule));
   box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 28px rgba(0,0,0,0.05);
 }
-.panel-lead h2 { font-size: 22px; }
+.panel-lead h2 { font-size: 24px; }
 .panel-quiet { background: transparent; border-style: dashed; }
 .panel-quiet h2 { font-size: 17px; color: var(--ink-soft); }
 
@@ -204,7 +215,7 @@ body.loading .loading-note {
    measure their own container, do not end up needlessly narrow. */
 @media (max-width: 640px) {
   .panel-lead { padding: 18px 14px 14px; box-shadow: none; }
-  .panel-lead h2 { font-size: 19px; }
+  .panel-lead h2 { font-size: 20px; }
   .legend { gap: 4px 14px; font-size: 13px; }
   .control-year { max-width: none; }
   h1 { margin-bottom: 4px; }

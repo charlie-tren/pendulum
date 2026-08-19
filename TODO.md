@@ -146,3 +146,8 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
       contact sheet if it needs revisiting.
 - [x] "Other projects" bar, matching the other project pages.
 - [x] Card moved to the in-progress group with a one-line description.
+
+- [x] Title typeface. Was a bold system sans, which belonged to a different
+      site: charlietrenorden.com is serif-led. Now Spectral 600 on headings via
+      `--font-display`, chosen from twelve rendered candidates.
+      `scripts/title_options.py` regenerates the sheet.
