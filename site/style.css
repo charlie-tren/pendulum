@@ -304,3 +304,16 @@ h1 { display: flex; align-items: center; gap: 14px; }
 /* Regime definitions under the mosaic key: plain words, each explaining itself. */
 .legend-regimes { gap: 6px 16px; font-size: 13px; margin: -2px 0 12px; }
 .legend-regimes .explained { color: var(--ink-faint); }
+
+/* The regime names under the mosaic carry their definition, so they read as
+   something you can interrogate. */
+.regime-label { cursor: help; text-decoration: underline dotted; text-underline-offset: 3px; }
+
+/* Key for the two lines on the balance chart. */
+.legend-lines .swatch { width: 26px; height: 8px; }
+.c-left { color: #2f6fb2; }
+.c-right { color: #c33c3c; }
+@media (prefers-color-scheme: dark) {
+  .c-left { color: #6ea8e0; }
+  .c-right { color: #e07575; }
+}

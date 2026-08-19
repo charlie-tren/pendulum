@@ -1,7 +1,8 @@
 /* Pendulum: static frontend. No framework, no build step, no dependencies.
    Charts are hand-rolled SVG so this still runs in five years. */
 
-const DEFAULTS = { group: "world", weight: "by_population", year: 2023, regime: null };
+const DEFAULTS = { group: "world", weight: "by_population", year: 2023,
+                   regime: null, missing: "include" };
 const BANDS = ["left", "centre", "right", "no_reading", "unresolved"];
 const SOURCES = ["dpi", "vparty", "carry_forward", "hand", "wikidata", "no_reading", "unresolved"];
 const REGIME_ORDER = ["closed_autocracy", "electoral_autocracy",
@@ -49,6 +50,28 @@ const sum = (obj) => Object.values(obj || {}).reduce((a, b) => a + b, 0);
 const darkMedia = window.matchMedia("(prefers-color-scheme: dark)");
 const shade = (entry) => (darkMedia.matches && entry.colour_dark) || entry.colour;
 
+/* "Exclude" drops the two grey categories. Where the bands add to the whole
+   group the remainder is rescaled, so the chart still reads as shares of the
+   countries that have a reading. Where they do not, the bands are simply
+   hidden and the scale is left alone. The default keeps them: a reader has to
+   ask for this. */
+const MISSING = new Set(["no_reading", "unresolved", "uncovered"]);
+
+function dropMissing(series, keys, { rescale = true } = {}) {
+  if (state.missing !== "exclude") return { series, keys };
+  const kept = keys.filter((k) => !MISSING.has(k));
+  if (!rescale) return { series, keys: kept };
+  return {
+    keys: kept,
+    series: series.map((row) => {
+      const total = kept.reduce((a, k) => a + (row[k] || 0), 0);
+      const out = { ...row };
+      for (const k of kept) out[k] = total ? (row[k] || 0) / total : 0;
+      return out;
+    }),
+  };
+}
+
 /* Follow the pointer rather than parking in the top right, which is where the
    right-hand band sits in most years: the readout covered the thing it was
    describing. Measure after unhiding, and flip to the other side of the cursor
@@ -80,11 +103,12 @@ function readHash() {
   if (Number.isInteger(year)) state.year = year;
   const regime = params.get("regime");
   if (regime && REGIME_ORDER.includes(regime)) state.regime = regime;
+  if (params.get("missing") === "exclude") state.missing = "exclude";
 }
 
 function writeHash() {
   const params = new URLSearchParams();
-  for (const key of ["group", "weight", "year", "regime"]) {
+  for (const key of ["group", "weight", "year", "regime", "missing"]) {
     if (key === "regime" && state.regime === defaultRegime()) continue;
     if (state[key] !== DEFAULTS[key]) params.set(key, state[key]);
   }
@@ -170,35 +194,50 @@ function drawLine(series) {
   const svg = $("#line");
   svg.innerHTML = "";
   svg.setAttribute("viewBox", `0 0 ${box.w} ${box.h}`);
-  const pad = { l: 44, r: 10, t: 12, b: 26 };
+  const pad = { l: 46, r: 10, t: 14, b: 26 };
   const rows = series.filter((r) => r.mean_by_country != null || r.mean_by_population != null);
   const s = scales(rows, box, pad);
   const key = state.weight === "by_country" ? "mean_by_country" : "mean_by_population";
-  const toUnit = (v) => (v + 1) / 2;
+  const maKey = `${key}_ma3`;
 
-  axes(svg, s, {
-    ticks: [0, 0.25, 0.5, 0.75, 1],
-    fmt: (v) => { const n = v * 2 - 1; return n === 0 ? "0" : (n > 0 ? "+" : "") + n.toFixed(1); },
-  });
+  /* Fit the axis to the data rather than the full minus one to plus one. The
+     world never approaches either end, so the fixed scale squashed every real
+     movement into the middle fifth of the chart. Zero is always included so the
+     crossing point stays honest. */
+  const vals = rows.flatMap((r) => [r[key], r[maKey]]).filter((v) => v != null);
+  const lo = Math.min(0, ...vals);
+  const hi = Math.max(0, ...vals);
+  const padding = Math.max((hi - lo) * 0.12, 0.02);
+  const y0 = lo - padding;
+  /* The world has never averaged right of centre for long, so a purely
+     data-fitted top put the zero line a few pixels below the frame and the two
+     read as one. Keep at least a fifth of the height above zero. */
+  const ABOVE = 0.2;
+  const y1 = Math.max(hi + padding, (ABOVE / (1 - ABOVE)) * -y0);
+  const unit = (v) => (v - y0) / (y1 - y0);
+
   svg.appendChild(svgEl("line", {
-    x1: pad.l, x2: box.w - pad.r, y1: s.y(0.5), y2: s.y(0.5),
+    x1: pad.l, x2: box.w - pad.r, y1: s.y(unit(0)), y2: s.y(unit(0)),
     stroke: "var(--ink-faint)", "stroke-width": 1.2,
   }));
+  for (const [at, text] of [[1, "right"], [0, "left"]]) {
+    const label = svgEl("text", {
+      x: pad.l - 8, y: s.y(at) + (at ? 10 : -1), "text-anchor": "end",
+      "font-size": 11.5, fill: "var(--ink-faint)",
+    });
+    label.textContent = text;
+    svg.appendChild(label);
+  }
+  for (let yr = Math.ceil(s.y0 / 10) * 10; yr <= s.y1; yr += 10) {
+    const t2 = svgEl("text", {
+      x: s.x(yr), y: box.h - 8, "text-anchor": "middle",
+      "font-size": 11, fill: "var(--ink-faint)",
+    });
+    t2.textContent = yr;
+    svg.appendChild(t2);
+  }
 
-  const path = (field, stroke, width, opacity) => {
-    const pts = rows.filter((r) => r[field] != null)
-      .map((r) => `${s.x(r.year).toFixed(1)},${s.y(toUnit(r[field])).toFixed(1)}`);
-    if (!pts.length) return;
-    svg.appendChild(svgEl("polyline", {
-      points: pts.join(" "), fill: "none", stroke,
-      "stroke-width": width, "stroke-opacity": opacity,
-      "stroke-linejoin": "round", "stroke-linecap": "round",
-    }));
-  };
-  /* Fill between the trailing mean and the zero line, red where the balance
-     sits right of centre and blue where it sits left. Clipping to the two
-     halves is simpler and safer than splitting the path at every crossing. */
-  const zeroY = s.y(0.5);
+  const zeroY = s.y(unit(0));
   const defs = svgEl("defs");
   for (const [id, y, h] of [["clipRight", pad.t, zeroY - pad.t],
                             ["clipLeft", zeroY, pad.t + s.ih - zeroY]]) {
@@ -208,10 +247,9 @@ function drawLine(series) {
   }
   svg.appendChild(defs);
 
-  const maKey = `${key}_ma3`;
   const filled = rows.filter((r) => r[maKey] != null);
   if (filled.length > 1) {
-    const top = filled.map((r) => `${s.x(r.year).toFixed(1)},${s.y(toUnit(r[maKey])).toFixed(1)}`);
+    const top = filled.map((r) => `${s.x(r.year).toFixed(1)},${s.y(unit(r[maKey])).toFixed(1)}`);
     const poly = top.concat([
       `${s.x(filled[filled.length - 1].year).toFixed(1)},${zeroY.toFixed(1)}`,
       `${s.x(filled[0].year).toFixed(1)},${zeroY.toFixed(1)}`,
@@ -224,20 +262,20 @@ function drawLine(series) {
     }
   }
 
+  const path = (field, stroke, width, opacity) => {
+    const pts = rows.filter((r) => r[field] != null)
+      .map((r) => `${s.x(r.year).toFixed(1)},${s.y(unit(r[field])).toFixed(1)}`);
+    if (!pts.length) return;
+    svg.appendChild(svgEl("polyline", {
+      points: pts.join(" "), fill: "none", stroke,
+      "stroke-width": width, "stroke-opacity": opacity,
+      "stroke-linejoin": "round", "stroke-linecap": "round",
+    }));
+  };
   path(key, "var(--ink-faint)", 1.4, 0.55);
   path(maKey, "var(--ink)", 2.4, 1);
-  describe(svg, "Mean government position over time, minus one for wholly left to plus " +
-                "one for wholly right, shaded red where the balance sits right of centre " +
-                "and blue where it sits left.");
-
-  for (const [v, text] of [[0.98, "right"], [0.02, "left"]]) {
-    const t = svgEl("text", {
-      x: box.w - pad.r - 2, y: s.y(v) + (v > 0.5 ? 11 : -3),
-      "text-anchor": "end", "font-size": 11, fill: "var(--ink-faint)",
-    });
-    t.textContent = text;
-    svg.appendChild(t);
-  }
+  describe(svg, "Mean government position over time, shaded red where the balance sits " +
+                "right of centre and blue where it sits left.");
 }
 
 /* ---------- regime x ideology mosaic ----------
@@ -266,6 +304,7 @@ function drawMosaic(group) {
   const gap = 7;
 
   const cols = REGIME_ORDER
+    .filter((regime) => regime !== "unknown")
     .map((regime) => ({ regime, cells: row.cells[regime] || {} }))
     .map((col) => ({ ...col, total: sum(col.cells) }))
     .filter((col) => col.total > 0.0005);
@@ -311,15 +350,30 @@ function drawMosaic(group) {
       }
       y += h;
     }
-    [DATA.palette.regimes[col.regime].short, pct(col.total)].forEach((text, i) => {
-      const t = svgEl("text", {
-        x: (x + w / 2).toFixed(1), y: (pad.t + ih + 19 + i * 15).toFixed(1),
+    /* Four names across one row overlapped as soon as a column narrowed. Take
+       the longest form that fits, and hang the definition off the label itself
+       so the words under the chart are what you hover. */
+    const meta = DATA.palette.regimes[col.regime];
+    const fits = (str) => str.length * 6.6 < w - 6;
+    const name = fits(meta.short) ? meta.short : (fits(meta.tiny) ? meta.tiny : "");
+    if (name) {
+      const label = svgEl("text", {
+        x: (x + w / 2).toFixed(1), y: (pad.t + ih + 19).toFixed(1),
         "text-anchor": "middle", "font-size": 12.5,
-        fill: i ? "var(--ink-faint)" : "var(--ink-soft)", "font-weight": i ? 400 : 600,
+        fill: "var(--ink-soft)", "font-weight": 600, class: "regime-label",
       });
-      t.textContent = text;
-      svg.appendChild(t);
+      label.textContent = name;
+      const tip = svgEl("title");
+      tip.textContent = `${meta.label}. ${meta.note}`;
+      label.appendChild(tip);
+      svg.appendChild(label);
+    }
+    const share = svgEl("text", {
+      x: (x + w / 2).toFixed(1), y: (pad.t + ih + (name ? 34 : 20)).toFixed(1),
+      "text-anchor": "middle", "font-size": 12.5, fill: "var(--ink-faint)",
     });
+    share.textContent = pct(col.total);
+    svg.appendChild(share);
     x += w + gap;
   }
   svg.onpointerleave = () => { readout.hidden = true; };
@@ -347,12 +401,13 @@ function drawMosaic(group) {
 function drawSpectrum(group) {
   const series = (group.spectrum || {})[state.weight] || [];
   if (!series.length) return;
-  const s = drawStack("#spectrum", series, SPECTRUM, DATA.palette.spectrum,
+  const shown = dropMissing(series, SPECTRUM);
+  const s = drawStack("#spectrum", shown.series, shown.keys, DATA.palette.spectrum,
     boxFor("#spectrum", 0.30, 200, 300),
     { label: `Share of the group by the governing party's position on a seven-point ` +
              `scale, ${series[0].year} to ${series[series.length - 1].year}.` });
-  attachHover(s, series, DATA.palette.spectrum, {
-    svgId: "#spectrum", readoutId: "#spectrum-readout", keys: SPECTRUM,
+  attachHover(s, shown.series, DATA.palette.spectrum, {
+    svgId: "#spectrum", readoutId: "#spectrum-readout", keys: shown.keys,
   });
 
 }
@@ -408,9 +463,7 @@ function drawMap() {
                 `direction of its government.`);
   const named = ["left", "centre", "right"]
     .map((k) => `${counts[k]} ${DATA.palette.buckets[k].label.toLowerCase()}`).join(", ");
-  $("#map-caption").textContent =
-    `In ${state.year}: ${named}. Countries with no left-right reading, and those no ` +
-    `source resolves, are drawn in grey.`;
+  $("#map-caption").textContent = `In ${state.year}: ${named}.`;
 }
 
 /* ---------- regimes over time, one at a time ---------- */
@@ -455,7 +508,8 @@ function drawRegime(group) {
   const max = Math.max(...cross.flatMap((r) =>
     REGIME_ORDER.filter((x) => x !== "unknown").map((x) => sum(r.cells[x]))), 0.05);
 
-  drawStack("#regime", series, BANDS, DATA.palette.buckets,
+  const shownR = dropMissing(series, BANDS, { rescale: false });
+  drawStack("#regime", shownR.series, shownR.keys, DATA.palette.buckets,
     boxFor("#regime", 0.34, 210, 320), {
       max,
       label: `${label} as a share of the group, split by the ideology of their ` +
@@ -591,11 +645,11 @@ function render() {
     `<span><i style="background:${shade(palette[k])}"></i>${palette[k].label}</span>`).join("");
   $("#legend-mosaic").innerHTML = $("#legend-regime").innerHTML =
     $("#legend-map").innerHTML = $("#legend").innerHTML;
-  $("#legend-regime-defs").innerHTML = REGIME_ORDER.filter((r) => r !== "unknown")
-    .map((r) => {
-      const g = DATA.palette.regimes[r];
-      return `<span class="explained" title="${g.note}" tabindex="0">${g.short}</span>`;
-    }).join("");
+  $("#legend-lines").innerHTML =
+    '<span><svg class="swatch" viewBox="0 0 26 8"><line x1="1" y1="4" x2="25" y2="4" ' +
+    'stroke="var(--ink-faint)" stroke-width="1.6" stroke-opacity=".7"/></svg>Each year</span>' +
+    '<span><svg class="swatch" viewBox="0 0 26 8"><line x1="1" y1="4" x2="25" y2="4" ' +
+    'stroke="var(--ink)" stroke-width="3"/></svg>Three-year average</span>';
   $("#legend-spectrum").innerHTML = SPECTRUM.map((k) =>
     `<span><i style="background:${shade(DATA.palette.spectrum[k])}"></i>` +
     `${DATA.palette.spectrum[k].label}</span>`).join("");
@@ -605,13 +659,14 @@ function render() {
            `<i style="background:${shade(s)}"></i>${s.label}</span>`;
   }).join("");
 
-  const s = drawStack("#area", series, BANDS, palette,
+  const shown = dropMissing(series, BANDS);
+  const s = drawStack("#area", shown.series, shown.keys, palette,
     boxFor("#area", 0.42, 230, 380), {
       label: `Stacked area showing the share of ${byPop ? "people" : "countries"} in ` +
              `${group.label} governed from the left, centre and right, ` +
              `${series[0].year} to ${series[series.length - 1].year}.`,
     });
-  attachHover(s, series, palette, { group });
+  attachHover(s, shown.series, palette, { group, keys: shown.keys });
   drawLine(group.index);
   drawStack("#prov", group.by_country.map((r) => ({ year: r.year, ...r.source })),
     SOURCES, DATA.palette.sources, boxFor("#prov", 0.20, 130, 190),
@@ -623,7 +678,7 @@ function render() {
   buildRegimeTabs();
   drawRegime(group);
 
-  const last = series[series.length - 1];
+  const last = shown.series[shown.series.length - 1];
   const unit = byPop ? "of the world's people" : "of countries";
   $("#caption").textContent =
     `In ${last.year}, ${pct(last.left)} ${unit} lived under a government of the left and ` +
@@ -648,17 +703,30 @@ Promise.all([
     select.value = state.group;
     select.addEventListener("change", () => { state.group = select.value; render(); });
 
-    for (const btn of document.querySelectorAll(".segmented button")) {
+    /* Scoped to [data-weight], not ".segmented button": that selector also
+       matches the missing-data control and the regime tabs, so clicking either
+       of those was setting state.weight to undefined. */
+    for (const btn of document.querySelectorAll("[data-weight]")) {
       btn.setAttribute("aria-checked", String(btn.dataset.weight === state.weight));
       btn.addEventListener("click", () => {
         state.weight = btn.dataset.weight;
-        for (const b of document.querySelectorAll(".segmented button")) {
+        for (const b of document.querySelectorAll("[data-weight]")) {
           b.setAttribute("aria-checked", String(b.dataset.weight === state.weight));
         }
         render();
       });
     }
 
+
+    for (const btn of document.querySelectorAll("[data-missing]")) {
+      btn.addEventListener("click", () => {
+        state.missing = btn.dataset.missing;
+        for (const b of document.querySelectorAll("[data-missing]")) {
+          b.setAttribute("aria-checked", String(b.dataset.missing === state.missing));
+        }
+        render();
+      });
+    }
 
     for (const btn of document.querySelectorAll(".play")) {
       btn.addEventListener("click", () => (playing() ? stopPlay() : startPlay()));
