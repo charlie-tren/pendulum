@@ -47,7 +47,7 @@ sources:
     label: Doesn't apply
     colour_dark: '#757d88'
     note: 'Nothing places this government on the left-right axis: an absolute monarchy, a military
-      government, or a party built around a leader rather than a programme.'
+      government, or a party organised around one leader rather than a set of policies.'
   unresolved:
     colour: '#dcdcdc'
     label: No data

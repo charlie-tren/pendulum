@@ -351,8 +351,8 @@ def main() -> int:
             # capped from this rather than from a number typed into the JS
             "regime_coverage_end": max(y for (_, y) in regimes),
             "note": ("no_reading means nothing places the government on the left-right "
-                     "axis: an absolute monarchy, a military government, or a party built "
-                     "around a leader rather than a programme. "
+                     "axis: an absolute monarchy, a military government, or a party "
+                     "organised around one leader rather than a set of policies. "
                      "unresolved means we lack data. They are different claims and are "
                      "never merged. Each year reports which source resolved it."),
         },
