@@ -350,8 +350,9 @@ def main() -> int:
             # the regime series stops before the political one; the slider is
             # capped from this rather than from a number typed into the JS
             "regime_coverage_end": max(y for (_, y) in regimes),
-            "note": ("no_reading means left-right genuinely does not apply - an absolute "
-                     "monarchy, a military government, a big-tent personality vehicle. "
+            "note": ("no_reading means nothing places the government on the left-right "
+                     "axis: an absolute monarchy, a military government, or a party built "
+                     "around a leader rather than a programme. "
                      "unresolved means we lack data. They are different claims and are "
                      "never merged. Each year reports which source resolved it."),
         },
