@@ -46,8 +46,8 @@ sources:
     colour: '#9a9a9a'
     label: Doesn't apply
     colour_dark: '#757d88'
-    note: 'No left-right reading applies: an absolute monarchy, a military government, or a big-tent
-      personality vehicle.'
+    note: 'Nothing places this government on the left-right axis: an absolute monarchy, a military
+      government, or a party built around a leader rather than a programme.'
   unresolved:
     colour: '#dcdcdc'
     label: No data

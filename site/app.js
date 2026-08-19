@@ -207,13 +207,13 @@ function drawLine(series) {
   const vals = rows.flatMap((r) => [r[key], r[maKey]]).filter((v) => v != null);
   const lo = Math.min(0, ...vals);
   const hi = Math.max(0, ...vals);
-  const padding = Math.max((hi - lo) * 0.12, 0.02);
-  const y0 = lo - padding;
-  /* The world has never averaged right of centre for long, so a purely
-     data-fitted top put the zero line a few pixels below the frame and the two
-     read as one. Keep at least a fifth of the height above zero. */
-  const ABOVE = 0.2;
-  const y1 = Math.max(hi + padding, (ABOVE / (1 - ABOVE)) * -y0);
+  /* Symmetric about zero: left and right must be the same distance from the
+     centre line, or the chart flatters whichever side happens to sit closer to
+     the frame. Still far tighter than the full minus one to plus one, which put
+     every real movement in a fifth of the height. */
+  const reach = Math.max(Math.abs(lo), Math.abs(hi)) * 1.12 || 0.1;
+  const y0 = -reach;
+  const y1 = reach;
   const unit = (v) => (v - y0) / (y1 - y0);
 
   /* Faint rules every tenth so a reader can judge level and slope, without

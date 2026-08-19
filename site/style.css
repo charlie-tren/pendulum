@@ -320,3 +320,34 @@ h1 { display: flex; align-items: center; gap: 14px; }
   .c-left { color: #6ea8e0; }
   .c-right { color: #e07575; }
 }
+
+/* ---- the mark swings ----
+   Three balls hanging in a row is a Newton's cradle at rest; the left one is
+   held out so the silhouette still reads as one when nothing is happening.
+   Hovering releases it: it falls, strikes, and the right one carries the swing
+   on. Each group pivots about its own point on the bar. */
+.mark .bob-l, .mark .bob-r {
+  transform-box: view-box;
+  transition: transform .45s cubic-bezier(.4, 0, .5, 1);
+}
+.mark .bob-l { transform-origin: 20px 12px; transform: rotate(-26deg); }
+.mark .bob-r { transform-origin: 44px 12px; }
+
+h1:hover .mark .bob-l, h1:focus-within .mark .bob-l { animation: cradle-left 1.5s ease-in-out infinite; }
+h1:hover .mark .bob-r, h1:focus-within .mark .bob-r { animation: cradle-right 1.5s ease-in-out infinite; }
+
+@keyframes cradle-left {
+  0%, 100% { transform: rotate(-26deg); }
+  32%, 62% { transform: rotate(0deg); }
+}
+@keyframes cradle-right {
+  0%, 32% { transform: rotate(0deg); }
+  60%     { transform: rotate(26deg); }
+  88%, 100% { transform: rotate(0deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  h1:hover .mark .bob-l, h1:hover .mark .bob-r,
+  h1:focus-within .mark .bob-l, h1:focus-within .mark .bob-r { animation: none; }
+  .mark .bob-l, .mark .bob-r { transition: none; }
+}
