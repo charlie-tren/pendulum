@@ -15,6 +15,31 @@ this file is closed.
       stopped short of building it. It covers a tenth of world population and
       does not say which party governs, so it is a Europe-only second axis
       rather than a data fill. Your call whether that is worth having.
+- [ ] **D7. Subnational: Australia, the United States, Germany** (asked
+      2026-08-19). Add a level below the country, so the map and the charts can
+      resolve states rather than only national governments. The three named are
+      the right three to start with: all federal, all with a long unbroken
+      record of who held each state, and between them they cover a two-party
+      case, a fifty-unit case and a coalition case.
+      **What each needs, and why they are not the same job:**
+      - **Australia** - 6 states + 2 territories. Premiers map to Labor / Liberal
+        / LNP / CLP almost mechanically, so this is close to pure hand-coding and
+        is the one to build first as the proof.
+      - **United States** - 50 states. Governor plus legislative control are both
+        well documented year by year, but they disagree often enough that the
+        first decision is *which one the colour means*. Pendulum codes the chief
+        executive nationally, so the governor is the consistent choice, with
+        legislative control as a possible second layer.
+      - **Germany** - 16 Länder, and the hard one. Almost every Land is governed
+        by a coalition, so a single left / right reading needs a rule for who
+        leads it, and that rule has to be written down the way the national
+        conventions already are in `CLAUDE.md`.
+      **Open questions before any of it is worth building:** the population
+      weighting needs subnational population per year, not just national; the map
+      needs state geometry, which Natural Earth has at 1:110m for admin-1 but at
+      a size worth checking before committing; and the year slider has to mean
+      the same thing at both levels. Scope this properly before writing code -
+      it is a second data model, not a wider version of the current one.
 
 
 Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.

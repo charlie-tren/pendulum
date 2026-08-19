@@ -27,7 +27,24 @@ body {
 
 .wrap { max-width: var(--max); margin: 0 auto; padding: 0 20px; }
 
-header { padding: 18px 0 8px; }
+/* The back link and the title share one grid rather than sitting in separate
+   blocks, so that on a phone they can occupy the same row. Giving the link its
+   own stacked row there wasted a whole line of a short screen and left the
+   title looking like it started halfway down the page. */
+/* header.wrap, not header: `.wrap` sets `padding: 0 20px` and a class outranks
+   an element selector whatever the source order, so a bare `header { padding }`
+   here is silently dead. It had been dead for a while - all the top spacing was
+   really coming from the separate bar block above. */
+header.wrap {
+  /* 22 is what the removed bar block actually contributed */
+  padding-top: 22px;
+  padding-bottom: 8px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+header > h1, header > .standfirst { grid-column: 1 / -1; }
+.home { grid-column: 2; justify-self: end; }
 h1 {
   font-family: var(--font-title);
   font-weight: 400;
@@ -165,7 +182,6 @@ footer li { margin-bottom: 3px; }
 a { color: var(--accent); }
 
 @media (max-width: 640px) {
-  header { padding-top: 10px; }
   .panel { padding: 18px 14px 14px; border-radius: 10px; }
   .controls { gap: 16px; }
   select { min-width: 0; width: 100%; }
@@ -226,7 +242,6 @@ body.loading .loading-note {
 
 /* ---- back to the rest of the site ----
    Matches the bar the other project pages use. */
-.bar { padding-top: 22px; display: flex; justify-content: flex-end; }
 .home {
   display: inline-flex; align-items: center;
   font-size: 14px; color: var(--ink-soft); text-decoration: none;
@@ -246,8 +261,12 @@ h1 { display: flex; align-items: center; gap: 26px; }
   transform: translateY(-0.02em);
 }
 @media (max-width: 640px) {
-  .bar { padding-top: 14px; }
+  header.wrap { padding-top: 14px; }
   h1 { gap: 10px; }
+  /* Level with the title rather than stacked above it. */
+  header > h1 { grid-column: 1; grid-row: 1; }
+  .home { grid-row: 1; }
+  header > .standfirst { grid-row: 2; }
 }
 
 /* ---- regime tabs ----
@@ -270,13 +289,15 @@ h1 { display: flex; align-items: center; gap: 26px; }
 .legend .explained:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
 /* ---- the map ----
-   A world map is about 2.4:1, so at 320px wide it is 135px tall and a country
-   is a pixel. Below the breakpoint it keeps a usable width and scrolls inside
-   its own box, which is the standard treatment for a chart too wide to shrink.
-   The page itself still never scrolls sideways. */
+   A world map is about 2.4:1, so on a phone it is short and a small country is
+   a couple of pixels. This used to hold a 620px minimum and swipe sideways for
+   that reason, but a map you have to scroll to see is not a map of the world:
+   you land on the Americas and never learn there is a chart about anywhere
+   else. The whole thing now fits the screen. Tapping a country still names it,
+   which is what the small ones need anyway. The overflow rule stays as a floor
+   in case a future projection is wider. */
 @media (max-width: 700px) {
   .chart-wide { overflow-x: auto; overscroll-behavior-x: contain; }
-  .chart-wide svg { min-width: 620px; }
 }
 
 /* ---- timeline player ---- */

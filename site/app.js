@@ -370,7 +370,13 @@ function drawMosaic(group) {
 
   const box = boxFor("#mosaic", 0.36, 270, 340);
   svg.setAttribute("viewBox", `0 0 ${box.w} ${box.h}`);
-  const pad = { l: 4, r: 4, t: 6, b: 46 };
+  /* No regime names under the bars on a phone. Four of them across 335px meant
+     three columns had no room for even the shortest form, so the row read as
+     one lonely truncated label and three bare percentages, which is worse than
+     no names at all. The key above the chart carries them, and tapping a block
+     names its regime. Dropping the row also gives the bars back their height. */
+  const names = box.w >= 420;
+  const pad = { l: 4, r: 4, t: 6, b: names ? 46 : 26 };
   const iw = box.w - pad.l - pad.r;
   const ih = box.h - pad.t - pad.b;
   const gap = 7;
@@ -438,7 +444,8 @@ function drawMosaic(group) {
        so the words under the chart are what you hover. */
     const meta = DATA.palette.regimes[col.regime];
     const fits = (str) => str.length * 6.6 < w - 6;
-    const name = fits(meta.short) ? meta.short : (fits(meta.tiny) ? meta.tiny : "");
+    const name = !names ? ""
+      : (fits(meta.short) ? meta.short : (fits(meta.tiny) ? meta.tiny : ""));
     if (name) {
       const label = svgEl("text", {
         x: (x + w / 2).toFixed(1), y: (pad.t + ih + 19).toFixed(1),
