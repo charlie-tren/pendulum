@@ -3,8 +3,9 @@ buckets:
     colour: '#2f6fb2'
     label: Left
   centre:
-    colour: '#7d5ba6'
+    colour: '#9042d4'
     label: Centre
+    colour_dark: '#a86ae8'
   right:
     colour: '#c33c3c'
     label: Right

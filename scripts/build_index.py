@@ -271,13 +271,30 @@ def main() -> int:
     payload = {
         "meta": {
             "sources": [
-                "Database of Political Institutions 2023 (IDB), CC-BY 4.0, 1975-2023",
-                "V-Party v2 (V-Dem Institute, 2022), party positions to ~2019",
-                "Wikidata P1387 party alignment joined to dated head-of-government terms",
-                "Hand-coded rows in data/seed/hand_coded.csv, each with a written basis",
-                "Political regime: V-Dem Regimes of the World via Our World in Data, "
-                "1789-2025",
-                "Population: Our World in Data / UN WPP - historical to 2023, medium-variant projection for 2024-2026",
+                {"name": "Database of Political Institutions 2023",
+                 "detail": "Inter-American Development Bank, CC-BY 4.0. Left-right "
+                           "orientation of the chief executive's party, 1975-2023.",
+                 "url": "https://doi.org/10.60966/8tx1xs4i"},
+                {"name": "V-Party v2",
+                 "detail": "V-Dem Institute, 2022. Expert-coded party positions, used to "
+                           "fill country-years DPI leaves blank. Ends around 2019.",
+                 "url": "https://www.v-dem.net/data/v-party-dataset/"},
+                {"name": "Wikidata",
+                 "detail": "Property P1387, political alignment, joined to dated "
+                           "head-of-government terms. Extends the series past 2023.",
+                 "url": "https://www.wikidata.org/wiki/Property:P1387"},
+                {"name": "Regimes of the World",
+                 "detail": "V-Dem via Our World in Data, 1789-2025. Closed and electoral "
+                           "autocracies, electoral and liberal democracies.",
+                 "url": "https://ourworldindata.org/grapher/political-regime"},
+                {"name": "Population",
+                 "detail": "Our World in Data and the UN World Population Prospects. "
+                           "Historical to 2023, medium-variant projection after.",
+                 "url": "https://ourworldindata.org/grapher/population"},
+                {"name": "Hand-coded rows",
+                 "detail": "Countries no source resolves, coded here with a written basis "
+                           "and a verification date for each.",
+                 "url": "https://github.com/charlie-tren/pendulum/blob/main/data/seed/hand_coded.csv"},
             ],
             "coverage": f"1975-{END_YEAR}",
             # the regime series stops before the political one; the slider is

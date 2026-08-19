@@ -166,3 +166,20 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
 - [ ] The `countries` and `members` blocks are still emitted into the JSON and
       nothing reads them now that the country strip is gone. Worth dropping
       from the build, or bringing the section back in a better form.
+
+## Feedback round, 2026-08-19 (second)
+
+- [x] Controls aligned; flex-end had bottom-aligned two controls of different heights.
+- [x] Centre colour made more saturated so it separates from blue.
+- [x] Regimes panel has its own key.
+- [x] Sources are links with a line of context each.
+- [x] Both lines on the balance chart are now named in the copy.
+- [x] Mosaic description removed.
+- [x] Standfirst rewritten.
+- [x] **2024-2026 coverage taken from 50% to 80% of world population** by
+      hand-coding the largest unresolved countries. The 2026 world mean moved
+      from +0.44 to +0.05: the apparent swing right was the missing countries.
+- [ ] 92 countries are still unresolved for 2024-2026, but they carry only about
+      a fifth of world population between them. Diminishing returns from here.
+- [ ] `countries` and `members` blocks are still emitted and unread since the
+      country strip went.

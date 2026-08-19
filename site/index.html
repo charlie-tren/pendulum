@@ -25,7 +25,7 @@
       <circle cx="45" cy="47" r="6.8" fill="#c33c3c"/>
     </svg>Pendulum</h1>
   <p class="standfirst">
-    Most charts of world politics count countries. This one counts people.
+    Fifty years of governments, weighted by the people who live under them.
   </p>
 </header>
 
@@ -59,7 +59,8 @@
     <h2>Left and right on balance</h2>
     <p class="sub">
       Mean position of the governments that have one, from &minus;1 for wholly left to
-      +1 for wholly right. The heavy line is a three-year trailing average.
+      +1 for wholly right. The faint line is each year on its own; the heavy line is a
+      three-year trailing average.
     </p>
     <figure class="chart">
       <svg id="line" role="img"></svg>
@@ -68,11 +69,6 @@
 
   <section class="panel">
     <h2>Ideology and regime</h2>
-    <p class="sub">
-      Left and right describe what a government wants, not whether the people under it
-      chose it. Each block is a share of the group's population, so a block's area
-      answers how many people live under, say, a right-wing electoral autocracy.
-    </p>
     <div class="control control-year">
       <label for="year">Year <output id="year-out"></output></label>
       <input type="range" id="year" min="1975" max="2025" step="1" value="2023">
@@ -92,6 +88,7 @@
       more of the world lives that way.
     </p>
     <div class="segmented segmented-wide" id="regime-tabs" role="radiogroup" aria-label="Regime type"></div>
+    <div class="legend" id="legend-regime"></div>
     <figure class="chart">
       <svg id="regime" role="img"></svg>
     </figure>

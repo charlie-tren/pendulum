@@ -49,8 +49,10 @@ h1 {
 .controls {
   display: flex;
   flex-wrap: wrap;
-  gap: 24px;
-  align-items: flex-end;
+  gap: 24px 28px;
+  /* flex-end bottom-aligned these, and the country control is taller because it
+     carries a hint underneath, so the two sat 29px out of line */
+  align-items: flex-start;
   margin: 28px 0 20px;
   padding-bottom: 20px;
   border-bottom: 1px solid var(--rule);
@@ -152,6 +154,8 @@ svg { display: block; width: 100%; height: auto; }
 footer { padding: 8px 0 60px; color: var(--ink-soft); }
 footer h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink-faint); }
 footer ul { margin: 0; padding-left: 18px; font-size: 13.5px; }
+footer li { margin-bottom: 6px; line-height: 1.5; }
+footer a { font-weight: 600; }
 footer li { margin-bottom: 3px; }
 .fine { font-size: 13px; color: var(--ink-faint); margin-top: 16px; }
 a { color: var(--accent); }

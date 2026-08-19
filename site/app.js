@@ -480,7 +480,7 @@ function render() {
 
   $("#legend").innerHTML = BANDS.map((k) =>
     `<span><i style="background:${shade(palette[k])}"></i>${palette[k].label}</span>`).join("");
-  $("#legend-mosaic").innerHTML = $("#legend").innerHTML;
+  $("#legend-mosaic").innerHTML = $("#legend-regime").innerHTML = $("#legend").innerHTML;
   $("#legend-src").innerHTML = SOURCES.map((k) =>
     `<span><i style="background:${shade(DATA.palette.sources[k])}"></i>` +
     `${DATA.palette.sources[k].label}</span>`).join("");
@@ -560,7 +560,8 @@ Promise.resolve(
       writeHash();
     });
 
-    $("#sources").innerHTML = DATA.meta.sources.map((s) => `<li>${s}</li>`).join("");
+    $("#sources").innerHTML = DATA.meta.sources.map((s) =>
+      `<li><a href="${s.url}" rel="noopener">${s.name}</a>. ${s.detail}</li>`).join("");
     document.body.classList.remove("loading");
     render();
 
