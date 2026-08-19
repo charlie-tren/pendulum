@@ -15,16 +15,19 @@ html = (SITE / "index.html").read_text(encoding="utf-8")
 css = (SITE / "style.css").read_text(encoding="utf-8")
 js = (SITE / "app.js").read_text(encoding="utf-8")
 data = json.loads((SITE / "orientation.json").read_text(encoding="utf-8"))
+map_data = json.loads((SITE / "map.json").read_text(encoding="utf-8"))
 
-# app.js already prefers window.__PENDULUM__ over fetch, so nothing to rewrite —
+# app.js already prefers the inlined globals over fetch, so nothing to rewrite,
 # but assert that contract still holds rather than silently shipping a file that
 # tries to fetch from file:// and renders blank.
-assert "window.__PENDULUM__ || fetch(" in js, "boot block changed — standalone would break"
+assert "window.__PENDULUM__ || fetch(" in js, "data boot block changed"
+assert "window.__PENDULUM_MAP__ || fetch(" in js, "map boot block changed"
 
 html = html.replace('<link rel="stylesheet" href="style.css">', f"<style>\n{css}\n</style>")
 html = html.replace(
     '<script src="app.js"></script>',
-    f"<script>window.__PENDULUM__ = {json.dumps(data, separators=(',', ':'))};</script>\n"
+    f"<script>window.__PENDULUM__ = {json.dumps(data, separators=(',', ':'))};"
+    f"window.__PENDULUM_MAP__ = {json.dumps(map_data, separators=(',', ':'))};</script>\n"
     f"<script>\n{js}\n</script>",
 )
 html = html.replace(

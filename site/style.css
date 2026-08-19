@@ -227,10 +227,10 @@ body.loading .loading-note {
 .home {
   display: inline-flex; align-items: center;
   font-size: 14px; color: var(--ink-soft); text-decoration: none;
-  padding: 6px 8px 6px 10px; margin-right: -8px; border-radius: 7px;
+  padding: 6px 10px 6px 8px; margin-right: -8px; border-radius: 7px;
 }
 .home:hover { background: var(--panel); color: var(--ink); }
-.home .back { font-size: 15px; margin-left: 6px; }
+.home .back { font-size: 15px; }
 
 /* ---- wordmark ----
    The rods take currentColor so the mark follows the theme; the three bobs stay
@@ -256,3 +256,12 @@ h1 { display: flex; align-items: center; gap: 14px; }
   .segmented-wide { border-radius: 8px; }
   .segmented-wide button { flex: 1 1 45%; }
 }
+
+/* A legend entry that carries an explanation. Focusable so it is reachable
+   without a mouse, and underlined so it looks like it holds something. */
+.legend .explained {
+  cursor: help;
+  text-decoration: underline dotted var(--ink-faint);
+  text-underline-offset: 3px;
+}
+.legend .explained:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }

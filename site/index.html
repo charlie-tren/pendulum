@@ -10,7 +10,7 @@
 </head>
 <body class="loading">
 <div class="bar wrap">
-  <a class="home" href="https://charlietrenorden.com/">Other projects <span class="back" aria-hidden="true">&rarr;</span></a>
+  <a class="home" href="https://charlietrenorden.com/"><span class="back" aria-hidden="true">&larr;</span>&nbsp;Other projects</a>
 </div>
 
 <header class="wrap">
@@ -79,6 +79,20 @@
       <div class="readout" id="mosaic-readout" hidden></div>
     </figure>
     <p class="caption" id="mosaic-caption"></p>
+  </section>
+
+  <section class="panel">
+    <h2>The world in one year</h2>
+    <div class="control control-year">
+      <label for="map-year">Year <output id="map-year-out"></output></label>
+      <input type="range" id="map-year" min="1975" max="2026" step="1" value="2023">
+    </div>
+    <div class="legend" id="legend-map"></div>
+    <figure class="chart">
+      <svg id="map" role="img"></svg>
+      <div class="readout" id="map-readout" hidden></div>
+    </figure>
+    <p class="caption" id="map-caption"></p>
   </section>
 
   <section class="panel">

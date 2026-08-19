@@ -73,6 +73,28 @@ def load_regimes():
     return out
 
 
+def map_series(records, iso_of):
+    """One string per country, one character per year, for the map.
+
+    A dict of 175 countries x 52 years as objects would be most of the payload;
+    as run characters it is a few kilobytes.
+    """
+    code = {"left": "l", "centre": "c", "right": "r",
+            "no_reading": "n", "unresolved": "u"}
+    years = sorted({r["year"] for r in records})
+    grid = defaultdict(dict)
+    for rec in records:
+        iso = iso_of.get(rec["entity"])
+        if iso:
+            grid[iso][rec["year"]] = code[rec["bucket"]]
+    return {
+        "year0": years[0],
+        "year1": years[-1],
+        "codes": {iso: "".join(row.get(y, "u") for y in years)
+                  for iso, row in sorted(grid.items())},
+    }
+
+
 def cross_tab(records, pop, members, regimes):
     """Population and country shares across the regime x ideology grid.
 
@@ -271,6 +293,7 @@ def main() -> int:
                      "never merged. Each year reports which source resolved it."),
         },
         "palette": yaml.safe_load((CFG / "palette.yaml").read_text(encoding="utf-8")),
+        "map": map_series(records, {v: k for k, v in iso_to_entity.items()}),
         "groups": result,
     }
     blob = json.dumps(payload, separators=(",", ":"))

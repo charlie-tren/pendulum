@@ -382,6 +382,62 @@ function drawMosaic(group) {
     : "";
 }
 
+/* ---------- the world in one year ----------
+   Geometry is projected at build time into plain SVG paths, so there is no
+   mapping library here: this fills 176 shapes and stops. */
+
+let MAP = null;
+const MAP_BUCKET = { l: "left", c: "centre", r: "right",
+                     n: "no_reading", u: "unresolved" };
+
+function bucketAt(iso, year) {
+  const row = DATA.map.codes[iso];
+  if (!row) return "unresolved";
+  const i = year - DATA.map.year0;
+  return MAP_BUCKET[row[i]] || "unresolved";
+}
+
+function drawMap() {
+  const svg = $("#map");
+  const readout = $("#map-readout");
+  if (!MAP) return;
+  svg.innerHTML = "";
+  readout.hidden = true;
+  svg.setAttribute("viewBox", `0 0 ${MAP.width} ${MAP.height}`);
+
+  const counts = { left: 0, centre: 0, right: 0, no_reading: 0, unresolved: 0 };
+  for (const [iso, d] of Object.entries(MAP.paths)) {
+    const bucket = bucketAt(iso, state.year);
+    counts[bucket] += 1;
+    const path = svgEl("path", {
+      d, fill: shade(DATA.palette.buckets[bucket]),
+      stroke: "var(--panel)", "stroke-width": 0.6, class: "mosaic-cell",
+    });
+    const show = (evt) => {
+      const name = MAP.names[iso] || iso;
+      const b = DATA.palette.buckets[bucket];
+      readout.innerHTML =
+        `<b>${name}</b>` +
+        `<div class="row"><span><i style="background:${shade(b)}"></i>${b.label}</span></div>` +
+        `<div class="prov">${state.year}</div>`;
+      readout.hidden = false;
+      placeReadout(readout, evt);
+    };
+    path.addEventListener("pointerenter", show);
+    path.addEventListener("pointermove", show);
+    svg.appendChild(path);
+  }
+  svg.onpointerleave = () => { readout.hidden = true; };
+
+  describe(svg, `World map for ${state.year}, each country coloured by the political ` +
+                `direction of its government.`);
+  const named = ["left", "centre", "right"]
+    .map((k) => `${counts[k]} ${DATA.palette.buckets[k].label.toLowerCase()}`).join(", ");
+  $("#map-caption").textContent =
+    `In ${state.year}: ${named}. Countries with no left-right reading, and those no ` +
+    `source resolves, are drawn in grey.`;
+}
+
 /* ---------- regimes over time, one at a time ---------- */
 
 /* Four panels side by side were 72px wide on a phone and barely wider than a
@@ -489,6 +545,17 @@ function attachHover(s, series, palette, group) {
   svg.addEventListener("touchmove", show, { passive: true });
 }
 
+/* Two scrubbers, one year. The mosaic and the map sit far apart on the page, so
+   each carries its own control, but they are the same piece of state. */
+function syncYear() {
+  for (const [id, out] of [["#year", "#year-out"], ["#map-year", "#map-year-out"]]) {
+    const el = $(id);
+    const year = clamp(+el.min, state.year, +el.max);
+    el.value = year;
+    $(out).textContent = year;
+  }
+}
+
 /* ---------- render ---------- */
 
 function render() {
@@ -503,10 +570,13 @@ function render() {
 
   $("#legend").innerHTML = BANDS.map((k) =>
     `<span><i style="background:${shade(palette[k])}"></i>${palette[k].label}</span>`).join("");
-  $("#legend-mosaic").innerHTML = $("#legend-regime").innerHTML = $("#legend").innerHTML;
-  $("#legend-src").innerHTML = SOURCES.map((k) =>
-    `<span><i style="background:${shade(DATA.palette.sources[k])}"></i>` +
-    `${DATA.palette.sources[k].label}</span>`).join("");
+  $("#legend-mosaic").innerHTML = $("#legend-regime").innerHTML =
+    $("#legend-map").innerHTML = $("#legend").innerHTML;
+  $("#legend-src").innerHTML = SOURCES.map((k) => {
+    const s = DATA.palette.sources[k];
+    return `<span class="explained" title="${s.note || ""}" tabindex="0">` +
+           `<i style="background:${shade(s)}"></i>${s.label}</span>`;
+  }).join("");
 
   const shareKey = byPop ? "coded_share_pop" : "coded_share_countries";
   const thin = group.index.filter((r) => (r[shareKey] ?? 1) < PROVISIONAL_BELOW && r.year > 2015);
@@ -525,6 +595,7 @@ function render() {
     SOURCES, DATA.palette.sources, boxFor("#prov", 0.20, 130, 190),
     { label: "Which data source resolved each country-year, over time." });
   drawMosaic(group);
+  drawMap();
   if (!state.regime) state.regime = defaultRegime();
   buildRegimeTabs();
   drawRegime(group);
@@ -542,11 +613,13 @@ function render() {
 
 /* ---------- boot ---------- */
 
-Promise.resolve(
-  window.__PENDULUM__ || fetch("orientation.json").then((r) => r.json())
-)
-  .then((data) => {
+Promise.all([
+  window.__PENDULUM__ || fetch("orientation.json").then((r) => r.json()),
+  window.__PENDULUM_MAP__ || fetch("map.json").then((r) => r.json()),
+])
+  .then(([data, mapData]) => {
     DATA = data;
+    MAP = mapData;
     readHash();
 
     const select = $("#group");
@@ -567,6 +640,17 @@ Promise.resolve(
     }
 
 
+    for (const [id, out] of [["#year", "#year-out"], ["#map-year", "#map-year-out"]]) {
+      const el = $(id);
+      el.addEventListener("input", () => {
+        state.year = +el.value;
+        syncYear();
+        drawMosaic(DATA.groups[state.group]);
+        drawMap();
+        writeHash();
+      });
+    }
+
     const slider = $("#year");
     const years = DATA.groups.world.cross.map((r) => r.year);
     slider.min = Math.min(...years);
@@ -574,14 +658,9 @@ Promise.resolve(
     // the data rather than a hardcoded year
     slider.max = DATA.meta.regime_coverage_end;
     state.year = Math.min(Math.max(state.year, +slider.min), +slider.max);
-    slider.value = state.year;
-    $("#year-out").textContent = state.year;
-    slider.addEventListener("input", () => {
-      state.year = +slider.value;
-      $("#year-out").textContent = state.year;
-      drawMosaic(DATA.groups[state.group]);
-      writeHash();
-    });
+    $("#map-year").min = DATA.map.year0;
+    $("#map-year").max = DATA.map.year1;
+    syncYear();
 
     $("#sources").innerHTML = DATA.meta.sources.map((s) =>
       `<li><a href="${s.url}" rel="noopener">${s.name}</a>. ${s.detail}</li>`).join("");

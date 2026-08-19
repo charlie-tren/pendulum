@@ -3,29 +3,6 @@ groups:
     label: All countries
     note: Everything the source data covers. Default view.
     members: ALL
-  seed15:
-    label: Original 15
-    note: 'The hand-coded set from the source spreadsheet. Kept so the sourced data can be diffed
-      against the original judgement calls.
-
-      '
-    as_of: 2026-08-18
-    members:
-    - IND
-    - USA
-    - IDN
-    - BRA
-    - JPN
-    - PHL
-    - DEU
-    - THA
-    - GBR
-    - FRA
-    - ZAF
-    - ITA
-    - COL
-    - KOR
-    - ESP
   g7:
     label: G7
     as_of: 2026-08-18
@@ -368,9 +345,3 @@ groups:
     - PER
     - URY
     - VEN
-  top20_pop:
-    label: 20 most populous
-    note: Resolved at build time from the population data, per year. The membership CHANGES over
-      time, which is the point — it tracks where people actually live.
-    as_of: '2026-08-18'
-    members: TOP20_POP

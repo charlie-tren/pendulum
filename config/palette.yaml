@@ -21,26 +21,38 @@ sources:
   dpi:
     colour: '#5b6b7a'
     label: DPI
+    note: Database of Political Institutions. Codes the chief executive's party as left, right
+      or centre. Covers 1975 to 2023.
   vparty:
     colour: '#8a9a5b'
     label: V-Party
+    note: V-Party, an expert survey of party positions from the V-Dem Institute. Fills country-years
+      DPI leaves blank. Ends around 2019.
   carry_forward:
     colour: '#c9a227'
     label: Carry-forward
+    note: V-Party's rating of a party, reapplied to later years where DPI still records that same
+      party in power.
   hand:
     colour: '#b5651d'
     label: Hand-coded
+    note: Coded here, with a written basis and a verification date for every row.
   wikidata:
     colour: '#6d8f9c'
     label: Wikidata
+    note: Wikidata's political alignment property, joined to dated head-of-government terms. This
+      is what extends the series past 2023.
   no_reading:
     colour: '#9a9a9a'
     label: Not applicable
     colour_dark: '#5b626b'
+    note: 'No left-right reading applies: an absolute monarchy, a military government, or a big-tent
+      personality vehicle.'
   unresolved:
     colour: '#dcdcdc'
     label: No data
     colour_dark: '#31363d'
+    note: No source places this country-year on the left-right axis.
 regimes:
   closed_autocracy:
     label: Closed autocracy
