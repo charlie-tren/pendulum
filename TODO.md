@@ -25,7 +25,7 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
 - [~] D3. Hand-coding started: `data/seed/hand_coded.csv`, 18 rules covering
       2020-2023, each with a written basis and a verification date. World
       coverage 85% -> 89% of population; ASEAN 60% -> 75%.
-- [ ] D3b. Extend to **2024-2026**, past DPI's end. Same file, same discipline.
+- [x] D3b. DONE. 2024-2026 hand-coded for the largest unresolved countries.
 - [ ] D3c. Second pass on the hand-coded rows, they are my calls, not
       sourced. Charlie should review the `basis` column before this ships.
 - [x] D4. V-Party v2 wired in as a **fill layer**, not just a nuance layer.
@@ -71,18 +71,18 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
       NATO, African Union, Arab League, BRICS+, ASEAN, Nordics, Anglosphere,
       Latin America, 20 most populous, and the original 15.
 - [x] V4. Weighting toggle.
-- [ ] V5. Spectrum toggle: 3-bucket (left/centre/right) vs the V-Party
+- [x] V5. DONE differently: the two live as separate panels, and the spectrum obeys
       multi-dimensional view.
-- [ ] V6. Map or cartogram, one year at a time, with a year scrubber.
-- [ ] V7. Country detail on click: that country's own history as a strip.
+- [x] V6. Map with a year scrubber. DONE.
+- [x] V7. SUPERSEDED, the country strip was built and then removed on request.
 - [x] V8. Deep links via hash; default state is never written. Verified.
 
 ## S, ship
 
 - [x] S1. Opens on World, population-weighted.
-- [ ] S2. Attribution page: V-Dem, OWID, DPI, Manifesto, CHES, with licences.
+- [x] S2. SUPERSEDED by the Sources panel, which links each source with a line of
       CC-BY means naming them is an obligation, not a courtesy.
-- [ ] S3. Methodology page, the 30-June rule, what 0 means, why the MA is
+- [x] S3. SUPERSEDED by the Notes on the Data panel. The 30-June rule is itself
       trailing, what the seed data is and where it is judgement rather than source.
 - [x] S4. Mobile verified at 375px: no horizontal scroll, all panels render,
       no console errors.
@@ -96,7 +96,7 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
 
 ## Frontend, next
 
-- [ ] V6. Map or cartogram with a year scrubber.
+- [x] V6. Duplicate of the V-block entry. DONE.
 - [x] V7. Country strip, every year since 1975 for one country, with a source
       bar underneath and party names in place. Defaults to the largest country
       in the selected group, so switching to the G7 lands on the United States.
@@ -104,19 +104,19 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
       block AREA is the share of people, plus small multiples over time. V-Dem
       Regimes of the World via OWID, codes confirmed against the dataset's own
       metadata rather than assumed.
-- [ ] V10. The nuanced spectrum view. V-Party's continuous score is already
+- [x] V10. DONE as The Full Spectrum, on V-Party's ordinal rather than the raw score:
       carried through the pipeline as `score` but nothing renders it yet.
-- [ ] S6. Dark mode is implemented via prefers-color-scheme but untested on a
+- [x] S6. DONE. Looked at in a real render; the greys were lifted clear of the panel.
       real dark display.
 
 ## Found while building the Wikidata layer
 
-- [ ] **D9. Reconcile the DPI/Wikidata seam.** Wikidata calls the US Democratic
+- [x] **D9. DONE.** `scripts/audit_hand_coded.py` flags any hand-coded row that
       Party `centrism` where DPI calls it `Left`, so the US appears to drift
       left-to-centre in 2024 with no election. Carry the DPI coding forward
       whenever the governing party has not actually changed. Documented in
       `docs/data-sources.md`.
-- [ ] D10. The slider is capped at 2025 from `meta.regime_coverage_end`, but the
+- [x] D10. DONE. Both scrubbers cap at and open on the regime coverage end, so
       political series runs to 2026. Decide whether the mosaic should show a
       2026 column with the regime axis marked unknown, or stay capped.
 
@@ -133,9 +133,9 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
 - [x] Dark mode looked at, in a real render. The two greys were the brightest
       thing on the chart, putting the emphasis on the categories that matter
       least. Palette entries now take an optional `colour_dark`.
-- [ ] The readout floats top-right over the chart, which is where the right-wing
+- [x] DONE. It follows the pointer. Was:
       band sits in most years. Consider following the pointer instead.
-- [ ] The page is seven panels and about 3,700px. Worth asking whether the
+- [x] MIS-SCOPED. Charlie curates the panel set directly now. Was:
       provenance and small-multiples panels earn their place above the fold.
 
 ## Identity, 2026-08-19
@@ -163,7 +163,7 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
       a y scale across tabs so switching compares like with like.
 - [x] "One country at a time" section removed.
 - [x] Notes section rewritten less chattily.
-- [ ] The `countries` and `members` blocks are still emitted into the JSON and
+- [x] DONE. Dropped from the build; payload fell from 1.13MB to 944KB. Was:
       nothing reads them now that the country strip is gone. Worth dropping
       from the build, or bringing the section back in a better form.
 
@@ -207,7 +207,7 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
       own coding of the same continuing party. It caught Russia, where a
       hand-coded "right" for 2024 disagreed with DPI's Center through 2023 and
       put a step in the series that no election produced.
-- [ ] Serbia and Montenegro have no row at all: DPI never covered them, so
+- [x] DONE via `config/seed_entities.yaml`. Both resolve 2006-2026. Was:
       `extend_years` has nothing to extend. Filling them means seeding the
       entities before the resolver runs.
 
@@ -226,7 +226,7 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
       only fills what DPI leaves blank, so taking the score from there would
       describe a quarter of the world and call it the spectrum. Coverage is
       93-99% of population and it stops at 2019 where V-Party does.
-- [ ] The spectrum panel could carry a weighting toggle like the others; it is
+- [x] DONE. It obeys the toggle at the top of the page rather than carrying its own.
       population-weighted only at the moment.
 
 - [x] Spectrum panel obeys the weighting toggle at the top rather than carrying
