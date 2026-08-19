@@ -1,5 +1,22 @@
 # TODO
 
+## Needs Charlie
+
+Both are parked on a decision or an account, not on work. Everything else in
+this file is closed.
+
+- [ ] **D5. Manifesto Project.** Needs a free account for the API key, which is
+      not mine to create. Register at https://manifesto-project.wzb.eu and I
+      will wire it in. It would give a continuous left-right axis back to 1945
+      for the 67 countries it covers, which is a better spine for the older
+      decades than anything currently in use.
+- [ ] **D6. CHES.** Data is downloaded and sitting in `data/raw/ches_trend.csv`
+      (1999-2024, seven waves, 28 countries, with `lrgen` and `galtan`), but I
+      stopped short of building it. It covers a tenth of world population and
+      does not say which party governs, so it is a Europe-only second axis
+      rather than a data fill. Your call whether that is worth having.
+
+
 Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
 
 ## Blocking
@@ -52,13 +69,6 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
       are banned; the Philippines' PFP because it is a self-described big tent.
       That is an answer. "We have no data" is not. Drawing them as one grey
       band conflated the two.
-- [~] D5. BLOCKED ON CHARLIE. Manifesto needs a free account for its API key and
-      registering one is not mine to do. See docs/data-sources.md. Was: RILE for
-      a continuous axis on the 67
-      countries it covers.
-- [~] D6. Data in hand (`data/raw/ches_trend.csv`, 1999-2024, 28 countries, with
-      lrgen and galtan) but not wired in: it covers a tenth of world population
-      and CHES does not say which party governs, so it is a feature not a fill.
 - [x] D7. Population weights joined. All 183 DPI countries resolve to OWID
       entities via `config/country_map.yaml`; 8 historical states dropped.
 - [x] D8a. Provenance emitted per group-year (`source` block: dpi / vparty /
