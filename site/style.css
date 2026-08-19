@@ -81,6 +81,9 @@ select:focus-visible, .segmented button:focus-visible { outline: 2px solid var(-
 .hint { font-size: 13px; color: var(--ink-faint); }
 
 .segmented {
+  /* The control sits in a flex column, so without this it stretches to the
+     width of the label above it and trails empty space past the last button. */
+  align-self: flex-start;
   display: inline-flex;
   border: 1px solid var(--rule);
   border-radius: 8px;

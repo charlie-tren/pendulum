@@ -216,6 +216,15 @@ function drawLine(series) {
   const y1 = Math.max(hi + padding, (ABOVE / (1 - ABOVE)) * -y0);
   const unit = (v) => (v - y0) / (y1 - y0);
 
+  /* Faint rules every tenth so a reader can judge level and slope, without
+     putting numbers back on an axis whose units mean nothing to them. */
+  for (let v = Math.ceil(y0 * 10) / 10; v <= y1; v = Math.round((v + 0.1) * 10) / 10) {
+    if (Math.abs(v) < 1e-9) continue;
+    svg.appendChild(svgEl("line", {
+      x1: pad.l, x2: box.w - pad.r, y1: s.y(unit(v)), y2: s.y(unit(v)),
+      stroke: "var(--rule)", "stroke-width": 1,
+    }));
+  }
   svg.appendChild(svgEl("line", {
     x1: pad.l, x2: box.w - pad.r, y1: s.y(unit(0)), y2: s.y(unit(0)),
     stroke: "var(--ink-faint)", "stroke-width": 1.2,
@@ -276,6 +285,45 @@ function drawLine(series) {
   path(maKey, "var(--ink)", 2.4, 1);
   describe(svg, "Mean government position over time, shaded red where the balance sits " +
                 "right of centre and blue where it sits left.");
+
+  /* Its own hover: this is two lines rather than stacked bands, so the reader
+     wants the two values, not a share breakdown. */
+  const readout = $("#line-readout");
+  const marker = svgEl("line", {
+    y1: pad.t, y2: pad.t + s.ih, stroke: "var(--ink)",
+    "stroke-width": 1, "stroke-opacity": 0.35, visibility: "hidden",
+  });
+  svg.appendChild(marker);
+  const lean = (v) => (v > 0.02 ? "right of centre" : v < -0.02 ? "left of centre" : "at the centre");
+  const show = (evt) => {
+    const rect = svg.getBoundingClientRect();
+    const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+    const px = ((clientX - rect.left) / rect.width) * box.w;
+    const year = Math.round(s.y0 + ((px - pad.l) / s.iw) * (s.y1 - s.y0));
+    const row = rows.find((r) => r.year === year);
+    if (!row || row[key] == null) return;
+    marker.setAttribute("x1", s.x(year));
+    marker.setAttribute("x2", s.x(year));
+    marker.setAttribute("visibility", "visible");
+    readout.innerHTML =
+      `<b>${year}</b>` +
+      `<div class="row"><span>This year</span><span>${row[key].toFixed(2)}</span></div>` +
+      (row[maKey] != null
+        ? `<div class="row"><span>Three-year</span><span>${row[maKey].toFixed(2)}</span></div>` : "") +
+      `<div class="prov">${lean(row[key])}</div>` +
+      (row.coded_share_pop != null
+        ? `<div class="prov">${pct(state.weight === "by_population"
+            ? row.coded_share_pop : row.coded_share_countries)} of the group has a reading</div>`
+        : "");
+    readout.hidden = false;
+    placeReadout(readout, evt);
+  };
+  svg.addEventListener("pointermove", show);
+  svg.addEventListener("touchmove", show, { passive: true });
+  svg.addEventListener("pointerleave", () => {
+    readout.hidden = true;
+    marker.setAttribute("visibility", "hidden");
+  });
 }
 
 /* ---------- regime x ideology mosaic ----------
@@ -303,10 +351,21 @@ function drawMosaic(group) {
   const ih = box.h - pad.t - pad.b;
   const gap = 7;
 
-  const cols = REGIME_ORDER
+  let cols = REGIME_ORDER
     .filter((regime) => regime !== "unknown")
-    .map((regime) => ({ regime, cells: row.cells[regime] || {} }))
-    .map((col) => ({ ...col, total: sum(col.cells) }))
+    .map((regime) => ({ regime, cells: row.cells[regime] || {} }));
+  if (state.missing === "exclude") {
+    /* Rescale the whole grid over the countries that have a reading, so the
+       columns still describe the same population and the widths stay honest. */
+    const coded = cols.reduce((a, col) => a + BANDS.filter((b) => !MISSING.has(b))
+      .reduce((x, b) => x + (col.cells[b] || 0), 0), 0);
+    cols = cols.map((col) => ({
+      regime: col.regime,
+      cells: Object.fromEntries(BANDS.filter((b) => !MISSING.has(b))
+        .map((b) => [b, coded ? (col.cells[b] || 0) / coded : 0])),
+    }));
+  }
+  cols = cols.map((col) => ({ ...col, total: sum(col.cells) }))
     .filter((col) => col.total > 0.0005);
   const usable = iw - gap * (cols.length - 1);
 
@@ -389,7 +448,7 @@ function drawMosaic(group) {
   ranked.sort((a, b) => b.v - a.v);
   const top = ranked[0];
   $("#mosaic-caption").textContent = top
-    ? `The largest single group in ${row.year} is ` +
+    ? `The largest single group in ${row.year} was ` +
       `${DATA.palette.buckets[top.band].label.toLowerCase()}-governed ` +
       `${DATA.palette.regimes[top.regime].short.toLowerCase()}, at ${pct(top.v)} of ` +
       `this group's population.`
@@ -499,7 +558,10 @@ function buildRegimeTabs() {
 }
 
 function drawRegime(group) {
-  const cross = group.cross || [];
+  /* V-Dem classifies regimes only to 2025, so the final year has every country
+     as unclassified and each band collapses to nothing. Stop where the source
+     does rather than drawing the cliff. */
+  const cross = (group.cross || []).filter((r) => r.year <= DATA.meta.regime_coverage_end);
   const series = cross.map((r) => ({ year: r.year, ...(r.cells[state.regime] || {}) }));
   if (!series.length) return;
   const label = DATA.palette.regimes[state.regime].short;
@@ -509,12 +571,15 @@ function drawRegime(group) {
     REGIME_ORDER.filter((x) => x !== "unknown").map((x) => sum(r.cells[x]))), 0.05);
 
   const shownR = dropMissing(series, BANDS, { rescale: false });
-  drawStack("#regime", shownR.series, shownR.keys, DATA.palette.buckets,
+  const sR = drawStack("#regime", shownR.series, shownR.keys, DATA.palette.buckets,
     boxFor("#regime", 0.34, 210, 320), {
       max,
       label: `${label} as a share of the group, split by the ideology of their ` +
              `governments, ${series[0].year} to ${series[series.length - 1].year}.`,
     });
+  attachHover(sR, shownR.series, DATA.palette.buckets, {
+    svgId: "#regime", readoutId: "#regime-readout", keys: shownR.keys,
+  });
 
   /* Sum the raw cells, not the plotted series: that carries a `year` field and
      summing it produced "202344%". */
@@ -668,9 +733,13 @@ function render() {
     });
   attachHover(s, shown.series, palette, { group, keys: shown.keys });
   drawLine(group.index);
-  drawStack("#prov", group.by_country.map((r) => ({ year: r.year, ...r.source })),
-    SOURCES, DATA.palette.sources, boxFor("#prov", 0.20, 130, 190),
+  const provSeries = group.by_country.map((r) => ({ year: r.year, ...r.source }));
+  const sProv = drawStack("#prov", provSeries, SOURCES, DATA.palette.sources,
+    boxFor("#prov", 0.20, 130, 190),
     { label: "Which data source resolved each country-year, over time." });
+  attachHover(sProv, provSeries, DATA.palette.sources, {
+    svgId: "#prov", readoutId: "#prov-readout", keys: SOURCES,
+  });
   drawSpectrum(group);
   drawMosaic(group);
   drawMap();
