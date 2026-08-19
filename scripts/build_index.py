@@ -115,21 +115,28 @@ def spectrum(records, pop, members, ordinals):
             continue
         by_year[rec["year"]].append(rec)
 
-    out = []
+    by_pop, by_country = [], []
     for year in sorted(by_year):
         w = {b: 0.0 for b in SPECTRUM_BANDS}
+        c = {b: 0.0 for b in SPECTRUM_BANDS}
         total = 0.0
         for rec in by_year[year]:
+            hit = ordinals.get((rec["entity"], year))
+            band = f"f{hit['ord']}" if hit else "uncovered"
+            c[band] += 1
             p = pop.get((rec["entity"], year))
             if p is None:
                 continue
-            hit = ordinals.get((rec["entity"], year))
-            w[f"f{hit['ord']}" if hit else "uncovered"] += p
+            w[band] += p
             total += p
+        n = len(by_year[year])
         if total:
-            out.append({"year": year, "pop": round(total),
-                        **{b: round(w[b] / total, 5) for b in SPECTRUM_BANDS}})
-    return out
+            by_pop.append({"year": year, "pop": round(total),
+                           **{b: round(w[b] / total, 5) for b in SPECTRUM_BANDS}})
+        if n:
+            by_country.append({"year": year, "n": n,
+                               **{b: round(c[b] / n, 5) for b in SPECTRUM_BANDS}})
+    return {"by_population": by_pop, "by_country": by_country}
 
 
 def cross_tab(records, pop, members, regimes):

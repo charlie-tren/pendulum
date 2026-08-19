@@ -386,7 +386,7 @@ function drawMosaic(group) {
 /* ---------- the seven-point spectrum ---------- */
 
 function drawSpectrum(group) {
-  const series = group.spectrum || [];
+  const series = (group.spectrum || {})[state.weight] || [];
   if (!series.length) return;
   drawStack("#spectrum", series, SPECTRUM, DATA.palette.spectrum,
     boxFor("#spectrum", 0.30, 200, 300),
@@ -399,9 +399,10 @@ function drawSpectrum(group) {
   const leftFirst = share(first, ["f0", "f1", "f2"]);
   const leftLast = share(last, ["f0", "f1", "f2"]);
   $("#spectrum-caption").textContent =
-    `Left of centre covered ${pct(leftFirst)} of this group in ${first.year} and ` +
-    `${pct(leftLast)} in ${last.year}. Bands are V-Party's own ratings, not a ` +
-    `recoding of the three-bucket series above.`;
+    `Left of centre covered ${pct(leftFirst)} of ` +
+    `${state.weight === "by_population" ? "this group's people" : "the countries here"} ` +
+    `in ${first.year} and ${pct(leftLast)} in ${last.year}. Seven-point ratings are ` +
+    `V-Party's own, covering 178 countries and ending in 2019.`;
 }
 
 /* ---------- the world in one year ----------
@@ -578,6 +579,52 @@ function syncYear() {
   }
 }
 
+/* ---------- playing the timeline ----------
+   Both scrubbers drive the same year, so one player serves them. Touching a
+   slider stops playback: the person has taken over. */
+
+const PLAY_MS = 320;
+let playTimer = null;
+
+function playing() { return playTimer !== null; }
+
+const ICON_PLAY = "M4 2.5v11l9-5.5z";
+const ICON_PAUSE = "M4 2.5h3.2v11H4zM8.8 2.5H12v11H8.8z";
+
+function setPlayButtons(on) {
+  for (const btn of document.querySelectorAll(".play")) {
+    btn.setAttribute("aria-pressed", String(on));
+    btn.setAttribute("aria-label", on ? "Pause the timeline" : "Play the timeline");
+    const path = btn.querySelector("path");
+    if (path) path.setAttribute("d", on ? ICON_PAUSE : ICON_PLAY);
+  }
+}
+
+function stopPlay() {
+  if (playTimer !== null) {
+    clearInterval(playTimer);
+    playTimer = null;
+    setPlayButtons(false);
+  }
+}
+
+function startPlay() {
+  const slider = $("#map-year");
+  const lo = +slider.min;
+  const hi = +slider.max;
+  // The page opens near the end of the range, so playing from there would give
+  // two or three years and then a jump back. Restart the run instead.
+  if (state.year > hi - 5) state.year = lo;
+  setPlayButtons(true);
+  playTimer = setInterval(() => {
+    state.year = state.year >= hi ? lo : state.year + 1;
+    syncYear();
+    drawMosaic(DATA.groups[state.group]);
+    drawMap();
+    writeHash();
+  }, PLAY_MS);
+}
+
 /* ---------- render ---------- */
 
 function render() {
@@ -666,9 +713,14 @@ Promise.all([
     }
 
 
+    for (const btn of document.querySelectorAll(".play")) {
+      btn.addEventListener("click", () => (playing() ? stopPlay() : startPlay()));
+    }
+
     for (const [id, out] of [["#year", "#year-out"], ["#map-year", "#map-year-out"]]) {
       const el = $(id);
       el.addEventListener("input", () => {
+        stopPlay();
         state.year = +el.value;
         syncYear();
         drawMosaic(DATA.groups[state.group]);

@@ -71,7 +71,12 @@
     <h2>Ideology and regime</h2>
     <div class="control control-year">
       <label for="year">Year <output id="year-out"></output></label>
-      <input type="range" id="year" min="1975" max="2025" step="1" value="2023">
+      <div class="scrub">
+        <button type="button" class="play" data-play="year" aria-pressed="false" aria-label="Play the timeline">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>
+        </button>
+        <input type="range" id="year" min="1975" max="2025" step="1" value="2023">
+      </div>
     </div>
     <div class="legend" id="legend-mosaic"></div>
     <figure class="chart">
@@ -83,11 +88,6 @@
 
   <section class="panel">
     <h2>A finer spectrum</h2>
-    <p class="sub">
-      Three buckets flatten a lot. V-Party rates each governing party on a seven-point
-      scale, from far left to far right, across 178 countries. It stops at 2019, so this
-      chart does too.
-    </p>
     <div class="legend" id="legend-spectrum"></div>
     <figure class="chart">
       <svg id="spectrum" role="img"></svg>
@@ -99,7 +99,12 @@
     <h2>The world in one year</h2>
     <div class="control control-year">
       <label for="map-year">Year <output id="map-year-out"></output></label>
-      <input type="range" id="map-year" min="1975" max="2026" step="1" value="2023">
+      <div class="scrub">
+        <button type="button" class="play" data-play="map-year" aria-pressed="false" aria-label="Play the timeline">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>
+        </button>
+        <input type="range" id="map-year" min="1975" max="2026" step="1" value="2023">
+      </div>
     </div>
     <div class="legend" id="legend-map"></div>
     <figure class="chart chart-wide">

@@ -228,3 +228,12 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
       93-99% of population and it stops at 2019 where V-Party does.
 - [ ] The spectrum panel could carry a weighting toggle like the others; it is
       population-weighted only at the moment.
+
+- [x] Spectrum panel obeys the weighting toggle at the top rather than carrying
+      its own. Right is 32% by population and 11% by country, so the toggle
+      earns its place here.
+- [x] Play button on both year scrubbers, driving the shared year.
+- [ ] The USSR shows as "no data" across the map for 1975 to 1991. DPI has rows
+      for it but they are dropped, because no modern OWID population series
+      exists for a state that no longer exists. Deciding what a world map should
+      show for a dissolved country is a design question, not a data one.
