@@ -10,8 +10,7 @@ stories.
 
 ## Status
 
-Early. Data pipeline works end to end against Our World in Data; the
-left-right spine and the frontend are not built yet. See `TODO.md`.
+Live at https://charlietrenorden.com/pendulum/. See `TODO.md` for what is next.
 
 ## Data
 
