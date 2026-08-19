@@ -807,12 +807,16 @@ Promise.all([
     }
 
 
-    const excl = $("#exclude-missing");
-    excl.checked = state.missing === "exclude";
-    excl.addEventListener("change", () => {
-      state.missing = excl.checked ? "exclude" : "include";
-      render();
-    });
+    for (const btn of document.querySelectorAll("[data-missing]")) {
+      btn.setAttribute("aria-checked", String(btn.dataset.missing === state.missing));
+      btn.addEventListener("click", () => {
+        state.missing = btn.dataset.missing;
+        for (const b of document.querySelectorAll("[data-missing]")) {
+          b.setAttribute("aria-checked", String(b.dataset.missing === state.missing));
+        }
+        render();
+      });
+    }
 
     for (const btn of document.querySelectorAll(".play")) {
       const key = btn.dataset.play === "map-year" ? "mapYear" : "year";

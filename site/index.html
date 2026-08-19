@@ -41,10 +41,11 @@
       </div>
     </div>
     <div class="control">
-      <label class="check">
-        <input type="checkbox" id="exclude-missing">
-        <span>Exclude countries without data</span>
-      </label>
+      <span class="label">Countries without data</span>
+      <div class="segmented" role="radiogroup" aria-label="Countries without data">
+        <button type="button" data-missing="include" role="radio" aria-checked="true">include</button>
+        <button type="button" data-missing="exclude" role="radio" aria-checked="false">exclude</button>
+      </div>
     </div>
   </section>
 
@@ -97,6 +98,17 @@
   </section>
 
   <section class="panel">
+    <h2>Regimes Over Time</h2>
+    <div class="segmented segmented-wide" id="regime-tabs" role="radiogroup" aria-label="Regime type"></div>
+    <div class="legend" id="legend-regime"></div>
+    <figure class="chart">
+      <svg id="regime" role="img"></svg>
+      <div class="readout" id="regime-readout" hidden></div>
+    </figure>
+    <p class="caption" id="regime-caption"></p>
+  </section>
+
+  <section class="panel">
     <h2>How the World Has Changed</h2>
     <div class="control control-year">
       <label for="map-year">Year <output id="map-year-out"></output></label>
@@ -113,17 +125,6 @@
       <div class="readout" id="map-readout" hidden></div>
     </figure>
     <p class="caption" id="map-caption"></p>
-  </section>
-
-  <section class="panel">
-    <h2>Regimes Over Time</h2>
-    <div class="segmented segmented-wide" id="regime-tabs" role="radiogroup" aria-label="Regime type"></div>
-    <div class="legend" id="legend-regime"></div>
-    <figure class="chart">
-      <svg id="regime" role="img"></svg>
-      <div class="readout" id="regime-readout" hidden></div>
-    </figure>
-    <p class="caption" id="regime-caption"></p>
   </section>
 
   <section class="panel">

@@ -135,7 +135,7 @@ groups:
     - IRN
     - ARE
     - IDN
-    article: 'the '
+    article: ''
   asean:
     label: ASEAN
     note: Timor-Leste acceded as the 11th member in October 2025.
@@ -152,7 +152,7 @@ groups:
     - THA
     - VNM
     - TLS
-    article: 'the '
+    article: ''
   africa:
     label: Africa
     note: Resolved from OWID continent mapping at build time.
@@ -232,7 +232,7 @@ groups:
     - TUR
     - GBR
     - USA
-    article: 'the '
+    article: ''
   african_union:
     label: African Union
     note: Excludes Western Sahara, which has no OWID population series in this build.

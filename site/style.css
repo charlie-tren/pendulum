@@ -165,7 +165,6 @@ footer li { margin-bottom: 3px; }
 a { color: var(--accent); }
 
 @media (max-width: 640px) {
-  .check { margin-top: 0; }
   header { padding-top: 10px; }
   .panel { padding: 18px 14px 14px; border-radius: 10px; }
   .controls { gap: 16px; }
@@ -362,18 +361,3 @@ h1:hover .mark .bob-r, h1:focus-within .mark .bob-r { animation: cradle-right 1.
   h1:focus-within .mark .bob-l, h1:focus-within .mark .bob-r { animation: none; }
 }
 
-/* A single on/off reads better as a checkbox than as a two-button segment. */
-/* This is a <label> inside .control, so it picks up the uppercase caption style
-   meant for the control captions above each input. Reset it, and drop it down
-   so it sits level with the select and the toggle rather than with their
-   captions. */
-.control label.check, .check {
-  display: inline-flex; align-items: center; gap: 9px;
-  font-size: 15px; font-weight: 400; letter-spacing: normal; text-transform: none;
-  color: var(--ink-soft); cursor: pointer;
-  align-self: flex-start; margin-top: 36px;
-}
-.control label.check span, .check span { font: inherit; letter-spacing: normal; text-transform: none; }
-.check input { width: 17px; height: 17px; accent-color: var(--accent); cursor: pointer; margin: 0; }
-.check:hover { color: var(--ink); }
-.check input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
