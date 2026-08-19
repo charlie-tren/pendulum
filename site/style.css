@@ -111,7 +111,7 @@ select:focus-visible, .segmented button:focus-visible { outline: 2px solid var(-
 }
 .panel h2 {
   font-family: var(--font-display); font-weight: 600;
-  font-size: 20px; margin: 0 0 4px; letter-spacing: -0.008em;
+  font-size: 21px; margin: 0 0 5px; letter-spacing: -0.008em;
 }
 .sub, .caption {
   font-size: 14px;
@@ -148,8 +148,8 @@ svg { display: block; width: 100%; height: auto; }
 
 /* ---- notes ---- */
 .notes dl { margin: 8px 0 0; }
-.notes dt { font-family: var(--font-display); font-weight: 600; font-size: 16px;
-            margin-top: 14px; }
+.notes dt { font-family: var(--font-display); font-weight: 600; font-size: 16.5px;
+            margin-top: 16px; }
 .notes dd { margin: 3px 0 0; color: var(--ink-soft); font-size: 15px; max-width: 62em; }
 
 footer { padding: 8px 0 60px; color: var(--ink-soft); }
@@ -195,14 +195,7 @@ input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-of
 /* ---- hierarchy ----
    Seven identical cards gave the headline chart and a provenance footnote the
    same weight. The lead panel now carries the page and the quiet one recedes. */
-.panel-lead {
-  padding: 26px 26px 22px;
-  border-color: color-mix(in srgb, var(--accent) 26%, var(--rule));
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 28px rgba(0,0,0,0.05);
-}
-.panel-lead h2 { font-size: 24px; }
-.panel-quiet { background: transparent; border-style: dashed; }
-.panel-quiet h2 { font-size: 17px; color: var(--ink-soft); }
+
 
 /* ---- loading ----
    The data is about a megabyte. Empty cards look broken; say what is happening. */
@@ -221,8 +214,6 @@ body.loading .loading-note {
    Panels get their inner padding back at the smallest sizes so charts, which
    measure their own container, do not end up needlessly narrow. */
 @media (max-width: 640px) {
-  .panel-lead { padding: 18px 14px 14px; box-shadow: none; }
-  .panel-lead h2 { font-size: 20px; }
   .legend { gap: 4px 14px; font-size: 13px; }
   .control-year { max-width: none; }
   h1 { margin-bottom: 4px; }
@@ -230,11 +221,11 @@ body.loading .loading-note {
 
 /* ---- back to the rest of the site ----
    Matches the bar the other project pages use. */
-.bar { padding-top: 22px; }
+.bar { padding-top: 22px; display: flex; justify-content: flex-end; }
 .home {
   display: inline-flex; align-items: center;
   font-size: 14px; color: var(--ink-soft); text-decoration: none;
-  padding: 6px 10px 6px 8px; margin-left: -8px; border-radius: 7px;
+  padding: 6px 8px 6px 10px; margin-right: -8px; border-radius: 7px;
 }
 .home:hover { background: var(--panel); color: var(--ink); }
 .home .back { font-size: 15px; }
@@ -252,4 +243,14 @@ h1 { display: flex; align-items: center; gap: 14px; }
 @media (max-width: 640px) {
   .bar { padding-top: 14px; }
   h1 { gap: 10px; }
+}
+
+/* ---- regime tabs ----
+   Wider than the weighting toggle because the labels are longer, and wrapping
+   to two rows on a phone rather than scrolling sideways. */
+.segmented-wide { display: flex; flex-wrap: wrap; margin: 4px 0 14px; }
+.segmented-wide button { flex: 1 1 auto; font-size: 14px; padding: 8px 12px; }
+@media (max-width: 640px) {
+  .segmented-wide { border-radius: 8px; }
+  .segmented-wide button { flex: 1 1 45%; }
 }

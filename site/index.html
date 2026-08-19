@@ -13,7 +13,7 @@
 </head>
 <body class="loading">
 <div class="bar wrap">
-  <a class="home" href="https://charlietrenorden.com/"><span class="back">&larr;</span>&nbsp;Other projects</a>
+  <a class="home" href="https://charlietrenorden.com/">Other projects <span class="back" aria-hidden="true">&rarr;</span></a>
 </div>
 
 <header class="wrap">
@@ -28,8 +28,7 @@
       <circle cx="45" cy="47" r="6.8" fill="#c33c3c"/>
     </svg>Pendulum</h1>
   <p class="standfirst">
-    Most charts of world politics count countries, which makes Tuvalu equal to India.
-    This one lets you count people instead.
+    Most charts of world politics count countries. This one counts people.
   </p>
 </header>
 
@@ -49,7 +48,7 @@
     </div>
   </section>
 
-  <section class="panel panel-lead">
+  <section class="panel">
     <h2 id="chart-title"></h2>
     <div class="legend" id="legend"></div>
     <figure class="chart">
@@ -60,38 +59,22 @@
   </section>
 
   <section class="panel">
-    <h2>Balance of the coded world</h2>
+    <h2>Left and right on balance</h2>
     <p class="sub">
-      Mean position of governments that have one, from &minus;1 (all left) to +1 (all right).
-      The pale line is the year; the solid line is a three-year trailing average.
-      Countries with no left&ndash;right reading are excluded here rather than counted as centre.
+      Mean position of the governments that have one, from &minus;1 for wholly left to
+      +1 for wholly right. The heavy line is a three-year trailing average.
     </p>
     <figure class="chart">
       <svg id="line" role="img"></svg>
     </figure>
   </section>
 
-  <section class="panel panel-quiet">
-    <h2>Where each figure comes from</h2>
-    <p class="sub">
-      No single dataset covers the whole world for the whole period. This shows which
-      source resolved each country-year, so you can see where the numbers are solid and
-      where they are thin.
-    </p>
-    <div class="legend" id="legend-src"></div>
-    <figure class="chart">
-      <svg id="prov" role="img"></svg>
-    </figure>
-  </section>
-
   <section class="panel">
-    <h2>Ideology crossed with regime type</h2>
+    <h2>Ideology and regime</h2>
     <p class="sub">
-      Left and right tell you what a government wants. They tell you nothing about
-      whether the people under it chose it. Every block below is a share of the group's
-      population, so the area of a block is the answer: how many people live under a
-      right&#8209;wing electoral autocracy, or a left&#8209;wing liberal democracy.
-      Regime classification is V&#8209;Dem's, via Our World in Data.
+      Left and right describe what a government wants, not whether the people under it
+      chose it. Each block is a share of the group's population, so a block's area
+      answers how many people live under, say, a right-wing electoral autocracy.
     </p>
     <div class="control control-year">
       <label for="year">Year <output id="year-out"></output></label>
@@ -106,59 +89,58 @@
   </section>
 
   <section class="panel">
-    <h2>The same thing over time</h2>
+    <h2>Regimes over time</h2>
     <p class="sub">
-      Each panel is one regime type. Heights are shares of the whole group, so the four
-      panels together account for everyone. A panel growing means more of the world
-      lives that way.
+      One regime type at a time, as a share of the whole group. A chart that grows means
+      more of the world lives that way.
     </p>
+    <div class="segmented segmented-wide" id="regime-tabs" role="radiogroup" aria-label="Regime type"></div>
     <figure class="chart">
-      <svg id="multiples" role="img"></svg>
+      <svg id="regime" role="img"></svg>
     </figure>
+    <p class="caption" id="regime-caption"></p>
   </section>
 
   <section class="panel">
-    <h2>One country at a time</h2>
+    <h2>Sources</h2>
     <p class="sub">
-      Every year since 1975 as a single strip. The thin bar underneath shows which
-      source resolved each stretch, so a run of hand-coded or Wikidata-derived years
-      is visible rather than buried.
+      No single dataset covers the whole world for the whole period. This shows which
+      source resolved each country-year.
     </p>
-    <div class="control">
-      <label for="country">Country</label>
-      <select id="country"></select>
-    </div>
-    <div class="legend" id="legend-strip"></div>
+    <div class="legend" id="legend-src"></div>
     <figure class="chart">
-      <svg id="strip" role="img"></svg>
-      <div class="readout" id="strip-readout" hidden></div>
+      <svg id="prov" role="img"></svg>
     </figure>
-    <p class="caption" id="strip-caption"></p>
   </section>
 
   <section class="panel notes">
-    <h2>Reading this honestly</h2>
+    <h2>Notes on the data</h2>
     <dl>
-      <dt>Two kinds of grey</dt>
+      <dt>Two kinds of missing</dt>
       <dd>
-        <b>Left&ndash;right does not apply</b> is an answer: Saudi Arabia bans political
-        parties, and the Philippines' governing party describes itself as a big tent
-        spanning populism to self-declared socialism. <b>No data</b> is an admission.
-        They are never merged, and neither is ever hidden by rescaling the rest to 100%.
+        <b>Left&ndash;right does not apply</b> is a finding rather than a gap. Saudi Arabia
+        bans political parties; the governing party of the Philippines describes itself as
+        a big tent spanning populism to self-declared socialism. <b>No data</b> records the
+        absence of a usable source. The two are reported separately, and neither is
+        removed by rescaling the remainder to 100%.
       </dd>
-      <dt>Colours follow the American convention</dt>
-      <dd>Blue for left, red for right. Most of the world uses the opposite.</dd>
-      <dt>Recent years are provisional</dt>
+      <dt>Colour convention</dt>
       <dd>
-        The academic sources end in 2023. Later years lean on Wikidata and hand-coding
-        and are marked as provisional wherever coverage falls below 80%. Treat movement
-        in those years as a gap in the data, not a swing in the world.
+        Blue denotes the left and red the right, following American usage. Most of the
+        world uses the reverse.
       </dd>
-      <dt>A year means 1 January</dt>
+      <dt>Provisional years</dt>
       <dd>
-        The party of the chief executive on 1 January, following the Database of
-        Political Institutions. A government that takes office in March counts from the
-        following year.
+        The Database of Political Institutions ends in 2023. From 2024 the series relies on
+        Wikidata and hand-coding, which together resolve about half the world's population,
+        so those years are hatched. Movement across them reflects coverage rather than
+        political change.
+      </dd>
+      <dt>Dating convention</dt>
+      <dd>
+        A country is recorded under the party of its chief executive on 1 January,
+        following the Database of Political Institutions. A government formed in March is
+        counted from the following year.
       </dd>
     </dl>
   </section>

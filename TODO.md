@@ -151,3 +151,18 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
       site: charlietrenorden.com is serif-led. Now Spectral 600 on headings via
       `--font-display`, chosen from twelve rendered candidates.
       `scripts/title_options.py` regenerates the sheet.
+
+## Round of feedback, 2026-08-19
+
+- [x] "Other projects" moved to the top right.
+- [x] Standfirst cut to one line.
+- [x] Chart and section titles shortened.
+- [x] Balance chart carries colour: filled blue below the zero line, red above.
+- [x] Heading treatment made uniform; panel-lead and panel-quiet variants dropped.
+- [x] Small multiples replaced by one full-width chart with regime tabs, sharing
+      a y scale across tabs so switching compares like with like.
+- [x] "One country at a time" section removed.
+- [x] Notes section rewritten less chattily.
+- [ ] The `countries` and `members` blocks are still emitted into the JSON and
+      nothing reads them now that the country strip is gone. Worth dropping
+      from the build, or bringing the section back in a better form.

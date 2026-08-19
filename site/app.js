@@ -1,7 +1,7 @@
 /* Pendulum: static frontend. No framework, no build step, no dependencies.
    Charts are hand-rolled SVG so this still runs in five years. */
 
-const DEFAULTS = { group: "world", weight: "by_population", year: 2023, country: null };
+const DEFAULTS = { group: "world", weight: "by_population", year: 2023, regime: null };
 const BANDS = ["left", "centre", "right", "no_reading", "unresolved"];
 const SOURCES = ["dpi", "vparty", "carry_forward", "hand", "wikidata", "no_reading", "unresolved"];
 const REGIME_ORDER = ["closed_autocracy", "electoral_autocracy",
@@ -61,14 +61,14 @@ function readHash() {
   if (group && DATA.groups[group]) state.group = group;
   if (weight === "by_country" || weight === "by_population") state.weight = weight;
   if (Number.isInteger(year)) state.year = year;
-  const country = params.get("country");
-  if (country && DATA.countries.some((c) => c.entity === country)) state.country = country;
+  const regime = params.get("regime");
+  if (regime && REGIME_ORDER.includes(regime)) state.regime = regime;
 }
 
 function writeHash() {
   const params = new URLSearchParams();
-  for (const key of ["group", "weight", "year", "country"]) {
-    if (key === "country" && state.country === defaultCountry(state.group)) continue;
+  for (const key of ["group", "weight", "year", "regime"]) {
+    if (key === "regime" && state.regime === defaultRegime()) continue;
     if (state[key] !== DEFAULTS[key]) params.set(key, state[key]);
   }
   const hash = params.toString();
@@ -98,12 +98,14 @@ function scales(series, box, pad) {
 
 function axes(svg, s, { ticks = [0, 0.5, 1], fmt = pct, step = 10 } = {}) {
   for (const v of ticks) {
+    // ticks may be on a data scale rather than 0..1, so normalise to plot space
+    const at = v / (ticks[ticks.length - 1] || 1);
     svg.appendChild(svgEl("line", {
-      x1: s.pad.l, x2: s.box.w - s.pad.r, y1: s.y(v), y2: s.y(v),
+      x1: s.pad.l, x2: s.box.w - s.pad.r, y1: s.y(at), y2: s.y(at),
       stroke: "var(--rule)", "stroke-width": 1,
     }));
     const t = svgEl("text", {
-      x: s.pad.l - 8, y: s.y(v) + 4, "text-anchor": "end",
+      x: s.pad.l - 8, y: s.y(at) + 4, "text-anchor": "end",
       "font-size": 11, fill: "var(--ink-faint)",
     });
     t.textContent = fmt(v);
@@ -136,20 +138,22 @@ function hatchDefs(svg) {
 
 /* ---------- stacked area ---------- */
 
-function drawStack(svgId, series, keys, palette, box, { provisional = null, label = "" } = {}) {
+function drawStack(svgId, series, keys, palette, box,
+                   { provisional = null, label = "", max = 1 } = {}) {
   const svg = $(svgId);
   svg.innerHTML = "";
   svg.setAttribute("viewBox", `0 0 ${box.w} ${box.h}`);
   const pad = { l: 44, r: 10, t: 10, b: 26 };
   const s = scales(series, box, pad);
   hatchDefs(svg);
-  axes(svg, s);
+  axes(svg, s, max === 1 ? {} : { ticks: [0, max / 2, max] });
 
   let base = series.map(() => 0);
   for (const key of keys) {
     const top = series.map((r, i) => base[i] + (r[key] || 0));
-    const pts = series.map((r, i) => `${s.x(r.year).toFixed(1)},${s.y(top[i]).toFixed(1)}`)
-      .concat(series.map((r, i) => `${s.x(r.year).toFixed(1)},${s.y(base[i]).toFixed(1)}`).reverse());
+    const pts = series.map((r, i) => `${s.x(r.year).toFixed(1)},${s.y(top[i] / max).toFixed(1)}`)
+      .concat(series.map((r, i) =>
+        `${s.x(r.year).toFixed(1)},${s.y(base[i] / max).toFixed(1)}`).reverse());
     svg.appendChild(svgEl("polygon", { points: pts.join(" "), fill: shade(palette[key]) }));
     base = top;
   }
@@ -212,10 +216,40 @@ function drawLine(series) {
       "stroke-linejoin": "round", "stroke-linecap": "round",
     }));
   };
+  /* Fill between the trailing mean and the zero line, red where the balance
+     sits right of centre and blue where it sits left. Clipping to the two
+     halves is simpler and safer than splitting the path at every crossing. */
+  const zeroY = s.y(0.5);
+  const defs = svgEl("defs");
+  for (const [id, y, h] of [["clipRight", pad.t, zeroY - pad.t],
+                            ["clipLeft", zeroY, pad.t + s.ih - zeroY]]) {
+    const clip = svgEl("clipPath", { id });
+    clip.appendChild(svgEl("rect", { x: 0, y, width: box.w, height: Math.max(h, 0) }));
+    defs.appendChild(clip);
+  }
+  svg.appendChild(defs);
+
+  const maKey = `${key}_ma3`;
+  const filled = rows.filter((r) => r[maKey] != null);
+  if (filled.length > 1) {
+    const top = filled.map((r) => `${s.x(r.year).toFixed(1)},${s.y(toUnit(r[maKey])).toFixed(1)}`);
+    const poly = top.concat([
+      `${s.x(filled[filled.length - 1].year).toFixed(1)},${zeroY.toFixed(1)}`,
+      `${s.x(filled[0].year).toFixed(1)},${zeroY.toFixed(1)}`,
+    ]).join(" ");
+    for (const [clip, bucket] of [["clipRight", "right"], ["clipLeft", "left"]]) {
+      svg.appendChild(svgEl("polygon", {
+        points: poly, fill: shade(DATA.palette.buckets[bucket]),
+        "fill-opacity": 0.22, "clip-path": `url(#${clip})`,
+      }));
+    }
+  }
+
   path(key, "var(--ink-faint)", 1.4, 0.55);
-  path(`${key}_ma3`, "var(--ink)", 2.4, 1);
-  describe(svg, "Line chart of mean government position, minus one for wholly left " +
-                "to plus one for wholly right, with a three-year trailing average.");
+  path(maKey, "var(--ink)", 2.4, 1);
+  describe(svg, "Mean government position over time, minus one for wholly left to plus " +
+                "one for wholly right, shaded red where the balance sits right of centre " +
+                "and blue where it sits left.");
 
   for (const [v, text] of [[0.98, "right"], [0.02, "left"]]) {
     const t = svgEl("text", {
@@ -326,164 +360,66 @@ function drawMosaic(group) {
     : "";
 }
 
-/* ---------- small multiples, one panel per regime ---------- */
+/* ---------- regimes over time, one at a time ---------- */
 
-function drawMultiples(group) {
-  const svg = $("#multiples");
-  svg.innerHTML = "";
-  const series = group.cross || [];
+/* Four panels side by side were 72px wide on a phone and barely wider than a
+   thumbnail on a desktop. One chart at full width, with tabs, is legible. */
+
+function defaultRegime() {
+  const cross = DATA.groups[state.group].cross || [];
+  const solid = cross.filter((r) => r.year <= 2023).slice(-1)[0];
+  if (!solid) return "electoral_autocracy";
+  return REGIME_ORDER.filter((r) => r !== "unknown")
+    .reduce((best, r) => (sum(solid.cells[r]) > sum(solid.cells[best]) ? r : best),
+            "closed_autocracy");
+}
+
+function buildRegimeTabs() {
+  const tabs = $("#regime-tabs");
+  tabs.innerHTML = REGIME_ORDER.filter((r) => r !== "unknown").map((r) =>
+    `<button type="button" role="radio" data-regime="${r}" ` +
+    `aria-checked="${r === state.regime}">${DATA.palette.regimes[r].short}</button>`).join("");
+  for (const btn of tabs.querySelectorAll("button")) {
+    btn.addEventListener("click", () => {
+      state.regime = btn.dataset.regime;
+      for (const b of tabs.querySelectorAll("button")) {
+        b.setAttribute("aria-checked", String(b.dataset.regime === state.regime));
+      }
+      drawRegime(DATA.groups[state.group]);
+      writeHash();
+    });
+  }
+}
+
+function drawRegime(group) {
+  const cross = group.cross || [];
+  const series = cross.map((r) => ({ year: r.year, ...(r.cells[state.regime] || {}) }));
   if (!series.length) return;
+  const label = DATA.palette.regimes[state.regime].short;
 
-  const panels = REGIME_ORDER.filter((r) => r !== "unknown");
-  const probe = boxFor("#multiples", 0.27, 180, 260);
-  // four panels side by side become 72px wide on a phone, which is unreadable;
-  // below this width they wrap to a 2x2 grid instead
-  const cols = probe.w < 560 ? 2 : 4;
-  const rows = panels.length / cols;
-  const box = { w: probe.w, h: rows === 1 ? probe.h : Math.round(probe.h * 1.55) };
-  svg.setAttribute("viewBox", `0 0 ${box.w} ${box.h}`);
-  const pad = { l: 4, r: 4, t: 24, b: 26 };
-  const gap = 16;
-  const rowGap = 30;
-  const pw = (box.w - pad.l - pad.r - gap * (cols - 1)) / cols;
-  const ih = (box.h - pad.t - pad.b - rowGap * (rows - 1)) / rows;
-  const years = series.map((r) => r.year);
-  const [y0, y1] = [Math.min(...years), Math.max(...years)];
-  const ymax = Math.max(...series.flatMap((r) => panels.map((p) => sum(r.cells[p]))), 0.05);
+  const shareKey = state.weight === "by_population" ? "coded_share_pop" : "coded_share_countries";
+  const thin = group.index.filter((r) => (r[shareKey] ?? 1) < PROVISIONAL_BELOW && r.year > 2015);
+  /* All four regimes share one y scale, so switching tabs compares like with
+     like instead of rescaling under the reader. */
+  const max = Math.max(...cross.flatMap((r) =>
+    REGIME_ORDER.filter((x) => x !== "unknown").map((x) => sum(r.cells[x]))), 0.05);
 
-  panels.forEach((regime, i) => {
-    const ox = pad.l + (i % cols) * (pw + gap);
-    const oy = pad.t + Math.floor(i / cols) * (ih + rowGap);
-    const sx = (yr) => ox + ((yr - y0) / (y1 - y0)) * pw;
-    const sy = (v) => oy + ih - (v / ymax) * ih;
-
-    let base = series.map(() => 0);
-    for (const band of BANDS) {
-      const top = series.map((r, j) => base[j] + ((r.cells[regime] || {})[band] || 0));
-      const pts = series.map((r, j) => `${sx(r.year).toFixed(1)},${sy(top[j]).toFixed(1)}`)
-        .concat(series.map((r, j) => `${sx(r.year).toFixed(1)},${sy(base[j]).toFixed(1)}`).reverse());
-      svg.appendChild(svgEl("polygon", {
-        points: pts.join(" "), fill: shade(DATA.palette.buckets[band]),
-      }));
-      base = top;
-    }
-    svg.appendChild(svgEl("line", {
-      x1: ox, x2: ox + pw, y1: oy + ih, y2: oy + ih,
-      stroke: "var(--rule)", "stroke-width": 1,
-    }));
-    const title = svgEl("text", {
-      x: ox, y: oy - 9, "font-size": 12.5, fill: "var(--ink-soft)", "font-weight": 600,
+  drawStack("#regime", series, BANDS, DATA.palette.buckets,
+    boxFor("#regime", 0.34, 210, 320), {
+      provisional: thin.length ? Math.min(...thin.map((r) => r.year)) : null,
+      max,
+      label: `${label} as a share of the group, split by the ideology of their ` +
+             `governments, ${series[0].year} to ${series[series.length - 1].year}.`,
     });
-    title.textContent = DATA.palette.regimes[regime].short;
-    svg.appendChild(title);
-    for (const yr of [y0, y1]) {
-      const t = svgEl("text", {
-        x: sx(yr), y: oy + ih + 15, "font-size": 11, fill: "var(--ink-faint)",
-        "text-anchor": yr === y0 ? "start" : "end",
-      });
-      t.textContent = yr;
-      svg.appendChild(t);
-    }
-  });
-  describe(svg, `Ideology composition within each regime type, ${y0} to ${y1}, ` +
-                `as a share of the whole group.`);
-}
 
-/* ---------- one country, as a strip of years ---------- */
-
-/* The largest country in the selected group, so switching to the G7 lands on
-   the United States rather than stranding the panel on a country not in it. */
-function defaultCountry(groupKey) {
-  const members = new Set(DATA.members[groupKey] || []);
-  const pool = DATA.countries.filter((c) => members.has(c.entity));
-  const best = (pool.length ? pool : DATA.countries)
-    .reduce((a, b) => (b.pop > a.pop ? b : a), { pop: -1, entity: null });
-  return best.entity;
-}
-
-function populateCountries(group) {
-  const members = new Set(DATA.members[state.group] || []);
-  const pool = DATA.countries.filter((c) => members.has(c.entity));
-  const list = (pool.length ? pool : DATA.countries).slice()
-    .sort((a, b) => a.entity.localeCompare(b.entity));
-  const select = $("#country");
-  select.innerHTML = list.map((c) => `<option value="${c.entity}">${c.entity}</option>`).join("");
-  if (!list.some((c) => c.entity === state.country)) state.country = defaultCountry(state.group);
-  select.value = state.country;
-}
-
-function drawCountry() {
-  const svg = $("#strip");
-  const readout = $("#strip-readout");
-  svg.innerHTML = "";
-  readout.hidden = true;
-  const rec = DATA.countries.find((c) => c.entity === state.country);
-  if (!rec) return;
-
-  const box = boxFor("#strip", 0.14, 108, 140);
-  svg.setAttribute("viewBox", `0 0 ${box.w} ${box.h}`);
-  const pad = { l: 4, r: 4, t: 8, b: 28 };
-  const iw = box.w - pad.l - pad.r;
-  const [y0, y1] = [1975, DATA.groups.world.by_country.slice(-1)[0].year];
-  const cw = iw / (y1 - y0 + 1);
-  const barH = 56;
-  const srcH = 9;
-
-  for (const run of rec.runs) {
-    const x = pad.l + (run.y0 - y0) * cw;
-    const w = (run.y1 - run.y0 + 1) * cw;
-    const bucket = DATA.palette.buckets[run.b];
-    const bucketFill = shade(bucket);
-    const rect = svgEl("rect", {
-      x: x.toFixed(1), y: pad.t, width: Math.max(w - 0.6, 0.6).toFixed(1), height: barH,
-      fill: bucketFill, class: "mosaic-cell",
-    });
-    rect.addEventListener("pointerenter", () => {
-      const span = run.y0 === run.y1 ? `${run.y0}` : `${run.y0}–${run.y1}`;
-      readout.innerHTML =
-        `<b>${span}</b>` +
-        `<div class="row"><span><i style="background:${bucketFill}"></i>${bucket.label}</span></div>` +
-        (run.p ? `<div class="row"><span>${run.p}</span></div>` : "") +
-        `<div class="prov">${DATA.palette.regimes[run.r].label}<br>` +
-        `via ${DATA.palette.sources[run.s].label}</div>`;
-      readout.hidden = false;
-    });
-    svg.appendChild(rect);
-
-    svg.appendChild(svgEl("rect", {
-      x: x.toFixed(1), y: pad.t + barH + 5, width: Math.max(w - 0.6, 0.6).toFixed(1),
-      height: srcH, fill: shade(DATA.palette.sources[run.s]), opacity: 0.9,
-    }));
-
-    if (w > 46) {
-      const t = svgEl("text", {
-        x: (x + 5).toFixed(1), y: pad.t + 18, "font-size": 11.5, "font-weight": 600,
-        fill: run.b === "no_reading" || run.b === "unresolved" ? "var(--ink-soft)" : "#fff",
-      });
-      t.textContent = run.p ? run.p.slice(0, Math.floor(w / 7)) : "";
-      svg.appendChild(t);
-    }
-  }
-  svg.onpointerleave = () => { readout.hidden = true; };
-
-  for (let yr = 1980; yr <= y1; yr += 10) {
-    const t = svgEl("text", {
-      x: (pad.l + (yr - y0) * cw).toFixed(1), y: box.h - 8, "font-size": 11,
-      fill: "var(--ink-faint)", "text-anchor": "middle",
-    });
-    t.textContent = yr;
-    svg.appendChild(t);
-  }
-
-  describe(svg, `${state.country}, every year from 1975 to ${y1}, coloured by the ` +
-                `political direction of its government.`);
-
-  const flips = rec.runs.filter((r, i) =>
-    i > 0 && ["left", "centre", "right"].includes(r.b) &&
-    ["left", "centre", "right"].includes(rec.runs[i - 1].b) && r.b !== rec.runs[i - 1].b).length;
-  $("#strip-caption").textContent =
-    `${state.country} changed the political direction of its government ` +
-    `${flips} ${flips === 1 ? "time" : "times"} between 1975 and ${y1}.`;
+  /* Sum the raw cells, not the plotted series: that carries a `year` field and
+     summing it produced "202344%". */
+  const share = (row) => sum(row.cells[state.regime]);
+  const first = cross[0];
+  const last = [...cross].reverse().find((r) => r.year <= 2023) || cross[cross.length - 1];
+  $("#regime-caption").textContent =
+    `${label} accounted for ${pct(share(last))} of this group in ${last.year}, ` +
+    `against ${pct(share(first))} in ${first.year}.`;
 }
 
 /* ---------- hover on the headline chart ---------- */
@@ -538,14 +474,13 @@ function render() {
   const palette = DATA.palette.buckets;
   const byPop = state.weight === "by_population";
 
-  $("#chart-title").textContent = byPop
-    ? `${group.label}: share of people by how their country is governed`
-    : `${group.label}: share of countries by government`;
+  $("#chart-title").textContent = byPop ? "How people are governed"
+                                        : "How countries are governed";
   $("#group-hint").textContent = group.n_members ? `${group.n_members} countries` : "";
 
   $("#legend").innerHTML = BANDS.map((k) =>
     `<span><i style="background:${shade(palette[k])}"></i>${palette[k].label}</span>`).join("");
-  $("#legend-mosaic").innerHTML = $("#legend-strip").innerHTML = $("#legend").innerHTML;
+  $("#legend-mosaic").innerHTML = $("#legend").innerHTML;
   $("#legend-src").innerHTML = SOURCES.map((k) =>
     `<span><i style="background:${shade(DATA.palette.sources[k])}"></i>` +
     `${DATA.palette.sources[k].label}</span>`).join("");
@@ -567,9 +502,9 @@ function render() {
     SOURCES, DATA.palette.sources, boxFor("#prov", 0.20, 130, 190),
     { label: "Which data source resolved each country-year, over time." });
   drawMosaic(group);
-  drawMultiples(group);
-  populateCountries(group);
-  drawCountry();
+  if (!state.regime) state.regime = defaultRegime();
+  buildRegimeTabs();
+  drawRegime(group);
 
   const latest = group.index[group.index.length - 1];
   const solid = [...group.index].reverse().find((r) => (r[shareKey] ?? 0) >= PROVISIONAL_BELOW);
@@ -608,12 +543,6 @@ Promise.resolve(
       });
     }
 
-    state.country = state.country || defaultCountry(state.group);
-    $("#country").addEventListener("change", (e) => {
-      state.country = e.target.value;
-      drawCountry();
-      writeHash();
-    });
 
     const slider = $("#year");
     const years = DATA.groups.world.cross.map((r) => r.year);
