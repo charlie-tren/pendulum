@@ -12,11 +12,11 @@ buckets:
   no_reading:
     colour: '#9a9a9a'
     label: Left-right does not apply
-    colour_dark: '#5b626b'
+    colour_dark: '#757d88'
   unresolved:
     colour: '#dcdcdc'
     label: No data
-    colour_dark: '#31363d'
+    colour_dark: '#454b56'
 sources:
   dpi:
     colour: '#5b6b7a'
@@ -45,13 +45,13 @@ sources:
   no_reading:
     colour: '#9a9a9a'
     label: Not applicable
-    colour_dark: '#5b626b'
+    colour_dark: '#757d88'
     note: 'No left-right reading applies: an absolute monarchy, a military government, or a big-tent
       personality vehicle.'
   unresolved:
     colour: '#dcdcdc'
     label: No data
-    colour_dark: '#31363d'
+    colour_dark: '#454b56'
     note: No source places this country-year on the left-right axis.
 regimes:
   closed_autocracy:

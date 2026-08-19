@@ -265,3 +265,13 @@ h1 { display: flex; align-items: center; gap: 14px; }
   text-underline-offset: 3px;
 }
 .legend .explained:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+/* ---- the map ----
+   A world map is about 2.4:1, so at 320px wide it is 135px tall and a country
+   is a pixel. Below the breakpoint it keeps a usable width and scrolls inside
+   its own box, which is the standard treatment for a chart too wide to shrink.
+   The page itself still never scrolls sideways. */
+@media (max-width: 700px) {
+  .chart-wide { overflow-x: auto; overscroll-behavior-x: contain; }
+  .chart-wide svg { min-width: 620px; }
+}

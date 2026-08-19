@@ -197,3 +197,16 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
       of world population. Serbia and Montenegro are absent from DPI entirely,
       so they have no row at all and can never be hand-filled without seeding
       the entity first.
+
+## Map follow-up, 2026-08-19
+
+- [x] Map scrolls inside its own box below 700px; it was 135px tall on a phone.
+- [x] Dark-mode greys lifted clear of the panel colour; unresolved countries
+      read as holes in the map before.
+- [x] `scripts/audit_hand_coded.py` flags hand-coded rows that contradict DPI's
+      own coding of the same continuing party. It caught Russia, where a
+      hand-coded "right" for 2024 disagreed with DPI's Center through 2023 and
+      put a step in the series that no election produced.
+- [ ] Serbia and Montenegro have no row at all: DPI never covered them, so
+      `extend_years` has nothing to extend. Filling them means seeding the
+      entities before the resolver runs.
