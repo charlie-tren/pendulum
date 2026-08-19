@@ -6,38 +6,38 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
 
 - [x] **Name the project.** Pendulum.
 - [x] **Deployment target: Cloudflare Pages on a subdomain.** Charlie's call to
-      me, 2026-08-18. Set up ONCE and attach the custom domain immediately —
+      me, 2026-08-18. Set up ONCE and attach the custom domain immediately -
       Chronoscape's two-Pages-projects mess came from doing this twice.
 - [x] **V-Party gap: run the nuanced view to 2025 on hand-coding**, with a
       visible "hand-coded from here" marker at the source's coverage end.
       Charlie's call to me, 2026-08-18.
 
-## D — data
+## D, data
 
 - [x] D1. OWID fetch working, no key. `scripts/fetch_owid.py`.
 - [x] D2. DPI 2023 pulled (CC-BY 4.0, 1975-**2023**, 183 countries) and diffed
       against the seed: 73% agree, 27% disagree, clustering on structural
       differences not noise. See `docs/seed-corrections.md`.
 - [ ] D2b. Work through the Philippines / Colombia / South Korea disagreements.
-      Personality-driven party systems — decide whether to defer to DPI or mark
+      Personality-driven party systems, decide whether to defer to DPI or mark
       them contested on the site. Leaning: mark contested, it's more honest and
       more interesting.
 - [~] D3. Hand-coding started: `data/seed/hand_coded.csv`, 18 rules covering
       2020-2023, each with a written basis and a verification date. World
       coverage 85% -> 89% of population; ASEAN 60% -> 75%.
 - [ ] D3b. Extend to **2024-2026**, past DPI's end. Same file, same discipline.
-- [ ] D3c. Second pass on the hand-coded rows — they are my calls, not
+- [ ] D3c. Second pass on the hand-coded rows, they are my calls, not
       sourced. Charlie should review the `basis` column before this ships.
 - [x] D4. V-Party v2 wired in as a **fill layer**, not just a nuance layer.
       Answers "can we fill the grey band": yes. Uncoded population falls from
       ~25% to ~2% for 1975-2019. Residual is absolute monarchies and non-party
-      military governments — a real answer, not a hole.
+      military governments, a real answer, not a hole.
 - [x] D4b. Party-name carry-forward past V-Party's 2019 end, where DPI still
       records the same party in power. Recovers Indonesia, Turkey, Uganda,
       Romania and others for 2020-2023.
 - [x] **D4c. Coverage cliff handled.** Years below 80% resolved are hatched,
       labelled provisional, and the caption names the last solid year.
-- [x] D4d. Party aliases added (`config/party_aliases.yaml`) — Bangladesh
+- [x] D4d. Party aliases added (`config/party_aliases.yaml`), Bangladesh
       AL/BAL and Uzbekistan LDP/OLDP. Everything else inspected and rejected as
       a different party or a rename; those went to hand-coding instead.
 - [x] D4e. **Split `uncoded` into `no_reading` and `unresolved`.** They are
@@ -55,7 +55,7 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
 - [ ] D8. One provenance record per series: source, version, retrieved date,
       licence, coverage end. Rendered on the site, not buried.
 
-## B — build
+## B, build
 
 - [x] B1. Pipeline built: `scripts/build_index.py` -> `data/out/orientation.json`.
 - [x] B2. Group filter applied at build time. 232KB for all 8 groups; fine as one file.
@@ -63,7 +63,7 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
 - [ ] B4. Tests on the aggregation maths. Weighted mean with missing countries
       is where this will silently go wrong.
 
-## V — viz
+## V, viz
 
 - [x] V1. Stacked area, population-weighted, is the headline chart.
 - [x] V2. Index line with trailing 3-year MA.
@@ -77,12 +77,12 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
 - [ ] V7. Country detail on click: that country's own history as a strip.
 - [x] V8. Deep links via hash; default state is never written. Verified.
 
-## S — ship
+## S, ship
 
 - [x] S1. Opens on World, population-weighted.
 - [ ] S2. Attribution page: V-Dem, OWID, DPI, Manifesto, CHES, with licences.
       CC-BY means naming them is an obligation, not a courtesy.
-- [ ] S3. Methodology page — the 30-June rule, what 0 means, why the MA is
+- [ ] S3. Methodology page, the 30-June rule, what 0 means, why the MA is
       trailing, what the seed data is and where it is judgement rather than source.
 - [x] S4. Mobile verified at 375px: no horizontal scroll, all panels render,
       no console errors.
@@ -90,14 +90,14 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
 
 ## Parked
 
-- Regime type (democracy/autocracy) as a *second* axis crossed with ideology —
+- Regime type (democracy/autocracy) as a *second* axis crossed with ideology -
   "how many people live under right-wing autocracies" is a better question than
   either axis alone. Parked only because it doubles the build.
 
-## Frontend — next
+## Frontend, next
 
 - [ ] V6. Map or cartogram with a year scrubber.
-- [x] V7. Country strip — every year since 1975 for one country, with a source
+- [x] V7. Country strip, every year since 1975 for one country, with a source
       bar underneath and party names in place. Defaults to the largest country
       in the selected group, so switching to the G7 lands on the United States.
 - [x] V9. Ideology crossed with regime type. Mosaic with a year slider where
@@ -119,3 +119,20 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
 - [ ] D10. The slider is capped at 2025 from `meta.regime_coverage_end`, but the
       political series runs to 2026. Decide whether the mosaic should show a
       2026 column with the regime axis marked unknown, or stay capped.
+
+## Design pass, 2026-08-19
+
+- [x] Charts draw at container pixel scale. Axis text was rendering at an
+      effective 3.5px on a phone.
+- [x] Small multiples wrap to 2x2 below 560px.
+- [x] aria-label and SVG title on all six charts. There were none.
+- [x] Legends repeated beside the mosaic and the country strip.
+- [x] Lead panel promoted, provenance panel demoted.
+- [x] Loading state, favicon, contrast fix, em dashes removed.
+- [x] Provisional label right-aligned; it was clipping to "provision".
+- [ ] **Dark mode has never been looked at**, only implemented. The band
+      colours are fixed hex and may be too saturated against the dark panel.
+- [ ] The readout floats top-right over the chart, which is where the right-wing
+      band sits in most years. Consider following the pointer instead.
+- [ ] The page is seven panels and about 3,700px. Worth asking whether the
+      provenance and small-multiples panels earn their place above the fold.

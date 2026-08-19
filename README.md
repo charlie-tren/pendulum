@@ -15,7 +15,7 @@ left-right spine and the frontend are not built yet. See `TODO.md`.
 
 ## Data
 
-Built on open data — V-Dem, Our World in Data, the IDB's Database of Political
+Built on open data, V-Dem, Our World in Data, the IDB's Database of Political
 Institutions, the Manifesto Project, and the Chapel Hill Expert Survey.
 Coverage, versions and licences are catalogued in `docs/data-sources.md`.
 
