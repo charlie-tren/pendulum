@@ -11,9 +11,11 @@ buckets:
   no_reading:
     colour: '#9a9a9a'
     label: Left-right does not apply
+    colour_dark: '#5b626b'
   unresolved:
     colour: '#dcdcdc'
     label: No data
+    colour_dark: '#31363d'
 sources:
   dpi:
     colour: '#5b6b7a'
@@ -33,9 +35,11 @@ sources:
   no_reading:
     colour: '#9a9a9a'
     label: Not applicable
+    colour_dark: '#5b626b'
   unresolved:
     colour: '#dcdcdc'
     label: No data
+    colour_dark: '#31363d'
 regimes:
   closed_autocracy:
     label: Closed autocracy
@@ -52,3 +56,5 @@ regimes:
   unknown:
     label: Regime not classified
     short: Not classified
+note: 'colour is the light-theme value. colour_dark, where present, replaces it under prefers-color-scheme:
+  dark.'

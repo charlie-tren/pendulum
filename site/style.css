@@ -21,7 +21,7 @@ body {
 
 .wrap { max-width: var(--max); margin: 0 auto; padding: 0 20px; }
 
-header { padding: 48px 0 8px; }
+header { padding: 18px 0 8px; }
 h1 {
   font-size: clamp(30px, 6vw, 44px);
   letter-spacing: -0.02em;
@@ -142,7 +142,7 @@ footer li { margin-bottom: 3px; }
 a { color: var(--accent); }
 
 @media (max-width: 640px) {
-  header { padding-top: 32px; }
+  header { padding-top: 10px; }
   .panel { padding: 18px 14px 14px; border-radius: 10px; }
   .controls { gap: 16px; }
   select { min-width: 0; width: 100%; }
@@ -208,4 +208,30 @@ body.loading .loading-note {
   .legend { gap: 4px 14px; font-size: 13px; }
   .control-year { max-width: none; }
   h1 { margin-bottom: 4px; }
+}
+
+/* ---- back to the rest of the site ----
+   Matches the bar the other project pages use. */
+.bar { padding-top: 22px; }
+.home {
+  display: inline-flex; align-items: center;
+  font-size: 14px; color: var(--ink-soft); text-decoration: none;
+  padding: 6px 10px 6px 8px; margin-left: -8px; border-radius: 7px;
+}
+.home:hover { background: var(--panel); color: var(--ink); }
+.home .back { font-size: 15px; }
+
+/* ---- wordmark ----
+   The rods take currentColor so the mark follows the theme; the three bobs stay
+   left blue, centre purple, right red, which is the page's own palette. */
+h1 { display: flex; align-items: center; gap: 14px; }
+.mark {
+  /* viewBox is cropped to the artwork, so height drives it and width follows */
+  height: 1.06em; width: auto; flex: none;
+  color: var(--ink-soft);
+  transform: translateY(-0.02em);
+}
+@media (max-width: 640px) {
+  .bar { padding-top: 14px; }
+  h1 { gap: 10px; }
 }

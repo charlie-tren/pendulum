@@ -130,9 +130,19 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
 - [x] Lead panel promoted, provenance panel demoted.
 - [x] Loading state, favicon, contrast fix, em dashes removed.
 - [x] Provisional label right-aligned; it was clipping to "provision".
-- [ ] **Dark mode has never been looked at**, only implemented. The band
-      colours are fixed hex and may be too saturated against the dark panel.
+- [x] Dark mode looked at, in a real render. The two greys were the brightest
+      thing on the chart, putting the emphasis on the categories that matter
+      least. Palette entries now take an optional `colour_dark`.
 - [ ] The readout floats top-right over the chart, which is where the right-wing
       band sits in most years. Consider following the pointer instead.
 - [ ] The page is seven panels and about 3,700px. Worth asking whether the
       provenance and small-multiples panels earn their place above the fold.
+
+## Identity, 2026-08-19
+
+- [x] Logo: a Newton's cradle with left blue, centre purple, right red. Chosen
+      from eight rendered candidates, on the basis that it stays legible at
+      16px, which 3, 4 and 8 did not. `scripts/logo_options.py` regenerates the
+      contact sheet if it needs revisiting.
+- [x] "Other projects" bar, matching the other project pages.
+- [x] Card moved to the in-progress group with a one-line description.

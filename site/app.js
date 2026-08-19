@@ -45,6 +45,12 @@ const svgEl = (name, attrs = {}) => {
 const pct = (v) => (v == null ? "n/a" : `${(v * 100).toFixed(v * 100 < 10 ? 1 : 0)}%`);
 const sum = (obj) => Object.values(obj || {}).reduce((a, b) => a + b, 0);
 
+/* Some palette entries carry a colour_dark. The pale greys in particular were
+   the brightest thing on a dark chart, which put the emphasis on the two
+   categories that matter least. */
+const darkMedia = window.matchMedia("(prefers-color-scheme: dark)");
+const shade = (entry) => (darkMedia.matches && entry.colour_dark) || entry.colour;
+
 /* ---------- URL state. The default is never written to the URL. ---------- */
 
 function readHash() {
@@ -144,7 +150,7 @@ function drawStack(svgId, series, keys, palette, box, { provisional = null, labe
     const top = series.map((r, i) => base[i] + (r[key] || 0));
     const pts = series.map((r, i) => `${s.x(r.year).toFixed(1)},${s.y(top[i]).toFixed(1)}`)
       .concat(series.map((r, i) => `${s.x(r.year).toFixed(1)},${s.y(base[i]).toFixed(1)}`).reverse());
-    svg.appendChild(svgEl("polygon", { points: pts.join(" "), fill: palette[key].colour }));
+    svg.appendChild(svgEl("polygon", { points: pts.join(" "), fill: shade(palette[key]) }));
     base = top;
   }
 
@@ -263,13 +269,13 @@ function drawMosaic(group) {
       const rect = svgEl("rect", {
         x: x.toFixed(1), y: y.toFixed(1),
         width: Math.max(w, 0.5).toFixed(1), height: Math.max(h, 0).toFixed(1),
-        fill: DATA.palette.buckets[band].colour, class: "mosaic-cell",
+        fill: shade(DATA.palette.buckets[band]), class: "mosaic-cell",
       });
       const n = (row.counts[col.regime] || {})[band] || 0;
       rect.addEventListener("pointerenter", () => {
         readout.innerHTML =
           `<b>${pct(v)} of people</b>` +
-          `<div class="row"><span><i style="background:${DATA.palette.buckets[band].colour}"></i>` +
+          `<div class="row"><span><i style="background:${shade(DATA.palette.buckets[band])}"></i>` +
           `${DATA.palette.buckets[band].label}</span></div>` +
           `<div class="row"><span>${DATA.palette.regimes[col.regime].label}</span></div>` +
           `<div class="prov">${Math.round(v * row.pop / 1e6)}m people · ` +
@@ -357,7 +363,7 @@ function drawMultiples(group) {
       const pts = series.map((r, j) => `${sx(r.year).toFixed(1)},${sy(top[j]).toFixed(1)}`)
         .concat(series.map((r, j) => `${sx(r.year).toFixed(1)},${sy(base[j]).toFixed(1)}`).reverse());
       svg.appendChild(svgEl("polygon", {
-        points: pts.join(" "), fill: DATA.palette.buckets[band].colour,
+        points: pts.join(" "), fill: shade(DATA.palette.buckets[band]),
       }));
       base = top;
     }
@@ -427,15 +433,16 @@ function drawCountry() {
     const x = pad.l + (run.y0 - y0) * cw;
     const w = (run.y1 - run.y0 + 1) * cw;
     const bucket = DATA.palette.buckets[run.b];
+    const bucketFill = shade(bucket);
     const rect = svgEl("rect", {
       x: x.toFixed(1), y: pad.t, width: Math.max(w - 0.6, 0.6).toFixed(1), height: barH,
-      fill: bucket.colour, class: "mosaic-cell",
+      fill: bucketFill, class: "mosaic-cell",
     });
     rect.addEventListener("pointerenter", () => {
       const span = run.y0 === run.y1 ? `${run.y0}` : `${run.y0}–${run.y1}`;
       readout.innerHTML =
         `<b>${span}</b>` +
-        `<div class="row"><span><i style="background:${bucket.colour}"></i>${bucket.label}</span></div>` +
+        `<div class="row"><span><i style="background:${bucketFill}"></i>${bucket.label}</span></div>` +
         (run.p ? `<div class="row"><span>${run.p}</span></div>` : "") +
         `<div class="prov">${DATA.palette.regimes[run.r].label}<br>` +
         `via ${DATA.palette.sources[run.s].label}</div>`;
@@ -445,7 +452,7 @@ function drawCountry() {
 
     svg.appendChild(svgEl("rect", {
       x: x.toFixed(1), y: pad.t + barH + 5, width: Math.max(w - 0.6, 0.6).toFixed(1),
-      height: srcH, fill: DATA.palette.sources[run.s].colour, opacity: 0.9,
+      height: srcH, fill: shade(DATA.palette.sources[run.s]), opacity: 0.9,
     }));
 
     if (w > 46) {
@@ -509,7 +516,7 @@ function attachHover(s, series, palette, group) {
       .map(([k, v]) => `${DATA.palette.sources[k].label} ${Math.round(v * 100)}%`)
       .join(" · ");
     const rows = BANDS.filter((k) => (row[k] || 0) > 0.001).map((k) =>
-      `<div class="row"><span><i style="background:${palette[k].colour}"></i>` +
+      `<div class="row"><span><i style="background:${shade(palette[k])}"></i>` +
       `${palette[k].label}</span><span>${pct(row[k])}</span></div>`);
     readout.innerHTML = `<b>${year}</b>${rows.join("")}` +
       (state.weight === "by_population" && row.pop
@@ -537,10 +544,10 @@ function render() {
   $("#group-hint").textContent = group.n_members ? `${group.n_members} countries` : "";
 
   $("#legend").innerHTML = BANDS.map((k) =>
-    `<span><i style="background:${palette[k].colour}"></i>${palette[k].label}</span>`).join("");
+    `<span><i style="background:${shade(palette[k])}"></i>${palette[k].label}</span>`).join("");
   $("#legend-mosaic").innerHTML = $("#legend-strip").innerHTML = $("#legend").innerHTML;
   $("#legend-src").innerHTML = SOURCES.map((k) =>
-    `<span><i style="background:${DATA.palette.sources[k].colour}"></i>` +
+    `<span><i style="background:${shade(DATA.palette.sources[k])}"></i>` +
     `${DATA.palette.sources[k].label}</span>`).join("");
 
   const shareKey = byPop ? "coded_share_pop" : "coded_share_countries";
@@ -631,6 +638,9 @@ Promise.resolve(
     /* Charts are sized from the container, so they have to be redrawn when it
        changes. Width only: mobile browsers fire resize on every address-bar
        collapse, and redrawing six charts for that is wasted work. */
+    // theme changes swap the greys, so the charts have to be redrawn
+    darkMedia.addEventListener("change", render);
+
     let last = window.innerWidth;
     let timer = null;
     window.addEventListener("resize", () => {

@@ -5,3 +5,6 @@ __pycache__/
 .DS_Store
 site/orientation.json
 site/standalone.html
+site/logo_options.png
+site/logo_options.html
+site/_*.png

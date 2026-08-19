@@ -18,7 +18,7 @@ subdirectory of the charlie-tren.github.io repo. That is the convention every
 other project on the site follows; an earlier plan for a Cloudflare Pages
 subdomain was dropped once the repo made the actual pattern obvious.
 
-To deploy: copy site/{index.html,style.css,app.js,orientation.json} into
+To deploy: copy site/{index.html,style.css,app.js,logo.svg,orientation.json} into
 charlie-tren.github.io/pendulum/ and push. Fetch first, other sessions push to
 that repo constantly. The card thumbnail is shot automatically by that repo's
 "Refresh card thumbnails" workflow, which Pendulum is registered with.
@@ -50,7 +50,8 @@ that repo constantly. The card thumbnail is shot automatically by that repo's
 10. **Charts draw at container pixel scale**, never into a fixed viewBox scaled
    to fit. A fixed 960-wide viewBox rendered 11px axis labels at 3.5px on a
    phone. Every draw function measures its container and sets its own viewBox.
-11. **Look at the page, do not only measure it.** The clipped "provisional"
+11. **Look at the page, do not only measure it.** `scripts/logo_options.py`
+   shows the pattern: render with playwright locally and actually view the PNG. The clipped "provisional"
    label survived a full round of DOM measurement and was obvious the moment
    the rendered image was actually viewed.
 
