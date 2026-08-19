@@ -26,9 +26,10 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
       Personality-driven party systems, decide whether to defer to DPI or mark
       them contested on the site. Leaning: mark contested, it's more honest and
       more interesting.
-- [~] D3. Hand-coding started: `data/seed/hand_coded.csv`, 18 rules covering
-      2020-2023, each with a written basis and a verification date. World
-      coverage 85% -> 89% of population; ASEAN 60% -> 75%.
+- [x] D3. DONE and long since past the state described here. `hand_coded.csv` now
+      carries 93 rules spanning 1975 to 2026, each with a written basis and a
+      verification date, checked against DPI in the test suite. Was: 18 rules
+      covering 2020-2023.
 - [x] D3b. DONE. 2024-2026 hand-coded for the largest unresolved countries.
 - [x] D3c. Hand-coded rows now carry a written basis and date each, are checked
       against DPI by `scripts/audit_hand_coded.py` in the test suite, and the
