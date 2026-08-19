@@ -50,10 +50,11 @@ that repo constantly. The card thumbnail is shot automatically by that repo's
 10. **Charts draw at container pixel scale**, never into a fixed viewBox scaled
    to fit. A fixed 960-wide viewBox rendered 11px axis labels at 3.5px on a
    phone. Every draw function measures its container and sets its own viewBox.
-11. **Look at the page, do not only measure it.** `scripts/logo_options.py`
-   shows the pattern: render with playwright locally and actually view the PNG. The clipped "provisional"
+11. **Look at the page, do not only measure it.** The clipped "provisional"
    label survived a full round of DOM measurement and was obvious the moment
-   the rendered image was actually viewed.
+   the rendered image was viewed. Dark mode passed the same way before anyone
+   saw that the greys were the brightest thing on the chart. Render locally
+   with playwright and open the PNG; `scripts/logo_options.py` is the pattern.
 
 ## Coding convention for orientation
 
