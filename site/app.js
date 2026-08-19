@@ -22,7 +22,8 @@ const TIMELINES = {
    year in the file. */
 const latestYear = () => DATA.meta.regime_coverage_end;
 const BANDS = ["left", "centre", "right", "no_reading", "unresolved"];
-const SOURCES = ["dpi", "vparty", "carry_forward", "hand", "wikidata", "no_reading", "unresolved"];
+const SOURCES = ["dpi", "vparty", "carry_forward", "dpi_carried", "hand", "wikidata",
+                 "no_reading", "unresolved"];
 const REGIME_ORDER = ["closed_autocracy", "electoral_autocracy",
                       "electoral_democracy", "liberal_democracy", "unknown"];
 const SPECTRUM = ["f0", "f1", "f2", "f3", "f4", "f5", "f6", "uncovered"];

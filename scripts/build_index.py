@@ -29,7 +29,7 @@ RAW, OUT, CFG, SEED = (ROOT / "data" / "raw", ROOT / "data" / "out",
                        ROOT / "config", ROOT / "data" / "seed")
 
 CATEGORIES = ["left", "centre", "right", "no_reading", "unresolved"]
-SOURCES = ["dpi", "vparty", "carry_forward", "hand", "wikidata",
+SOURCES = ["dpi", "vparty", "carry_forward", "dpi_carried", "hand", "wikidata",
            "no_reading", "unresolved"]
 SCORE = {"left": -1.0, "centre": 0.0, "right": 1.0}
 # V-Dem Regimes of the World, via OWID. Codes confirmed against the dataset's

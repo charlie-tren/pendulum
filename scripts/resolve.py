@@ -126,6 +126,18 @@ def resolve(records: list[dict], annual: dict, ratings: dict,
             aliases: dict | None = None, hand: dict | None = None,
             wikidata: dict | None = None) -> list[dict]:
     aliases, hand, wikidata = aliases or {}, hand or {}, wikidata or {}
+
+    # The last year DPI codes each country, and what it said. Used to stop the
+    # DPI-to-Wikidata handover from inventing a change of position in a
+    # government that never changed: Wikidata calls the US Democratic Party
+    # "centrism" where DPI calls it Left, so Biden's second term appeared to
+    # drift to the centre with no election in between.
+    dpi_last: dict[str, tuple[int, str]] = {}
+    for rec in records:
+        if rec["bucket"]:
+            prev = dpi_last.get(rec["entity"])
+            if prev is None or rec["year"] > prev[0]:
+                dpi_last[rec["entity"]] = (rec["year"], rec["bucket"])
     for rec in records:
         key = (rec["entity"], rec["year"])
         if rec["bucket"]:
@@ -149,11 +161,19 @@ def resolve(records: list[dict], annual: dict, ratings: dict,
                        source="no_reading" if hit["bucket"] == "no_reading" else "hand")
         elif key in wikidata:
             hit = wikidata[key]
+            bucket, source = hit["bucket"], "wikidata"
+            # If the term Wikidata is describing had already begun while DPI was
+            # still reporting, then DPI has already judged this same government
+            # and its reading wins. Otherwise the handover year shows a swing
+            # that no election produced.
+            last = dpi_last.get(rec["entity"])
+            if last and hit.get("start") is not None and hit["start"] <= last[0]:
+                bucket, source = last[1], "dpi_carried"
             # the DPI party name carried into extended years belongs to an
             # earlier government; replace it rather than mislabel this one
-            rec.update(bucket=hit["bucket"], score=None,
+            rec.update(bucket=bucket, score=None,
                        party=hit["party"] or rec["party"],
-                       source="no_reading" if hit["bucket"] == "no_reading" else "wikidata")
+                       source="no_reading" if bucket == "no_reading" else source)
         else:
             rec.update(bucket="unresolved", score=None, source="unresolved")
     return records
@@ -203,5 +223,6 @@ def load_wikidata(path: Path, cfg_path: Path, rename: dict) -> dict:
         if end != "9999-12-31" and end[5:10] < "01-01":
             last -= 1
         for year in range(max(first, 1975), min(last, 2026) + 1):
-            out[(entity, year)] = {"bucket": bucket, "party": slot["party"]}
+            out[(entity, year)] = {"bucket": bucket, "party": slot["party"],
+                                   "start": int(start[:4])}
     return out

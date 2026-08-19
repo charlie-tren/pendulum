@@ -33,6 +33,12 @@ sources:
     label: Carry-forward
     note: V-Party's rating of a party, reapplied to later years where DPI still records that same
       party in power.
+  dpi_carried:
+    colour: '#7d8a97'
+    colour_dark: '#8d99a6'
+    label: DPI, carried
+    note: DPI's own reading of a government that was still in office after DPI stopped reporting.
+      Used in place of a later source that judges the same unchanged government differently.
   hand:
     colour: '#b5651d'
     label: Hand-coded

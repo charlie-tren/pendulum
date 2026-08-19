@@ -179,3 +179,50 @@ def test_no_duplicate_country_years():
         key = (rec["entity"], rec["year"])
         assert key not in seen, f"duplicate row for {key}"
         seen.add(key)
+
+
+def test_no_phantom_swing_at_the_dpi_handover():
+    """A government that did not change must not change position at the seam.
+
+    DPI stops in 2023 and Wikidata takes over, and the two judge some parties
+    differently: Wikidata calls the US Democratic Party "centrism" where DPI
+    calls it Left. Left alone, Biden's unchanged second term drifted to the
+    centre in 2024 with no election behind it. 176 country-years across 69
+    countries were affected, 18% of world population.
+
+    A country may legitimately change here, but only if the term did. So the
+    guard is narrow: no country-year may be resolved by Wikidata while DPI's own
+    reading of that same still-running term exists.
+    """
+    import yaml
+
+    import build_index as B
+    from resolve import (load_aliases, load_dpi, load_hand_coded, load_vparty,
+                         load_wikidata, resolve)
+    cmap = yaml.safe_load((ROOT / "config" / "country_map.yaml").read_text(encoding="utf-8"))
+    records = B.seed_entities(B.extend_years(load_dpi(cmap)),
+                              ROOT / "config" / "seed_entities.yaml")
+    annual, ratings = load_vparty(cmap)
+    wiki = load_wikidata(ROOT / "data" / "raw" / "wikidata_hog.json",
+                         ROOT / "config" / "wikidata_positions.yaml", cmap["vparty_rename"])
+    records = resolve(records, annual, ratings,
+                      aliases=load_aliases(ROOT / "config" / "party_aliases.yaml"),
+                      hand=load_hand_coded(ROOT / "data" / "seed" / "hand_coded.csv"),
+                      wikidata=wiki)
+
+    dpi_last = {}
+    for rec in load_dpi(cmap):
+        if rec["bucket"]:
+            prev = dpi_last.get(rec["entity"])
+            if prev is None or rec["year"] > prev[0]:
+                dpi_last[rec["entity"]] = (rec["year"], rec["bucket"])
+
+    offenders = []
+    for rec in records:
+        if rec["source"] != "wikidata":
+            continue
+        hit = wiki.get((rec["entity"], rec["year"]))
+        last = dpi_last.get(rec["entity"])
+        if hit and last and hit.get("start") is not None and hit["start"] <= last[0]:
+            offenders.append((rec["entity"], rec["year"]))
+    assert not offenders, f"Wikidata overrode DPI on a term DPI already judged: {offenders[:5]}"
