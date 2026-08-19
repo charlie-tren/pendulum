@@ -15,14 +15,20 @@ from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parents[1]
 
 GOOGLE = ("https://fonts.googleapis.com/css2"
-          "?family=Spectral:wght@500;600;700"
-          "&family=Instrument+Serif"
-          "&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700"
-          "&family=Playfair+Display:wght@600;700"
-          "&family=Newsreader:opsz,wght@6..72,500;6..72,600"
-          "&family=DM+Serif+Display"
-          "&family=Space+Grotesk:wght@600;700"
-          "&family=Bricolage+Grotesque:opsz,wght@12..96,700"
+          "?family=Instrument+Serif:ital@0;1"
+          "&family=Libre+Caslon+Display"
+          "&family=Young+Serif"
+          "&family=Bodoni+Moda:opsz,wght@6..96,500;6..96,700"
+          "&family=Lora:wght@600;700"
+          "&family=Crimson+Pro:wght@500;600"
+          "&family=Petrona:wght@500;600"
+          "&family=Gloock"
+          "&family=Bitter:wght@600;700"
+          "&family=Zilla+Slab:wght@500;600"
+          "&family=Syne:wght@700;800"
+          "&family=Familjen+Grotesk:wght@600;700"
+          "&family=Unbounded:wght@600"
+          "&family=Cormorant+Garamond:wght@600;700"
           "&display=swap")
 
 # single quotes: this string goes into an HTML style attribute, and double
@@ -31,32 +37,38 @@ SITE_SERIF = ("'Iowan Old Style','Palatino Linotype',Palatino,Georgia,"
               "'Times New Roman',serif")
 
 OPTIONS = [
-    ("Now: system sans, bold",
-     "font: 700 44px/1.05 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;"
-     "letter-spacing:-0.02em;"),
+    ("Now: Instrument Serif",
+     "font: 400 54px/1.0 'Instrument Serif',Georgia,serif; letter-spacing:-0.005em;"),
+    ("Instrument Serif, italic",
+     "font: italic 400 54px/1.0 'Instrument Serif',Georgia,serif;"),
+    ("Libre Caslon Display",
+     "font: 400 46px/1.05 'Libre Caslon Display',Georgia,serif; letter-spacing:-0.01em;"),
+    ("Young Serif",
+     "font: 400 45px/1.05 'Young Serif',Georgia,serif; letter-spacing:-0.015em;"),
+    ("Bodoni Moda 700",
+     "font: 700 46px/1.05 'Bodoni Moda',Didot,Georgia,serif; letter-spacing:-0.01em;"),
+    ("Gloock",
+     "font: 400 47px/1.02 Gloock,Georgia,serif; letter-spacing:-0.01em;"),
+    ("Cormorant Garamond 700",
+     "font: 700 54px/1.0 'Cormorant Garamond',Garamond,serif; letter-spacing:-0.005em;"),
+    ("Lora 700",
+     "font: 700 42px/1.05 Lora,Georgia,serif; letter-spacing:-0.02em;"),
+    ("Crimson Pro 600",
+     "font: 600 48px/1.02 'Crimson Pro',Georgia,serif; letter-spacing:-0.015em;"),
+    ("Petrona 600",
+     "font: 600 46px/1.03 Petrona,Georgia,serif; letter-spacing:-0.015em;"),
+    ("Zilla Slab 600",
+     "font: 600 43px/1.05 'Zilla Slab',Georgia,serif; letter-spacing:-0.02em;"),
+    ("Bitter 700",
+     "font: 700 41px/1.05 Bitter,Georgia,serif; letter-spacing:-0.025em;"),
+    ("Syne 800",
+     "font: 800 41px/1.05 Syne,sans-serif; letter-spacing:-0.03em;"),
+    ("Familjen Grotesk 700",
+     "font: 700 43px/1.05 'Familjen Grotesk',sans-serif; letter-spacing:-0.03em;"),
+    ("Unbounded 600",
+     "font: 600 38px/1.08 Unbounded,sans-serif; letter-spacing:-0.03em;"),
     ("Site serif, regular",
      f"font: 400 46px/1.05 {SITE_SERIF}; letter-spacing:-0.015em;"),
-    ("Site serif, italic",
-     f"font: italic 400 46px/1.05 {SITE_SERIF}; letter-spacing:-0.01em;"),
-    ("Spectral 600",
-     "font: 600 44px/1.05 Spectral,Georgia,serif; letter-spacing:-0.015em;"),
-    ("Instrument Serif",
-     "font: 400 52px/1.0 'Instrument Serif',Georgia,serif; letter-spacing:-0.01em;"),
-    ("Fraunces 600",
-     "font: 600 44px/1.05 Fraunces,Georgia,serif; letter-spacing:-0.02em;"),
-    ("Playfair Display 700",
-     "font: 700 44px/1.05 'Playfair Display',Georgia,serif; letter-spacing:-0.02em;"),
-    ("Newsreader 600",
-     "font: 600 46px/1.05 Newsreader,Georgia,serif; letter-spacing:-0.015em;"),
-    ("DM Serif Display",
-     "font: 400 46px/1.05 'DM Serif Display',Georgia,serif; letter-spacing:-0.01em;"),
-    ("Space Grotesk 700",
-     "font: 700 43px/1.05 'Space Grotesk',sans-serif; letter-spacing:-0.03em;"),
-    ("Bricolage Grotesque 700",
-     "font: 700 43px/1.05 'Bricolage Grotesque',sans-serif; letter-spacing:-0.025em;"),
-    ("Fraunces 700, wonky",
-     "font: 700 44px/1.05 Fraunces,Georgia,serif; letter-spacing:-0.02em;"
-     "font-variation-settings:'SOFT' 60,'WONK' 1;"),
 ]
 
 MARK = """<svg class="mark" viewBox="0 8 58 48" aria-hidden="true">
@@ -94,7 +106,7 @@ def main() -> int:
  .stand {{ margin:10px 0 0; color:#5a6068; font-size:15px;
           font-family:-apple-system,'Segoe UI',sans-serif; max-width:40ch; }}
 </style>
-<h1>Pendulum title typefaces</h1>
+<h1>Pendulum title typefaces, round two</h1>
 <div class="grid">{cells}</div>"""
 
     out_html = ROOT / "site" / "title_options.html"
