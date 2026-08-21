@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Pendulum's tab mark: the cradle squared up. logo.svg is 58x48, so a browser
+       squashed the whole wordmark into a 16x13 sliver and it read as grey smudge.
+       Bar and rods are heavier than the logo's, and the bobs much larger, because
+       at 16px a 2.4-wide rod is a third of a pixel. Regenerate the PNG/ICO with
+       tools/make_icons.py. -->
+  <rect width="100" height="100" rx="24" fill="#151a21"/>
+  <line x1="20" y1="26" x2="80" y2="26" stroke="#8b93a0" stroke-width="7" stroke-linecap="round"/>
+  <line x1="28" y1="26" x2="28" y2="58" stroke="#9aa1aa" stroke-width="4.5" stroke-linecap="round"/>
+  <circle cx="28" cy="70" r="12" fill="#2f6fb2"/>
+  <line x1="50" y1="26" x2="50" y2="58" stroke="#9aa1aa" stroke-width="4.5" stroke-linecap="round"/>
+  <circle cx="50" cy="70" r="12" fill="#9042d4"/>
+  <line x1="72" y1="26" x2="72" y2="58" stroke="#9aa1aa" stroke-width="4.5" stroke-linecap="round"/>
+  <circle cx="72" cy="70" r="12" fill="#c33c3c"/>
+</svg>
