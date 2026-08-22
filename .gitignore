@@ -14,4 +14,6 @@ site/map.json
 
 # wrangler cache - holds the Cloudflare account id and email
 .wrangler/
-site/wealth.json
+site/wealth/data.json
+site/_mark*.png
+site/_marks.html

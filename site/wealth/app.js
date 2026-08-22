@@ -399,8 +399,8 @@ function wire() {
   window.addEventListener("resize", () => { clearTimeout(t); t = setTimeout(render, 140); });
 }
 
-fetch("wealth.json")
-  .then((r) => { if (!r.ok) throw new Error(`wealth.json ${r.status}`); return r.json(); })
+fetch("data.json")
+  .then((r) => { if (!r.ok) throw new Error(`data.json ${r.status}`); return r.json(); })
   .then((d) => {
     DATA = d;
     readHash(); buildPickers(); renderLayers(); wire(); render();

@@ -268,7 +268,7 @@ body.loading .loading-note {
 /* ---- wordmark ----
    The rods take currentColor so the mark follows the theme; the three bobs stay
    left blue, centre purple, right red, which is the page's own palette. */
-h1 { display: flex; align-items: center; gap: 26px; }
+h1 { display: flex; align-items: center; gap: 26px; width: fit-content; }
 .mark {
   /* viewBox is cropped to the artwork, so height drives it and width follows */
   height: 1.06em; width: auto; flex: none;
@@ -295,11 +295,6 @@ h1 { display: flex; align-items: center; gap: 26px; }
   .topnav > a:first-child::after { margin-left: 7px; margin-right: -1px; }
   .topnav .back { display: none; }
   .topnav > a { white-space: nowrap; }
-  /* Below 480 the full label will not fit beside the wordmark and the sibling
-     link, and shrinking the title any further to make room costs more than the
-     word "Other" is worth. */
-  .lbl-full { display: none; }
-  .lbl-short { display: inline; }
   header > .standfirst { grid-row: 2; }
 }
 
@@ -432,10 +427,21 @@ footer .terms { display: block; color: var(--ink-faint); font-size: 12.5px; marg
 }
 .topnav > a:hover { background: var(--panel); color: var(--ink); }
 .topnav > a + a { margin-right: -8px; }
-.lbl-short { display: none; }
 .topnav > a:first-child::after {
   content: ""; width: 1px; height: 14px; background: var(--rule);
   margin-left: 11px; margin-right: -3px;
+}
+/* The short label and its override MUST sit together, base first. Split across
+   the file, this base rule came after the media query that was meant to beat
+   it, both at one class of specificity, so the later one won and "Other
+   projects" rendered as an empty link on every phone. The geometry checks all
+   passed, because an empty link still has a box. */
+.lbl-short { display: none; }
+@media (max-width: 640px) {
+  /* the full label will not fit beside the wordmark and the sibling link, and
+     shrinking the title further costs more than the word "Other" is worth */
+  .lbl-full { display: none; }
+  .lbl-short { display: inline; }
 }
 
 .layer-list { margin: 0; }
