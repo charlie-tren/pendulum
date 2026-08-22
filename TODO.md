@@ -40,6 +40,43 @@ this file is closed.
       a size worth checking before committing; and the year slider has to mean
       the same thing at both levels. Scope this properly before writing code -
       it is a second data model, not a wider version of the current one.
+- [ ] **D8. An inequality section** (asked 2026-08-19). Yes, the data exists, and
+      it reaches much further back than the political series. I probed the
+      endpoints rather than going from memory, so these are measured:
+
+      | Dataset | OWID slug | Span | Entities | Notes |
+      |---|---|---|---|---|
+      | Income share by class | `income-share-distribution-before-tax-wid` | **1820-2024** | 165 | top 1 / next 9 / middle 40 / bottom 50, sums to 100 |
+      | Wealth share of the top 1% | `wealth-share-richest-1-percent` | **1800-2024** | 226 | 58 entities reach back past 1900 |
+      | Wealth share of the top 10% | `wealth-share-richest-10-percent` | 1800-2024 | 226 | bottom 90% is 100 minus this |
+      | Palma ratio | `palma-ratio-wid` | 1820-2024 | 165 | top 10% over bottom 40% |
+      | Gini | `economic-inequality-gini-index` | 1963-2025 | 183 | World Bank PIP |
+
+      **The Gini is the weak one, which is worth knowing before building around
+      it.** It only starts in 1963, and it is thin: 7 countries in 1980, 51 in
+      2000, 56 in 2023. It is survey-based, so it exists only where a survey was
+      run. If the section is meant to go back a long way, the class shares are
+      the series that does it and the Gini is a supporting panel at best. Long-run
+      Gini estimates do exist (van Zanden et al. 1820-2000, and Moatsos in the
+      OECD's *How Was Life?*) but they are global and regional reconstructions
+      from a paper, not a per-country annual panel, and would need hand-entering.
+
+      **The one to build is the class-share chart.** It is the same stacked-area
+      shape the site already draws, it sums to 100 so the existing band tests
+      apply almost unchanged, and the World row alone is a story: the bottom
+      half's share of world income fell from 14.2% in 1820 to a trough of 6.0%
+      in 1980 and has recovered to 8.0%, while the top 1% went 19.7% to 25.0% by
+      1900, down to 16.0% by 1960, and back to 20.7% today. Verified, not
+      recalled - the four classes sum to 100.00 on every row sampled.
+      **Caveats to state on the page:** the World series has 56 observations
+      across 1820-2024, so it is decadal early and annual late, and it must not
+      be drawn as though it were measured every year; and WID's early figures
+      are reconstructions, not observations.
+      Fetching is free and needs no key - add the slugs to `scripts/fetch_owid.py`,
+      which already carries the User-Agent that OWID's Cloudflare requires. CC BY 4.0.
+      **Open question for Charlie:** income or wealth? They tell different
+      stories and wealth reaches further back, but income is the one with a
+      ready-made four-class split.
 
 
 Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
