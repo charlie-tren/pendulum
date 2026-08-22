@@ -6,6 +6,16 @@
   --bg: #fbfbfa;
   --panel: #ffffff;
   --accent: #2f6fb2;
+  /* The wealth page. One hue per kind of evidence rather than per country,
+     because the thing a reader has to keep hold of is which layer they are
+     looking at, not which nation. Warm for the deep past, cool for the
+     measured present. */
+  --w-deep: #a1662f;
+  --w-early: #c08a3e;
+  --w-mid: #7d8f9c;
+  --w-now: #2f6fb2;
+  --w-england: #4f7d5e;
+  --w-piedmont: #9a5b8f;
   --max: 960px;
   /* The same serif stack charlietrenorden.com sets on its body. No webfont at
      all: nothing to request, nothing to swap in late, and the project reads as
@@ -193,6 +203,10 @@ a { color: var(--accent); }
   :root {
     --ink: #e9ecf0; --ink-soft: #a7aeb8; --ink-faint: #98a0aa;
     --rule: #2b2f36; --bg: #131519; --panel: #1a1d22; --accent: #6ea8e0;
+    /* lifted off the dark ground: the mid-grey and the greens in particular
+       disappear into the panel at their light-mode values */
+    --w-deep: #c98a4d; --w-early: #e0a95a; --w-mid: #9aa8b4; --w-now: #6ea8e0;
+    --w-england: #6fa583; --w-piedmont: #c383b6;
   }
   .segmented button[aria-checked="true"] { background: var(--accent); color: #0f1114; }
   .readout { background: rgba(26,29,34,0.97); }
@@ -385,3 +399,36 @@ h1:hover .mark .bob-r, h1:focus-within .mark .bob-r { animation: cradle-right 1.
 
 /* Licence and retrieval date sit under each source, quieter than the role. */
 footer .terms { display: block; color: var(--ink-faint); font-size: 12.5px; margin-top: 2px; }
+
+/* ---- the wealth page ----
+   A link out of the top of the main page, and the two blocks the wealth page
+   adds to the shared furniture. */
+.crosslink {
+  display: block; margin: 0 0 26px;
+  padding: 14px 18px; border: 1px solid var(--rule); border-radius: 12px;
+  background: var(--panel); color: var(--ink); text-decoration: none;
+  transition: border-color .18s, transform .18s;
+}
+.crosslink:hover, .crosslink:focus-visible { border-color: var(--accent); }
+.crosslink b { display: block; font-family: var(--font-title); font-weight: 400;
+               font-size: 20px; letter-spacing: -0.01em; }
+.crosslink span { display: block; margin-top: 3px; font-size: 14px; color: var(--ink-soft); }
+.crosslink .go { float: right; color: var(--ink-faint); font-size: 20px; line-height: 1.6; }
+.crosslink:hover .go { color: var(--accent); }
+
+.layer-list { margin: 0; }
+.layer-list dt {
+  display: flex; align-items: center; gap: 9px;
+  font-weight: 650; font-size: 14px; margin-top: 14px;
+}
+.layer-list dt:first-child { margin-top: 0; }
+.layer-list dt i { width: 12px; height: 12px; border-radius: 3px; flex: none; }
+.layer-list dd { margin: 4px 0 0 21px; font-size: 14px; color: var(--ink-soft); }
+.layer-list .pending {
+  font-weight: 400; font-size: 12px; color: var(--ink-faint);
+  border: 1px solid var(--rule); border-radius: 999px; padding: 1px 8px;
+}
+.sources { margin: 0; padding-left: 18px; font-size: 14px; color: var(--ink-soft); }
+.sources li { margin-bottom: 9px; }
+.dot { cursor: pointer; }
+.dot:hover { fill-opacity: 1; }

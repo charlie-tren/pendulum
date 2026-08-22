@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pendulum: Wealth</title>
+<meta name="description" content="How unequally wealth has been held, from English tax rolls in 1283 to national accounts today.">
+<link rel="canonical" href="https://charlietrenorden.com/pendulum/wealth.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Charlie Trenorden">
+<meta property="og:title" content="Pendulum: seven centuries of wealth inequality">
+<meta property="og:description" content="Who owned what, from the English tax rolls of 1283 to national accounts today.">
+<meta property="og:url" content="https://charlietrenorden.com/pendulum/wealth.html">
+<meta property="og:image" content="https://charlietrenorden.com/pendulum/og-card.png">
+<meta property="og:image:width" content="2400">
+<meta property="og:image:height" content="1260">
+<meta property="og:image:alt" content="Pendulum: the share of wealth held by the richest tenth, 1283 to today.">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="favicon-192.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+</head>
+<body class="loading">
+<header class="wrap">
+  <a class="home" href="./"><span class="back" aria-hidden="true">&larr;</span>&nbsp;Who governs</a>
+  <h1>
+    <svg class="mark" viewBox="0 8 58 48" aria-hidden="true" focusable="false">
+      <line x1="9" y1="12" x2="55" y2="12" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/>
+      <g class="bob-l"><line x1="20" y1="12" x2="20" y2="41" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" opacity=".55"/><circle cx="20" cy="47" r="6" fill="#2f6fb2"/></g>
+      <g class="bob-m"><line x1="32" y1="12" x2="32" y2="41" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" opacity=".55"/><circle cx="32" cy="47" r="6" fill="#9042d4"/></g>
+      <g class="bob-r"><line x1="44" y1="12" x2="44" y2="41" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" opacity=".55"/><circle cx="44" cy="47" r="6" fill="#c33c3c"/></g>
+    </svg>Wealth</h1>
+  <p class="standfirst">
+    Who owned what, from the English tax rolls of 1283 to national accounts today.
+  </p>
+</header>
+
+<main class="wrap">
+  <section class="controls" aria-label="Chart controls">
+    <div class="control">
+      <label for="metric-sel">Measure</label>
+      <select id="metric-sel">
+        <option value="top10">Share held by the richest tenth</option>
+        <option value="top1">Share held by the richest hundredth</option>
+        <option value="gini">Wealth Gini</option>
+      </select>
+      <span class="hint" id="metric-hint"></span>
+    </div>
+    <div class="control">
+      <label for="country-sel">Country</label>
+      <select id="country-sel"></select>
+      <span class="hint" id="country-hint"></span>
+    </div>
+    <div class="control">
+      <span class="label">Before 1800</span>
+      <div class="segmented" role="radiogroup" aria-label="Early evidence">
+        <button type="button" data-early="show" role="radio" aria-checked="true">show</button>
+        <button type="button" data-early="hide" role="radio" aria-checked="false">hide</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2 id="long-title">Seven Centuries of Wealth</h2>
+    <div class="legend" id="legend-long"></div>
+    <figure class="chart">
+      <svg id="long" role="img"></svg>
+      <div class="readout" id="long-readout" hidden></div>
+    </figure>
+    <p class="caption" id="long-caption"></p>
+  </section>
+
+  <section class="panel">
+    <h2>Before the Statistics</h2>
+    <p class="sub" id="early-sub"></p>
+    <div class="legend" id="legend-early"></div>
+    <figure class="chart">
+      <svg id="early" role="img"></svg>
+      <div class="readout" id="early-readout" hidden></div>
+    </figure>
+    <p class="caption" id="early-caption"></p>
+  </section>
+
+  <section class="panel">
+    <h2>What Each Layer Measures</h2>
+    <p class="sub">
+      Four kinds of evidence, drawn apart on purpose. They do not share a unit or a
+      population, and a single line through all of them would be a nicer chart than
+      the evidence supports.
+    </p>
+    <dl id="layers" class="layer-list"></dl>
+  </section>
+
+  <section class="panel">
+    <h2>Sources</h2>
+    <ul id="sources" class="sources"></ul>
+  </section>
+</main>
+
+<footer class="wrap">
+  <p class="fine">
+    Built from open data. <a href="https://github.com/charlie-tren/pendulum">Code and data.</a>
+  </p>
+</footer>
+
+<script src="wealth.js"></script>
+</body>
+</html>
