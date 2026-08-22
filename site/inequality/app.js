@@ -690,11 +690,117 @@ function drawScale() {
   svg.onpointerleave = () => { readout.hidden = true; };
   const first = median(rows[0].pts.map((p) => p.gini));
   const last = median(rows[rows.length - 1].pts.map((p) => p.gini));
+  const yrs = deepSites().map((p) => p.year);
+  $("#scale-sub").textContent =
+    `${deepSites().length} excavated settlements, ${yearLabel(Math.min(...yrs))} to `
+    + `${yearLabel(Math.max(...yrs))}. The box is the middle half, the line is `
+    + "the median, the whisker is the full range.";
   $("#scale-caption").textContent =
     `Median Gini ${first.toFixed(2)} in villages, ${last.toFixed(2)} in cities. ` +
     `The two hunter-gatherer camps in the sample sit at 0.16 and 0.17.`;
   describe(svg, "Wealth Gini at every excavated site, grouped by whether the "
                 + "site was a camp, a village, a town or a city.");
+}
+
+/* Piedmont's towns against its countryside, on whichever measure is picked.
+   Two lines, because two lines is what the data is: a value every fifty years
+   for each. The interesting part is that they converge, so the lines have to
+   be able to cross and be seen doing it. */
+function drawSettle() {
+  const svg = $("#settle");
+  const readout = $("#settle-readout");
+  svg.innerHTML = ""; readout.hidden = true;
+  const metric = state.metric, M = METRICS[metric];
+
+  const series = (DATA.settlement || [])
+    .map((s) => ({ ...s, pts: s[metric] || [] }))
+    .filter((s) => s.pts.length > 1);
+  if (!series.length) { $("#settle-caption").textContent = ""; return; }
+
+  const narrow = window.matchMedia("(max-width: 700px)").matches;
+  const box = boxFor("#settle", narrow ? 0.6 : 0.3, 180, 280);
+  svg.setAttribute("viewBox", `0 0 ${box.w} ${box.h}`);
+  const pad = { l: narrow ? 34 : 46, r: 14, t: 12, b: 28 };
+  const iw = box.w - pad.l - pad.r, ih = box.h - pad.t - pad.b;
+  const yrs = series.flatMap((s) => s.pts.map(([y]) => y));
+  const x0 = Math.min(...yrs), x1 = Math.max(...yrs);
+  const xOf = (y) => pad.l + ((y - x0) / (x1 - x0)) * iw;
+  const yOf = (v) => pad.t + (1 - v / M.max) * ih;
+
+  const ticks = M.max === 1 ? [0, 0.25, 0.5, 0.75, 1] : [0, 25, 50, 75, 100];
+  for (const t of ticks) {
+    svg.appendChild(svgEl("line", {
+      x1: pad.l, x2: pad.l + iw, y1: yOf(t).toFixed(1), y2: yOf(t).toFixed(1),
+      stroke: "var(--rule)", "stroke-width": 1,
+    }));
+    const lab = svgEl("text", {
+      x: pad.l - 8, y: (yOf(t) + 4).toFixed(1), "text-anchor": "end",
+      "font-size": 11, fill: "var(--ink-faint)",
+    });
+    lab.textContent = M.pct ? `${t}%` : t.toFixed(2);
+    svg.appendChild(lab);
+  }
+  for (const t of ticksFor(x0, x1, Math.max(2, Math.round(iw / 90)))) {
+    const lab = svgEl("text", {
+      x: xOf(t).toFixed(1), y: (pad.t + ih + 18).toFixed(1),
+      "text-anchor": "middle", "font-size": 10.5, fill: "var(--ink-faint)",
+    });
+    lab.textContent = yearLabel(t);
+    svg.appendChild(lab);
+  }
+
+  /* Gold and green, not two ambers. The first pair were --w-region and
+     --w-early, which are a shade apart and made two lines that cross look
+     like one line with a kink in it. Green already means a rural place on
+     this palette, from the England dots. */
+  const COL = { cities: "var(--w-early)", rural: "var(--w-england)" };
+  for (const s of series) {
+    svg.appendChild(svgEl("polyline", {
+      points: s.pts.map(([y, v]) => `${xOf(y).toFixed(1)},${yOf(v).toFixed(1)}`).join(" "),
+      fill: "none", stroke: COL[s.id] || "var(--w-early)", "stroke-width": 2.4,
+      "stroke-linejoin": "round", "stroke-linecap": "round",
+    }));
+    for (const [y, v] of s.pts) {
+      const dot = svgEl("circle", {
+        cx: xOf(y).toFixed(1), cy: yOf(v).toFixed(1), r: 3.2,
+        fill: COL[s.id] || "var(--w-early)", class: "dot",
+      });
+      hook(dot, (evt) => {
+        const other = series.find((o) => o !== s);
+        const match = other && other.pts.find(([oy]) => oy === y);
+        readout.innerHTML = `<b>${y}</b>` +
+          `<div class="row"><span>${s.label}</span><span>${fmt(v)}</span></div>` +
+          (match ? `<div class="row"><span>${other.label}</span>` +
+                   `<span>${fmt(match[1])}</span></div>` : "") +
+          `<div class="prov">Piedmont, from the estimi</div>`;
+        readout.hidden = false; placeReadout(readout, evt);
+      });
+      svg.appendChild(dot);
+    }
+  }
+  svg.onpointerleave = () => { readout.hidden = true; };
+
+  $("#legend-settle").innerHTML = series.map((s) =>
+    `<span><i style="background:${COL[s.id]}"></i>${s.label}</span>`).join("");
+
+  /* The caption states the reversal, because it is the finding and it is the
+     opposite of what the dig sites say. */
+  const cities = series.find((s) => s.id === "cities");
+  const rural = series.find((s) => s.id === "rural");
+  if (cities && rural) {
+    const shared = rural.pts.map(([y]) => y).filter((y) => cities.pts.some(([c]) => c === y));
+    const first = shared[0], last = shared[shared.length - 1];
+    const at = (s, y) => s.pts.find(([py]) => py === y)[1];
+    const gap0 = at(cities, first) - at(rural, first);
+    const gap1 = at(cities, last) - at(rural, last);
+    $("#settle-caption").textContent =
+      `In ${first} the towns sat ${Math.abs(gap0).toFixed(M.pct ? 1 : 2)}`
+      + `${M.pct ? " points" : ""} above the countryside. By ${last} the gap had `
+      + (gap1 * gap0 < 0 ? "closed and reversed." : `narrowed to `
+         + `${Math.abs(gap1).toFixed(M.pct ? 1 : 2)}${M.pct ? " points" : ""}.`);
+  }
+  describe(svg, "Wealth inequality in Piedmont's towns against its countryside, "
+                + "every fifty years from 1300 to 1800.");
 }
 
 /* ----------------------------------------------------------------- furniture */
@@ -791,9 +897,15 @@ function buildPickers() {
      list had no Gini, so picking one of those drew the band and no line and
      looked broken. Rebuilt whenever the measure changes; the selection is kept
      if it survives, and falls back to all countries if it does not. */
-  const rows = Object.values(DATA.countries)
-    .filter((c) => (c.industrial[state.metric] || []).length
-                || (c.modern[state.metric] || []).length)
+  /* TWO points, not one. Fifteen countries carry a single decade of
+     estimates and nothing else - Slovakia, Malta, Cyprus, Austria and eleven
+     others - so on the Gini they passed a `.length` test, appeared in the
+     picker, and then drew nothing at all, because a line needs two ends.
+     They still sit inside the quartile band, which is where a single
+     observation belongs. */
+  const usable = (c) => Math.max((c.industrial[state.metric] || []).length,
+                                 (c.modern[state.metric] || []).length) > 1;
+  const rows = Object.values(DATA.countries).filter(usable)
     .sort((a, b) => a.label.localeCompare(b.label));
   /* "All countries" is not a country: it drops the highlighted line and leaves
      the quartile band, which is every country at once. */
@@ -832,20 +944,8 @@ function render() {
   renderLegend();
   drawEras();
   drawScale();
-  if (state.country === ALL) {
-    /* Count what the band is actually drawn from on THIS measure, not every
-       country in the file. The two differ by a factor of five on the Gini. */
-    const n = Object.values(DATA.countries).filter((x) =>
-      (x.industrial[state.metric] || []).length || (x.modern[state.metric] || []).length).length;
-    $("#country-hint").textContent = `${n} countries on this measure`;
-  } else {
-    const c = DATA.countries[state.country];
-    const spans = [];
-    if (c?.industrial.gini.length) spans.push(c.industrial.gini[0][0]);
-    if (c?.modern.top10.length) spans.push(c.modern.top10[0][0]);
-    $("#country-hint").textContent = spans.length
-      ? `charted from ${Math.min(...spans)}` : "no national series";
-  }
+  drawSettle();
+  $("#country-hint").textContent = "";
   writeHash();
 }
 

@@ -241,6 +241,45 @@ def deep() -> list[dict]:
     return out
 
 
+SETTLEMENT_ROWS = {
+    "Piedmont (cities only)": ("cities", "Cities"),
+    "Piedmont (rural areas only)": ("rural", "Countryside"),
+}
+
+
+def settlement_series() -> list[dict]:
+    """Piedmont's tax registers split into towns and countryside.
+
+    The archaeological chart says bigger settlements were more unequal. This is
+    the only place in the written record where the same cut exists, so it is
+    the only way to test that claim against evidence of a completely different
+    kind. Alfani publishes the split every fifty years from 1500, with the
+    cities alone running back to 1300.
+
+    These are the roll-up rows the scatter deliberately excludes, because
+    plotting them beside their own component towns double-counts the same
+    registers. Here they are the point.
+    """
+    acc = {k: {"id": k, "label": lab, "gini": [], "top10": [], "top1": []}
+           for k, lab in SETTLEMENT_ROWS.values()}
+    for r in rows("alfani_piedmont_places.csv"):
+        hit = SETTLEMENT_ROWS.get((r.get("") or "").strip())
+        if not hit:
+            continue
+        year = num(r.get("Year (reference)"))
+        if year is None:
+            continue
+        s = acc[hit[0]]
+        for key, col in (("gini", "Gini index"), ("top10", "D10"), ("top1", "Top1%")):
+            v = num(r.get(col))
+            if v is not None:
+                s[key].append([int(year), round(v, 4)])
+    for s in acc.values():
+        for k in ("gini", "top10", "top1"):
+            s[k].sort()
+    return [acc[k] for k, _ in SETTLEMENT_ROWS.values() if acc[k]["gini"]]
+
+
 def industrial_provenance() -> dict:
     """How the decadal estimates were actually arrived at.
 
@@ -339,6 +378,7 @@ def main() -> int:
             "deep_present": bool(deep()),
         },
         "points": sorted(pts, key=lambda p: (p["year"], p["place"])),
+        "settlement": settlement_series(),
         "regions": regs,
         "countries": ctry,
     }
