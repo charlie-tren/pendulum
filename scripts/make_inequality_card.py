@@ -131,8 +131,8 @@ HTML = f"""<!doctype html><meta charset="utf-8">
 
 
 def main() -> int:
-    tmp = ROOT / "site" / "wealth" / "_og.html"
-    out = ROOT / "site" / "wealth" / "og-card.png"
+    tmp = ROOT / "site" / "inequality" / "_og.html"
+    out = ROOT / "site" / "inequality" / "og-card.png"
     tmp.write_text(HTML, encoding="utf-8")
     with sync_playwright() as pw:
         br = pw.chromium.launch()

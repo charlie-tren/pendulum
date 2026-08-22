@@ -244,30 +244,24 @@ def deep() -> list[dict]:
 LAYERS = {
     "deep": {
         "label": "Excavated settlements",
-        "note": "The Gini of house floor areas within one settlement phase. "
-                "Floor area is the standard archaeological proxy for household "
-                "wealth: it survives, it scales with what a household could "
-                "command, and it is measurable from a plan.",
+        "note": "The Gini of house floor areas at one settlement. Floor area is "
+                "the standard proxy for household wealth where no records survive.",
     },
     "preindustrial": {
         "label": "Tax registers",
-        "note": "Assessed wealth across the households of one town or county, "
-                "from the register the levy was charged on. The English "
-                "figures are reconstructed to add back households too poor to "
-                "be assessed, which raises them substantially.",
+        "note": "Assessed wealth across one town or county, from the register the "
+                "levy was charged on. The English figures add back households "
+                "too poor to be assessed.",
     },
     "industrial": {
         "label": "Reconstructed estimates",
-        "note": "Whole-country household wealth at decade intervals, "
-                "reconstructed from probate inventories, estate duty returns "
-                "and household surveys. Coverage thins the further back it "
-                "goes.",
+        "note": "Whole-country household wealth every decade, from probate "
+                "inventories, estate duty returns and surveys.",
     },
     "modern": {
         "label": "National accounts",
-        "note": "Shares of total household net wealth, from tax records and "
-                "national balance sheets, annual. The only layer measured "
-                "contemporaneously rather than reconstructed after the fact.",
+        "note": "Shares of household net wealth from tax records and national "
+                "balance sheets. The only layer measured at the time.",
     },
 }
 

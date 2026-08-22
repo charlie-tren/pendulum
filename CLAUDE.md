@@ -18,15 +18,15 @@ subdirectory of the charlie-tren.github.io repo. That is the convention every
 other project on the site follows; an earlier plan for a Cloudflare Pages
 subdomain was dropped once the repo made the actual pattern obvious.
 
-Two pages: `/pendulum/` is who governs, `/pendulum/wealth.html` is who owns.
-They share `style.css` and nothing else - separate data, separate script, and a
-card at the top of each linking to the other.
+Two pages, and they are SIBLINGS at the site root, not parent and child:
+`charlietrenorden.com/pendulum/` is who governs, `charlietrenorden.com/inequality/`
+is who owns. Each links to the other from its header nav.
 
-To deploy: copy `site/*` into charlie-tren.github.io/pendulum/ and push, which
-is index.html, wealth.html, style.css, app.js, wealth.js, orientation.json,
-map.json, wealth.json, og-card.png and the icons. Fetch first, other sessions
-push to that repo constantly. The card thumbnail is shot automatically by that
-repo's "Refresh card thumbnails" workflow, which Pendulum is registered with.
+To deploy: `site/*` (minus the `inequality/` folder) goes to
+charlie-tren.github.io/`pendulum/`, and `site/inequality/*` goes to
+charlie-tren.github.io/`inequality/`. `style.css` is copied into BOTH, from the
+one source at `site/style.css`, so never edit the deployed copies. Fetch first,
+other sessions push to that repo constantly.
 
 The JSON under `site/` is a COPY of `data/out/`. Rebuild, then copy, or the
 page serves yesterday's numbers while the tests pass against today's.

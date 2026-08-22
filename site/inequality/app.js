@@ -39,21 +39,18 @@ const svgEl = (name, attrs = {}) => {
 const METRICS = {
   gini: {
     label: "Wealth Gini", max: 1, pct: false,
-    blurb: "Half the mean absolute difference in wealth between any two "
-         + "households, over the mean. 0 is a perfectly even distribution, "
-         + "1 is the limit where one household holds everything.",
+    blurb: "Half the mean absolute difference between any two households, over "
+         + "the mean. 0 is an even distribution, 1 is one household with all of it.",
   },
   top10: {
     label: "Share held by the richest 10%", max: 100, pct: true,
-    blurb: "The top decile's share of total household wealth in the unit "
-         + "being measured, which is a settlement, a county or a country "
-         + "depending on the period.",
+    blurb: "The top decile's share of household wealth in one settlement, "
+         + "county or country.",
   },
   top1: {
     label: "Share held by the richest 1%", max: 100, pct: true,
-    blurb: "The top percentile's share of total household wealth in the unit "
-         + "being measured, which is a settlement, a county or a country "
-         + "depending on the period.",
+    blurb: "The top percentile's share of household wealth in one settlement, "
+         + "county or country.",
   },
 };
 
@@ -80,6 +77,13 @@ const PERIODS = [
   { key: "measured", from: 1801, to: 1e9 },
 ];
 
+/* The key is read at a glance, so it takes the shortest name that is still
+   true. The long ones belong in the panel that explains the layers. */
+const SRC_KEY = {
+  industrial: "Estimates, middle half",
+  modern: "Accounts, middle half",
+};
+
 const SOURCE_STYLE = {
   industrial: { colour: "var(--w-mid)", dashed: true },
   modern: { colour: "var(--w-now)", dashed: false },
@@ -91,20 +95,31 @@ const yearLabel = (y) => (y < 0 ? `${Math.abs(y).toLocaleString()} BC` : `${y}`)
    them. A panel spanning 10,000 years and one spanning 200 both need labels a
    reader recognises, so the step comes off a 1/2/5 ladder rather than being
    the span divided by a count, which produces marks like 1837 and 4611. */
+/* The panel is divided into equal parts and a tick goes at each division, so
+   the labels are evenly spread from edge to edge with no short gap at the end.
+
+   The obvious alternative, stepping by a round number, is what was here before
+   and it leaves a ragged remainder: a panel running 1283 to 1800 stepped by 200
+   labelled 1283, 1483 and 1683 and then stopped 117 years short of its own
+   right edge. Round numbers are worth less here than even spacing, because the
+   spacing is what a reader uses to judge distance. Labels are rounded to
+   something readable and sit at their true position. */
 function ticksFor(x0, x1, want) {
   const span = x1 - x0;
   if (span <= 0) return [x0];
-  const raw = span / Math.max(1, want);
-  const mag = 10 ** Math.floor(Math.log10(raw));
-  const step = [1, 2, 5, 10].map((m) => m * mag).find((v) => v >= raw) || 10 * mag;
-  /* Anchored at the panel's own start, not at a multiple of the step from year
-     zero. Anchoring on zero made the FIRST gap a different width from all the
-     others, so a panel running 9200 BC to 1283 got its first label at 5000 BC
-     and the eye read the uneven spacing as uneven time. Every labelled gap is
-     now identical. */
-  const out = [];
-  for (let t = x0; t <= x1 + 1e-9; t += step) out.push(Math.round(t));
-  return out.length >= 2 ? out : [x0, x1];
+  const n = Math.max(2, Math.min(6, want));
+  const step = span / n;
+  const grain = step > 1000 ? 100 : step > 200 ? 50 : step > 40 ? 10 : 1;
+  /* The two ends are the panel's exact bounds, never rounded. Rounding them
+     gave the boundary year two different labels on the two panels that share
+     it: 1283 came out as "1300" on the left of the gutter and "1280" on the
+     right, which reads as an error rather than as rounding. */
+  const out = [x0];
+  for (let i = 1; i < n; i += 1) {
+    out.push(Math.round((x0 + step * i) / grain) * grain);
+  }
+  out.push(x1);
+  return out;
 }
 const fmt = (v) => (METRICS[state.metric].pct ? `${v.toFixed(1)}%` : v.toFixed(2));
 
@@ -224,6 +239,7 @@ function periodContent(period, metric) {
      different measurements. */
   const trends = [];
   for (const [layer, colour] of [["deep", "var(--w-deep)"], ["preindustrial", "var(--w-early)"]]) {
+    if (layer === "deep" && period.key !== "ancient") continue;
     const own = all.filter((p) => p.layer === layer).map((p) => [p.year, p[metric]]);
     const line = kernelSmooth(own);
     if (line.length > 1) trends.push({ layer, colour, line });
@@ -291,7 +307,7 @@ function drawEras() {
   const box = boxFor("#eras", narrow ? 1.15 : 0.46, narrow ? 300 : 260, narrow ? 460 : 430);
   svg.setAttribute("viewBox", `0 0 ${box.w} ${box.h}`);
 
-  const pad = { l: narrow ? 30 : 44, r: 8, t: 10, b: 40 };
+  const pad = { l: narrow ? 30 : 44, r: 8, t: 22, b: 40 };
   const gut = narrow ? 7 : 16;
   const iw = box.w - pad.l - pad.r;
 
@@ -348,13 +364,17 @@ function drawEras() {
        carries real dated ticks rather than one range caption. A single "9200
        BC to 1283" told a reader nothing about where inside it a dot sat. */
     const name = svgEl("text", {
-      x: lane.x, y: (lane.y - 1).toFixed(1), "font-size": 12,
+      x: lane.x, y: (lane.y - 8).toFixed(1), "font-size": 12,
       "font-weight": 600, fill: "var(--ink-soft)",
     });
     name.textContent = `${yearLabel(x0)} to ${yearLabel(era.labelTo ?? x1)}`;
     svg.appendChild(name);
 
-    for (const t of ticksFor(x0, x1, Math.max(2, Math.round(lane.w / 78)))) {
+    /* The panels share their boundary years, so without this the same year is
+       printed twice, once either side of the gutter. The left panel keeps it. */
+    const xticks = ticksFor(x0, x1, Math.max(2, Math.round(lane.w / 78)));
+    for (const [ti, t] of xticks.entries()) {
+      if (i > 0 && ti === 0) continue;
       const tx = xOf(t);
       if (tx < lane.x - 1 || tx > lane.x + lane.w + 1) continue;
       svg.appendChild(svgEl("line", {
@@ -366,7 +386,8 @@ function drawEras() {
         x: tx.toFixed(1), y: (lane.y + lane.h + 17).toFixed(1),
         "text-anchor": "middle", "font-size": 10.5, fill: "var(--ink-faint)",
       });
-      lab.textContent = yearLabel(t);
+      // the last tick names the period's end, which is the header's year
+      lab.textContent = yearLabel(ti === xticks.length - 1 ? (era.labelTo ?? t) : t);
       svg.appendChild(lab);
     }
 
@@ -414,9 +435,16 @@ function drawEras() {
       }));
     }
 
-    // ---- one dot per site or assessment, unless its layer is folded away
+    /* House sizes are the weakest evidence on the page and they only earn a
+       place where nothing better survives. Eleven dig sites fall after 1283,
+       inside panels that have tax registers or national accounts, and drawing
+       them there put a scatter of orange next to far better measurements of the
+       same centuries. They stay in the settlement-size chart, which is what
+       they are actually good for. */
+    const better = i > 0;
     for (const p of pts) {
       if (!state.scatter[p.layer]) continue;
+      if (p.layer === "deep" && better) continue;
       const hue = `var(--w-${p.layer === "deep" ? "deep" : "early"})`;
       const dot = svgEl("circle", {
         cx: xOf(p.year).toFixed(1), cy: yOf(lane, p[metric]).toFixed(1),
@@ -491,11 +519,8 @@ function drawEras() {
   /* The count changes with the measure: no national accounts publish a Gini
      and no historian's estimate reaches the
      richest 1%, so the panel count follows the measure. */
-  const n = ["", "One panel", "Two panels", "Three panels", "Four panels"][eras.length];
   $("#eras-caption").textContent =
-    `${n}, one per period. The horizontal scale differs between them and the ` +
-    "vertical scale does not, so heights are comparable across panels and " +
-    "horizontal distances are not.";
+    "Each panel has its own time scale. Only the heights are comparable.";
 }
 
 /* ------------------------------------------------- the archaeology, two cuts */
@@ -504,7 +529,11 @@ function drawEras() {
    cut than his five-step political taxonomy: the words need no glossary, the
    medians are monotonic where the political one has a flat spot, and it is the
    same claim about scale. The political coding is still in the payload. */
-const SIZES = ["camp", "village", "town", "city"];
+/* Camp is dropped: two sites is not a category, it is two sites, and a box
+   plot over n=2 draws a box that means nothing. The foraging figure survives in
+   the caption where it can be stated as what it is. */
+const SIZES = ["village", "town", "city"];
+const SIZE_LABEL = { village: "Village", town: "Town", city: "City" };
 
 function deepSites() {
   return DATA.points.filter((p) => p.layer === "deep" && p.gini != null);
@@ -570,7 +599,7 @@ function drawScale() {
       x: pad.l - 12, y: (cy + 1).toFixed(1), "text-anchor": "end",
       "font-size": 13, fill: "var(--ink)",
     });
-    name.textContent = row.key;
+    name.textContent = SIZE_LABEL[row.key] || row.key;
     svg.appendChild(name);
     const n = svgEl("text", {
       x: pad.l - 12, y: (cy + 15).toFixed(1), "text-anchor": "end",
@@ -626,10 +655,8 @@ function drawScale() {
   const first = median(rows[0].pts.map((p) => p.gini));
   const last = median(rows[rows.length - 1].pts.map((p) => p.gini));
   $("#scale-caption").textContent =
-    `Median Gini ${first.toFixed(2)} at ${rows[0].key} scale, ` +
-    `${last.toFixed(2)} at ${rows[rows.length - 1].key} scale, across ` +
-    `${deepSites().length} sites. The same ordering holds for how a place fed ` +
-    `itself: 0.17 for the foragers, 0.27 where they gardened, 0.35 where they farmed.`;
+    `Median Gini ${first.toFixed(2)} in villages, ${last.toFixed(2)} in cities. ` +
+    `The two hunter-gatherer camps in the sample sit at 0.16 and 0.17.`;
   describe(svg, "Wealth Gini at every excavated site, grouped by whether the "
                 + "site was a camp, a village, a town or a city.");
 }
@@ -637,8 +664,8 @@ function drawScale() {
 /* ----------------------------------------------------------------- furniture */
 
 const LAYER_DOT = {
-  deep: ["var(--w-deep)", "Every excavated settlement"],
-  preindustrial: ["var(--w-early)", "Every tax assessment"],
+  deep: ["var(--w-deep)", "Dig sites"],
+  preindustrial: ["var(--w-early)", "Tax records"],
 };
 
 function renderLegend() {
@@ -660,13 +687,13 @@ function renderLegend() {
   }
   if (trends.length) {
     out.push({ colour: trends.length === 1 ? trends[0].colour : "var(--ink-soft)",
-               label: "Local average" });
+               label: "Average" });
   }
   if (pts.some((p) => p.aggregate && state.scatter[p.layer])) {
-    out.push({ colour: "var(--w-region)", label: "A whole region, hollow" });
+    out.push({ colour: "var(--w-region)", label: "Whole regions, hollow" });
   }
   for (const src of sources) {
-    out.push({ colour: src.colour, label: `${src.label}, middle half` });
+    out.push({ colour: src.colour, label: SRC_KEY[src.key] || src.label });
   }
   if (sources.length && state.country !== ALL) {
     out.push({ colour: "var(--w-pick)",

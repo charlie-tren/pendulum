@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 OUT = ROOT / "site" / "_coin_animations.gif"
 
-FRAMES, STEP_MS = 30, 60          # 1.8s of motion, which covers the longest loop
+FRAMES, STEP_MS = 40, 60          # 1.8s of motion, which covers the longest loop
 
 # Same geometry the real mark uses, inlined so this file stands alone
 RX, RY, STEP, BASE = 6.6, 2.6, 4.2, 51.0
@@ -51,47 +51,77 @@ MARK = ('<svg viewBox="0 8 58 48">'
         + "".join(stack_svg(m, cx, n) for m, cx, n in STACKS)
         + "</svg>")
 
+# Ten ways of moving a coin between the stacks. The subject of the page is
+# wealth changing hands, so every one of these is some version of a coin
+# leaving one pile and arriving in another. `--i` is the coin's index up its
+# own stack, set on each group, which is what lets a whole stack move in
+# sequence rather than as a block.
 OPTIONS = {
-    "Lift": """
-      .o1 .stack { animation: lift 1.5s ease-in-out infinite; }
-      .o1 .s-silver { animation-delay: .12s; } .o1 .s-gold { animation-delay: .24s; }
-      @keyframes lift { 0%,100%{transform:translateY(0)} 45%{transform:translateY(-3px)} }""",
+    "Bronze to gold": """
+      .o1 .s-bronze .coin:last-of-type { animation: fly-bg 2s ease-in-out infinite; }
+      @keyframes fly-bg { 0%,10%{transform:none} 45%,100%{transform:translate(32px,-22px)} }""",
 
-    "Stack up": """
-      .o2 .coin { animation: rise 1.8s ease-out infinite; animation-delay: calc(var(--i) * .07s); }
-      @keyframes rise { 0%{transform:translateY(10px);opacity:0} 22%,100%{transform:none;opacity:1} }""",
+    "Both to the gold": """
+      .o2 .s-bronze .coin:last-of-type { animation: fly-bg 2.2s ease-in-out infinite; }
+      .o2 .s-silver .coin:last-of-type { animation: fly-sg 2.2s ease-in-out infinite .2s; }
+      @keyframes fly-sg { 0%,10%{transform:none} 45%,100%{transform:translate(16px,-17px)} }""",
 
-    "Topple": """
-      .o3 .s-gold { animation: topple 1.9s ease-in-out infinite; transform-origin: 45px 53px; }
-      @keyframes topple { 0%,55%{transform:rotate(0)} 72%{transform:rotate(7deg)} 100%{transform:rotate(0)} }""",
+    "Round trip": """
+      .o3 .s-bronze .coin:last-of-type { animation: trip 2.4s ease-in-out infinite; }
+      @keyframes trip { 0%,8%{transform:none} 40%,60%{transform:translate(32px,-22px)}
+                        92%,100%{transform:none} }""",
 
-    "Shimmer": """
-      .o4 .coin ellipse { animation: shine 1.6s ease-in-out infinite;
-                          animation-delay: calc(var(--i) * .06s); }
-      @keyframes shine { 0%,100%{filter:brightness(1)} 40%{filter:brightness(1.55)} }""",
+    "Arc over the top": """
+      .o4 .s-silver .coin:last-of-type { animation: arc 2s ease-in-out infinite; }
+      @keyframes arc { 0%{transform:none} 50%{transform:translate(8px,-26px)}
+                       100%{transform:translate(16px,-17px)} }""",
 
-    "Spin the top": """
-      .o5 .s-gold .coin:last-of-type ellipse,
-      .o5 .s-silver .coin:last-of-type ellipse,
-      .o5 .s-bronze .coin:last-of-type ellipse {
-        animation: spin 1.5s ease-in-out infinite; transform-box: fill-box;
-        transform-origin: 50% 50%; }
-      @keyframes spin { 0%,100%{transform:scaleX(1)} 50%{transform:scaleX(.15)} }""",
+    "Siphon": """
+      .o5 .s-bronze .coin, .o5 .s-silver .coin {
+        animation: siphon 2.6s ease-in-out infinite;
+        animation-delay: calc(var(--i) * .18s); }
+      @keyframes siphon { 0%,14%{transform:none;opacity:1}
+                          55%{transform:translate(24px,-20px);opacity:.25}
+                          70%,100%{transform:none;opacity:1} }""",
 
-    "Grow apart": """
-      .o6 .s-bronze { animation: shrink 2s ease-in-out infinite; }
-      .o6 .s-gold { animation: grow 2s ease-in-out infinite; }
-      .o6 .stack { transform-origin: 50% 53px; }
-      @keyframes grow { 0%,100%{transform:scaleY(1)} 50%{transform:scaleY(1.14)} }
-      @keyframes shrink { 0%,100%{transform:scaleY(1)} 50%{transform:scaleY(.86)} }""",
+    "One at a time, forever": """
+      .o6 .s-bronze .coin:last-of-type { animation: fly-bg 1.4s ease-in infinite; }
+      .o6 .s-silver .coin:last-of-type { animation: fly-sg 1.4s ease-in infinite .35s; }""",
+
+    "Tipping point": """
+      .o7 .s-bronze { animation: drain 2.6s ease-in-out infinite; transform-origin:13px 53px; }
+      .o7 .s-gold { animation: swell 2.6s ease-in-out infinite; transform-origin:45px 53px; }
+      @keyframes drain { 0%,100%{transform:scaleY(1)} 50%{transform:scaleY(.5)} }
+      @keyframes swell { 0%,100%{transform:scaleY(1)} 50%{transform:scaleY(1.18)} }""",
+
+    "Slide along the base": """
+      .o8 .s-bronze .coin:first-of-type { animation: slide 2.2s ease-in-out infinite; }
+      @keyframes slide { 0%,12%{transform:none} 50%,100%{transform:translateX(32px)} }""",
+
+    "Cascade": """
+      .o9 .coin { animation: cascade 2.8s ease-in-out infinite;
+                  animation-delay: calc(var(--i) * .1s); }
+      @keyframes cascade { 0%,20%{transform:none} 55%{transform:translate(10px,-8px)}
+                           85%,100%{transform:none} }""",
+
+    "Poached from the top": """
+      .o10 .s-gold .coin:last-of-type { animation: poach 2.4s ease-in-out infinite; }
+      @keyframes poach { 0%,10%{transform:none} 45%{transform:translate(-32px,10px)}
+                         80%,100%{transform:none} }""",
 }
+
+# shared by more than one option above
+SHARED = """
+  @keyframes fly-bg { 0%,10%{transform:none} 45%,100%{transform:translate(32px,-22px)} }
+  @keyframes fly-sg { 0%,10%{transform:none} 45%,100%{transform:translate(16px,-17px)} }
+"""
 
 HTML = """<!doctype html><meta charset="utf-8">
 <style>
   * {{ margin:0; box-sizing:border-box; }}
   body {{ background:#131519; color:#e9ecf0; padding:26px 24px;
-         font:14px/1.4 -apple-system,"Segoe UI",Roboto,sans-serif; width:940px; }}
-  .grid {{ display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }}
+         font:14px/1.4 -apple-system,"Segoe UI",Roboto,sans-serif; width:760px; }}
+  .grid {{ display:grid; grid-template-columns:repeat(2,1fr); gap:18px; }}
   .cell {{ border:1px solid #2b2f36; border-radius:12px; background:#1a1d22; padding:14px 16px 11px; }}
   .row {{ display:flex; align-items:center; gap:16px; height:56px; }}
   svg {{ height:46px; width:auto; overflow:visible; flex:none; }}
@@ -124,7 +154,7 @@ def capture(pg, w, h, out):
 
 
 def main() -> int:
-    css = "".join(OPTIONS.values())
+    css = "".join(OPTIONS.values()) + SHARED
     names = list(OPTIONS)
 
     with sync_playwright() as pw:
@@ -135,9 +165,9 @@ def main() -> int:
                         for i, n in enumerate(names))
         tmp = ROOT / "site" / "_anim.html"
         tmp.write_text(HTML.format(css=css, cells=cells), encoding="utf-8")
-        pg = br.new_page(viewport={"width": 940, "height": 330}, device_scale_factor=1)
+        pg = br.new_page(viewport={"width": 760, "height": 1100}, device_scale_factor=1)
         pg.goto(tmp.as_uri()); pg.wait_for_timeout(200)
-        capture(pg, 940, 330, OUT)
+        capture(pg, 760, 1100, OUT)
         pg.close()
         print(f"wrote {OUT.relative_to(ROOT)}  {OUT.stat().st_size:,} bytes")
 
@@ -145,7 +175,7 @@ def main() -> int:
         for i, name in enumerate(names):
             one = CELL.format(cls=f"o{i + 1}", mark=MARK, name=name, n=i + 1)
             tmp.write_text(
-                HTML.format(css=css, cells=one).replace("width:940px", "width:430px")
+                HTML.format(css=css, cells=one).replace("width:760px", "width:430px")
                     .replace("repeat(3,1fr)", "1fr")
                     .replace("height:46px", "height:74px")
                     .replace("font:400 29px/1", "font:400 44px/1")
