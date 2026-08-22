@@ -226,3 +226,47 @@ def test_no_phantom_swing_at_the_dpi_handover():
         if hit and last and hit.get("start") is not None and hit["start"] <= last[0]:
             offenders.append((rec["entity"], rec["year"]))
     assert not offenders, f"Wikidata overrode DPI on a term DPI already judged: {offenders[:5]}"
+
+
+def test_vparty_ratings_start_the_year_after_the_election():
+    """V-Party is keyed on the election; the winner does not govern on 1 January
+    of the election year.
+
+    The site's convention is the party in power on 1 January. V-Party's rows are
+    stamped with the election year, and the loader used to apply the new rating
+    from that year, which put the winner in power up to twelve months early:
+    Japan read right through 2012 off a 26 December election the DPJ governed
+    all year, and Chile read right through 2017 while Bachelet was in office.
+    54 country-years across 38 countries.
+
+    This is the same bug the Wikidata layer had and had fixed. Fixing one
+    instance is not fixing the class, so this guards the other source.
+    """
+    import yaml
+
+    from resolve import load_vparty
+    cmap = yaml.safe_load((ROOT / "config" / "country_map.yaml").read_text(encoding="utf-8"))
+    annual, _ = load_vparty(cmap)
+
+    # Japan: the DPJ governed from September 2009 to 26 December 2012, so it
+    # holds 1 January of 2010, 2011 and 2012, and the LDP's win shows in 2013.
+    assert annual[("Japan", 2012)]["bucket"] == annual[("Japan", 2011)]["bucket"], \
+        "the December 2012 election moved Japan inside the DPJ's own term"
+    assert annual[("Japan", 2013)]["bucket"] == "right"
+
+
+def test_absolute_monarchies_are_no_reading_for_the_whole_period():
+    """Left-right does not apply where parties are banned, and it does not start
+    applying in a particular year.
+
+    Saudi Arabia read `unresolved` from 1975 to 2019 and `no_reading` from 2020,
+    while five identical Gulf monarchies were covered from 1975. The rule was
+    written in an early pass that only reached back a few years, and the later
+    pass that widened the others skipped it because it already had a row.
+    """
+    banned = ["SAU", "OMN", "QAT", "ARE", "KWT", "BHR"]
+    letters = {"n": "no_reading", "u": "unresolved"}
+    for iso in banned:
+        codes = DATA["map"]["codes"][iso]
+        wrong = [DATA["map"]["year0"] + i for i, c in enumerate(codes) if c != "n"]
+        assert not wrong, f"{iso} is not no_reading in {wrong[:6]} ({letters.get(codes[0])})"

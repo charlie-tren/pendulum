@@ -115,7 +115,15 @@ def load_vparty(cmap: dict):
                for r in grp.sort_values("year").itertuples()]
         for i, (year, ordv, score, short) in enumerate(obs):
             nxt = obs[i + 1][0] if i + 1 < len(obs) else VPARTY_END
-            for y in range(year, min(nxt, VPARTY_END) + 1):
+            # year + 1, not year: V-Party is keyed on the ELECTION, and the
+            # winner of an election in year Y does not hold office on 1 January
+            # of Y - the government it beat does. Starting the new rating in the
+            # election year itself put the winner in power up to twelve months
+            # early and invented a swing in a year no government changed. Japan
+            # 2012 read right off the December election while the DPJ governed
+            # all year; Chile 2017 read right off Pinera's December win while
+            # Bachelet was still in office. Same bug the Wikidata layer had.
+            for y in range(year + 1, min(nxt, VPARTY_END) + 1):
                 annual[(entity, y)] = {"bucket": ORD_BUCKET[ordv], "score": score, "ord": ordv}
             ratings[(entity, norm_party(short))] = {
                 "bucket": ORD_BUCKET[ordv], "score": score, "ord": ordv, "last_seen": year}
