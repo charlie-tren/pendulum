@@ -9,7 +9,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Charlie Trenorden">
 <meta property="og:title" content="Pendulum: eleven thousand years of wealth inequality">
-<meta property="og:description" content="Who owned what, from excavated settlements in 9200 BC to national accounts today.">
+<meta property="og:description" content="From a Syrian village in 9200 BC to last year&#39;s tax returns.">
 <meta property="og:url" content="https://charlietrenorden.com/pendulum/wealth/">
 <meta property="og:image" content="https://charlietrenorden.com/pendulum/wealth/og-card.png">
 <meta property="og:image:width" content="2400">
@@ -25,7 +25,8 @@
 <body class="loading">
 <header class="wrap">
   <nav class="topnav">
-    <a href="../">Who governs</a>
+    <a href="../">Left and Right</a>
+    <span class="sep" aria-hidden="true"></span>
     <a class="home" href="https://charlietrenorden.com/"><span class="back" aria-hidden="true">&larr;</span>&nbsp;<span class="lbl-full">Other projects</span><span class="lbl-short">Projects</span></a>
   </nav>
   <h1>
@@ -50,7 +51,7 @@
       </g>
     </svg>Inequality</h1>
   <p class="standfirst">
-    Who owned what, from excavated settlements in 9200 BC to national accounts today.
+    From a Syrian village in 9200 BC to last year's tax returns.
   </p>
 </header>
 
@@ -60,8 +61,8 @@
       <label for="metric-sel">Measure</label>
       <select id="metric-sel">
         <option value="gini">Wealth Gini</option>
-        <option value="top10">Share held by the richest tenth</option>
-        <option value="top1">Share held by the richest hundredth</option>
+        <option value="top10">Share held by the richest 10%</option>
+        <option value="top1">Share held by the richest 1%</option>
       </select>
     </div>
     <div class="control">
@@ -80,6 +81,36 @@
       <div class="readout" id="eras-readout" hidden></div>
     </figure>
     <p class="caption" id="eras-caption"></p>
+  </section>
+
+  <section class="panel">
+    <h2>Inequality and the State</h2>
+    <p class="sub">
+      Every excavated site carries a coding for how the society that built it
+      was organised, on Kohler's five-step scale. The wider a polity's reach,
+      the more unevenly its houses were sized. One dot is one site; the bar is
+      the median.
+    </p>
+    <figure class="chart">
+      <svg id="scale" role="img"></svg>
+      <div class="readout" id="scale-readout" hidden></div>
+    </figure>
+    <p class="caption" id="scale-caption"></p>
+  </section>
+
+  <section class="panel">
+    <h2>Two Hemispheres</h2>
+    <p class="sub">
+      Kohler's own headline finding, from the same sites. Eurasia had draught
+      animals and the plough, which let a household work more land than it
+      could farm by hand and let the surplus concentrate. The Americas did not.
+    </p>
+    <div class="legend" id="legend-old"></div>
+    <figure class="chart">
+      <svg id="oldnew" role="img"></svg>
+      <div class="readout" id="oldnew-readout" hidden></div>
+    </figure>
+    <p class="caption" id="oldnew-caption"></p>
   </section>
 
   <section class="panel">

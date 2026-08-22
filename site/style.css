@@ -303,7 +303,7 @@ h1 { display: flex; align-items: center; gap: 26px; width: fit-content; }
   }
   .topnav { grid-row: 1; gap: 0; }
   .topnav > a { font-size: 12.5px; padding: 5px 6px; }
-  .topnav > a:first-child::after { margin-left: 7px; margin-right: -1px; }
+  .topnav .sep { margin: 0 4px; }
   .topnav .back { display: none; }
   .topnav > a { white-space: nowrap; }
   header > .standfirst { grid-row: 2; }
@@ -438,9 +438,12 @@ footer .terms { display: block; color: var(--ink-faint); font-size: 12.5px; marg
 }
 .topnav > a:hover { background: var(--panel); color: var(--ink); }
 .topnav > a + a { margin-right: -8px; }
-.topnav > a:first-child::after {
-  content: ""; width: 1px; height: 14px; background: var(--rule);
-  margin-left: 11px; margin-right: -3px;
+/* A real element, not ::after on the first link. As a pseudo-element it was
+   part of that anchor's box, so hovering the divider highlighted the link next
+   to it and the hover target was visibly wider than the word. */
+.topnav .sep {
+  width: 1px; height: 14px; background: var(--rule);
+  margin: 0 7px; flex: none;
 }
 /* The short label and its override MUST sit together, base first. Split across
    the file, this base rule came after the media query that was meant to beat
@@ -494,3 +497,18 @@ h1:hover .coins .s-gold, h1:focus-within .coins .s-gold { animation-delay: .24s;
 @media (prefers-reduced-motion: reduce) {
   h1:hover .coins .stack, h1:focus-within .coins .stack { animation: none; }
 }
+
+/* A key entry that is also a control. Same shape as the static ones so the row
+   reads as one legend, but pressable, and visibly off when its layer is folded
+   away. */
+.legend .key {
+  font: inherit; font-size: 13.5px; color: var(--ink-soft);
+  display: inline-flex; align-items: center; gap: 7px;
+  background: none; border: 0; padding: 0; cursor: pointer;
+  border-bottom: 1px dashed var(--rule);
+}
+.legend .key:hover { color: var(--ink); border-bottom-color: var(--ink-faint); }
+.legend .key:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.legend .key[aria-pressed="false"] { color: var(--ink-faint); }
+.legend .key[aria-pressed="false"] i { background: none !important;
+  box-shadow: inset 0 0 0 1.5px var(--ink-faint); }

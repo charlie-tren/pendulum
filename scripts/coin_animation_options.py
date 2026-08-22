@@ -108,35 +108,57 @@ CELL = ('<div class="cell"><div class="row {cls}">{mark}<span class="word">Inequ
         '<div class="name">{n}. {name}</div></div>')
 
 
+def capture(pg, w, h, out):
+    shots = []
+    for i in range(FRAMES):
+        path = ROOT / "site" / f"_f{i:02d}.png"
+        pg.screenshot(path=str(path))
+        shots.append(path)
+        pg.wait_for_timeout(STEP_MS)
+    frames = [Image.open(x).convert("P", palette=Image.ADAPTIVE, colors=96) for x in shots]
+    frames[0].save(out, save_all=True, append_images=frames[1:],
+                   duration=STEP_MS, loop=0, optimize=True)
+    for x in shots:
+        x.unlink()
+    return out
+
+
 def main() -> int:
     css = "".join(OPTIONS.values())
-    cells = "".join(
-        CELL.format(cls=f"o{i + 1}", mark=MARK, name=name, n=i + 1)
-        for i, name in enumerate(OPTIONS)
-    )
-    tmp = ROOT / "site" / "_anim.html"
-    tmp.write_text(HTML.format(css=css, cells=cells), encoding="utf-8")
+    names = list(OPTIONS)
 
-    shots = []
     with sync_playwright() as pw:
         br = pw.chromium.launch()
+
+        # the grid, all six at once
+        cells = "".join(CELL.format(cls=f"o{i + 1}", mark=MARK, name=n, n=i + 1)
+                        for i, n in enumerate(names))
+        tmp = ROOT / "site" / "_anim.html"
+        tmp.write_text(HTML.format(css=css, cells=cells), encoding="utf-8")
         pg = br.new_page(viewport={"width": 940, "height": 330}, device_scale_factor=1)
-        pg.goto(tmp.as_uri())
-        pg.wait_for_timeout(200)
-        for i in range(FRAMES):
-            path = ROOT / "site" / f"_f{i:02d}.png"
-            pg.screenshot(path=str(path))
-            shots.append(path)
-            pg.wait_for_timeout(STEP_MS)
+        pg.goto(tmp.as_uri()); pg.wait_for_timeout(200)
+        capture(pg, 940, 330, OUT)
+        pg.close()
+        print(f"wrote {OUT.relative_to(ROOT)}  {OUT.stat().st_size:,} bytes")
+
+        # and one file each, larger, because a six-up grid is small to judge
+        for i, name in enumerate(names):
+            one = CELL.format(cls=f"o{i + 1}", mark=MARK, name=name, n=i + 1)
+            tmp.write_text(
+                HTML.format(css=css, cells=one).replace("width:940px", "width:430px")
+                    .replace("repeat(3,1fr)", "1fr")
+                    .replace("height:46px", "height:74px")
+                    .replace("font:400 29px/1", "font:400 44px/1")
+                    .replace("height:56px", "height:88px"),
+                encoding="utf-8")
+            pg = br.new_page(viewport={"width": 430, "height": 148}, device_scale_factor=2)
+            pg.goto(tmp.as_uri()); pg.wait_for_timeout(200)
+            out = ROOT / "site" / f"_coin_anim_{i + 1}.gif"
+            capture(pg, 430, 148, out)
+            pg.close()
+            print(f"  {out.name}  {out.stat().st_size:,} bytes  ({name})")
         br.close()
     tmp.unlink()
-
-    frames = [Image.open(p).convert("P", palette=Image.ADAPTIVE, colors=128) for p in shots]
-    frames[0].save(OUT, save_all=True, append_images=frames[1:],
-                   duration=STEP_MS, loop=0, optimize=True)
-    for p in shots:
-        p.unlink()
-    print(f"wrote {OUT.relative_to(ROOT)}  {OUT.stat().st_size:,} bytes, {FRAMES} frames")
     return 0
 
 

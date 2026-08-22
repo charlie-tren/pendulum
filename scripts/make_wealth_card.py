@@ -125,7 +125,7 @@ HTML = f"""<!doctype html><meta charset="utf-8">
 <svg class="chart" width="{W}" height="{H}">{draw()}</svg>
 <div class="top">
   <div class="head">{MARK}<h1>Inequality</h1></div>
-  <p>Who owned what, from excavated settlements in 9200 BC to national accounts today.</p>
+  <p>From a Syrian village in 9200 BC to last year&#8217;s tax returns.</p>
 </div>
 """
 

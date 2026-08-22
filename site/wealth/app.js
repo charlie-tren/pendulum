@@ -14,9 +14,18 @@
    one y axis. You can compare heights, which is the honest comparison, and the
    gutters say plainly that the horizontal scales differ. */
 
-const DEFAULTS = { metric: "gini", country: "GBR" };
+/* `scatter` is which layers show their individual observations. The tax
+   registers open closed: 84 towns, 26 regional estimates and a median in one
+   panel was a thicket, and the median is the thing worth reading first. The
+   archaeology opens open, because 52 sites over 10,000 years is the finding
+   rather than clutter, and there is no denser summary to fall back on. Both
+   are toggled from the key. */
+const DEFAULTS = {
+  metric: "gini", country: "GBR",
+  scatter: { deep: true, preindustrial: false },
+};
 const ALL = "__all";
-const state = { ...DEFAULTS };
+const state = { ...DEFAULTS, scatter: { ...DEFAULTS.scatter } };
 let DATA = null;
 
 const $ = (sel) => document.querySelector(sel);
@@ -213,6 +222,17 @@ function boxFor(svgId, ratio, minH, maxH) {
   return { w, h: Math.round(clamp(minH, w * ratio, maxH)) };
 }
 
+/* Both an aria-label and a <title>: screen readers take the label, and a
+   browser's own tooltip takes the title, so a keyboard user and a mouse user
+   get the same sentence. Dropped in a rewrite, which threw at the end of two
+   chart functions and stopped the ones after them ever running. */
+function describe(svg, text) {
+  svg.setAttribute("aria-label", text);
+  let t = svg.querySelector("title");
+  if (!t) { t = svgEl("title"); svg.prepend(t); }
+  t.textContent = text;
+}
+
 function placeReadout(el, evt) {
   if (getComputedStyle(el).position === "static") return;
   const fig = el.parentElement.getBoundingClientRect();
@@ -363,8 +383,9 @@ function drawEras() {
       }));
     }
 
-    // ---- one dot per site or assessment
+    // ---- one dot per site or assessment, unless its layer is folded away
     for (const p of pts) {
+      if (!state.scatter[p.layer]) continue;
       const hue = `var(--w-${p.layer === "deep" ? "deep" : "early"})`;
       const dot = svgEl("circle", {
         cx: xOf(p.year).toFixed(1), cy: yOf(lane, p[metric]).toFixed(1),
@@ -446,32 +467,245 @@ function drawEras() {
     "horizontal distances are not.";
 }
 
+/* ------------------------------------------------- the archaeology, two cuts */
+
+/* Kohler's own five-step coding of political organisation, smallest first.
+   Ordering matters: the whole point of the chart is that it is monotonic, and
+   sorting alphabetically would hide that. */
+const SCALES = ["family", "local", "big man", "regional", "state"];
+
+const OLD_WORLD = new Set([
+  "Europe & NE", "Northeast China", "Central China", "East Coast China", "Egypt",
+]);
+
+function deepSites() {
+  return DATA.points.filter((p) => p.layer === "deep" && p.gini != null);
+}
+
+const median = (xs) => {
+  const v = xs.slice().sort((a, b) => a - b);
+  const i = (v.length - 1) / 2;
+  return v.length % 2 ? v[i] : (v[i - 0.5] + v[i + 0.5]) / 2;
+};
+
+/* A strip plot, not a bar chart of the medians. n is 1 to 22 per row and the
+   ranges overlap heavily - states run 0.12 to 0.68 - so a bar would assert a
+   precision the sample cannot carry. Showing every site and marking the median
+   lets a reader see the overlap for themselves. */
+function drawScale() {
+  const svg = $("#scale");
+  const readout = $("#scale-readout");
+  svg.innerHTML = ""; readout.hidden = true;
+
+  const rows = SCALES
+    .map((k) => ({ key: k, pts: deepSites().filter((p) => p.scale === k) }))
+    .filter((r) => r.pts.length);
+  if (!rows.length) return;
+
+  const box = boxFor("#scale", 0.34, 190, 300);
+  svg.setAttribute("viewBox", `0 0 ${box.w} ${box.h}`);
+  const pad = { l: 86, r: 14, t: 8, b: 26 };
+  const iw = box.w - pad.l - pad.r;
+  const rowH = (box.h - pad.t - pad.b) / rows.length;
+  const xOf = (v) => pad.l + v * iw;
+
+  for (const t of [0, 0.25, 0.5, 0.75, 1]) {
+    svg.appendChild(svgEl("line", {
+      x1: xOf(t).toFixed(1), x2: xOf(t).toFixed(1), y1: pad.t,
+      y2: (box.h - pad.b).toFixed(1), stroke: "var(--rule)", "stroke-width": 1,
+    }));
+    const lab = svgEl("text", {
+      x: xOf(t).toFixed(1), y: (box.h - pad.b + 16).toFixed(1),
+      "text-anchor": "middle", "font-size": 11, fill: "var(--ink-faint)",
+    });
+    lab.textContent = t.toFixed(2);
+    svg.appendChild(lab);
+  }
+
+  rows.forEach((row, i) => {
+    const cy = pad.t + i * rowH + rowH / 2;
+    const name = svgEl("text", {
+      x: pad.l - 12, y: (cy + 4).toFixed(1), "text-anchor": "end",
+      "font-size": 12.5, fill: "var(--ink-soft)",
+    });
+    name.textContent = row.key;
+    svg.appendChild(name);
+
+    const n = svgEl("text", {
+      x: pad.l - 12, y: (cy + 17).toFixed(1), "text-anchor": "end",
+      "font-size": 10.5, fill: "var(--ink-faint)",
+    });
+    n.textContent = `${row.pts.length} site${row.pts.length === 1 ? "" : "s"}`;
+    svg.appendChild(n);
+
+    for (const p of row.pts) {
+      // a deterministic vertical offset so overlapping sites stay countable
+      const j = ((p.year * 2654435761) % 1000) / 1000 - 0.5;
+      const dot = svgEl("circle", {
+        cx: xOf(p.gini).toFixed(1), cy: (cy + j * rowH * 0.52).toFixed(1),
+        r: 3.4, fill: "var(--w-deep)", "fill-opacity": 0.55, class: "dot",
+      });
+      hook(dot, (evt) => {
+        readout.innerHTML = `<b>${p.place}</b>` +
+          `<div class="row"><span>${yearLabel(p.year)}</span><span>${p.gini.toFixed(2)}</span></div>` +
+          `<div class="row"><span>scale</span><span>${p.scale}</span></div>` +
+          `<div class="prov">${p.group}</div>`;
+        readout.hidden = false; placeReadout(readout, evt);
+      });
+      svg.appendChild(dot);
+    }
+
+    const m = median(row.pts.map((p) => p.gini));
+    svg.appendChild(svgEl("line", {
+      x1: xOf(m).toFixed(1), x2: xOf(m).toFixed(1),
+      y1: (cy - rowH * 0.34).toFixed(1), y2: (cy + rowH * 0.34).toFixed(1),
+      stroke: "var(--w-pick)", "stroke-width": 2.6, "stroke-linecap": "round",
+    }));
+  });
+
+  svg.onpointerleave = () => { readout.hidden = true; };
+  const lo = median(rows[0].pts.map((p) => p.gini));
+  const hi = median(rows[rows.length - 1].pts.map((p) => p.gini));
+  $("#scale-caption").textContent =
+    `Median Gini runs from ${lo.toFixed(2)} at ${rows[0].key} scale to ` +
+    `${hi.toFixed(2)} at ${rows[rows.length - 1].key} scale, across ` +
+    `${deepSites().length} sites. The ranges overlap, so this is a tendency ` +
+    `across the sample rather than a rule about any one society.`;
+  describe(svg, "Wealth Gini at each excavated site, grouped by the political "
+                + "scale of the society that built it, smallest at the top.");
+}
+
+function drawOldNew() {
+  const svg = $("#oldnew");
+  const readout = $("#oldnew-readout");
+  svg.innerHTML = ""; readout.hidden = true;
+
+  const sites = deepSites();
+  if (!sites.length) return;
+  const box = boxFor("#oldnew", 0.34, 190, 300);
+  svg.setAttribute("viewBox", `0 0 ${box.w} ${box.h}`);
+  const pad = { l: 44, r: 12, t: 10, b: 28 };
+  const iw = box.w - pad.l - pad.r, ih = box.h - pad.t - pad.b;
+  const years = sites.map((p) => p.year);
+  const x0 = Math.min(...years), x1 = Math.max(...years);
+  const xOf = (y) => pad.l + ((y - x0) / (x1 - x0)) * iw;
+  const yOf = (v) => pad.t + (1 - v) * ih;
+
+  for (const t of [0, 0.25, 0.5, 0.75, 1]) {
+    svg.appendChild(svgEl("line", {
+      x1: pad.l, x2: pad.l + iw, y1: yOf(t).toFixed(1), y2: yOf(t).toFixed(1),
+      stroke: "var(--rule)", "stroke-width": 1,
+    }));
+    const lab = svgEl("text", {
+      x: pad.l - 8, y: (yOf(t) + 4).toFixed(1), "text-anchor": "end",
+      "font-size": 11, fill: "var(--ink-faint)",
+    });
+    lab.textContent = t.toFixed(2);
+    svg.appendChild(lab);
+  }
+  for (const t of ticksFor(x0, x1, Math.max(3, Math.round(iw / 90)))) {
+    const lab = svgEl("text", {
+      x: xOf(t).toFixed(1), y: (pad.t + ih + 18).toFixed(1),
+      "text-anchor": "middle", "font-size": 10.5, fill: "var(--ink-faint)",
+    });
+    lab.textContent = yearLabel(t);
+    svg.appendChild(lab);
+  }
+
+  const halves = [
+    { key: "Old World", colour: "var(--w-deep)", pts: sites.filter((p) => OLD_WORLD.has(p.group)) },
+    { key: "New World", colour: "var(--w-now)", pts: sites.filter((p) => !OLD_WORLD.has(p.group)) },
+  ];
+  for (const h of halves) {
+    for (const p of h.pts) {
+      const dot = svgEl("circle", {
+        cx: xOf(p.year).toFixed(1), cy: yOf(p.gini).toFixed(1), r: 3.4,
+        fill: h.colour, "fill-opacity": 0.55, class: "dot",
+      });
+      hook(dot, (evt) => {
+        readout.innerHTML = `<b>${p.place}</b>` +
+          `<div class="row"><span>${yearLabel(p.year)}</span><span>${p.gini.toFixed(2)}</span></div>` +
+          `<div class="prov">${h.key}. ${p.group}</div>`;
+        readout.hidden = false; placeReadout(readout, evt);
+      });
+      svg.appendChild(dot);
+    }
+    const line = rollingMedian(h.pts.map((p) => [p.year, p.gini]), 7);
+    if (line.length > 1) {
+      svg.appendChild(svgEl("polyline", {
+        points: line.map(([y, v]) => `${xOf(y).toFixed(1)},${yOf(v).toFixed(1)}`).join(" "),
+        fill: "none", stroke: h.colour, "stroke-width": 2.4,
+        "stroke-linejoin": "round", "stroke-linecap": "round",
+      }));
+    }
+  }
+  svg.onpointerleave = () => { readout.hidden = true; };
+
+  $("#legend-old").innerHTML = halves.map((h) =>
+    `<span><i style="background:${h.colour}"></i>${h.key}, ${h.pts.length} sites</span>`).join("")
+    + '<span><i style="background:var(--ink-soft)"></i>Rolling median of seven</span>';
+
+  const om = median(halves[0].pts.map((p) => p.gini));
+  const nm = median(halves[1].pts.map((p) => p.gini));
+  $("#oldnew-caption").textContent =
+    `Median Gini ${om.toFixed(2)} across ${halves[0].pts.length} Old World sites, ` +
+    `${nm.toFixed(2)} across ${halves[1].pts.length} in the New. The two samples ` +
+    `are small and unevenly dated, so the gap is suggestive rather than settled.`;
+  describe(svg, "Wealth Gini at every excavated site over time, split between "
+                + "Old World and New World.");
+}
+
 /* ----------------------------------------------------------------- furniture */
+
+const LAYER_DOT = {
+  deep: ["var(--w-deep)", "Every excavated settlement"],
+  preindustrial: ["var(--w-early)", "Every tax assessment"],
+};
 
 function renderLegend() {
   const eras = activeEras(state.metric);
   const pts = eras.flatMap((e) => e.content.pts);
-  const layerShown = (k) => pts.some((p) => p.layer === k);
+  const has = (k) => pts.some((p) => p.layer === k);
   const trends = eras.flatMap((e) => e.content.trends);
   const sources = eras.flatMap((e) => e.content.series);
-  const aggregates = pts.filter((p) => p.aggregate);
 
-  /* Every entry here is a thing actually on the chart, and every thing on the
-     chart has an entry. Both halves of that have been broken before. */
+  /* Every entry is a thing on the chart, and every thing on the chart has an
+     entry. Both halves of that have been broken before. The two scatter
+     entries are buttons: pressing one folds its observations away and leaves
+     the median. */
   const out = [];
-  if (layerShown("deep")) out.push(["var(--w-deep)", "One excavated settlement"]);
-  if (layerShown("preindustrial")) out.push(["var(--w-early)", "One tax assessment"]);
+  for (const key of ["deep", "preindustrial"]) {
+    if (!has(key)) continue;
+    const [colour, label] = LAYER_DOT[key];
+    out.push({ colour, label, toggle: key, on: state.scatter[key] });
+  }
   if (trends.length) {
-    out.push([trends.length === 1 ? trends[0].colour : "var(--ink-soft)",
-              "Rolling median of nine, in each scatter's own colour"]);
+    out.push({ colour: trends.length === 1 ? trends[0].colour : "var(--ink-soft)",
+               label: "Rolling median of nine" });
   }
-  if (aggregates.length) out.push(["var(--w-region)", "A whole region, hollow"]);
-  for (const src of sources) out.push([src.colour, `${src.label}, middle half`]);
+  if (pts.some((p) => p.aggregate && state.scatter[p.layer])) {
+    out.push({ colour: "var(--w-region)", label: "A whole region, hollow" });
+  }
+  for (const src of sources) {
+    out.push({ colour: src.colour, label: `${src.label}, middle half` });
+  }
   if (sources.length && state.country !== ALL) {
-    out.push(["var(--w-pick)", DATA.countries[state.country]?.label || state.country]);
+    out.push({ colour: "var(--w-pick)",
+               label: DATA.countries[state.country]?.label || state.country });
   }
-  $("#legend-eras").innerHTML = out.map(([c, t]) =>
-    `<span><i style="background:${c}"></i>${t}</span>`).join("");
+
+  $("#legend-eras").innerHTML = out.map((e) => (e.toggle
+    ? `<button type="button" class="key" data-scatter="${e.toggle}" `
+      + `aria-pressed="${e.on}"><i style="background:${e.colour}"></i>${e.label}</button>`
+    : `<span><i style="background:${e.colour}"></i>${e.label}</span>`)).join("");
+
+  for (const btn of $("#legend-eras").querySelectorAll("[data-scatter]")) {
+    btn.addEventListener("click", () => {
+      const k = btn.dataset.scatter;
+      state.scatter[k] = !state.scatter[k];
+      render();
+    });
+  }
 }
 
 function renderLayers() {
@@ -492,13 +726,21 @@ function renderLayers() {
 
 function buildPickers() {
   const sel = $("#country-sel");
+  /* Filtered on the CURRENT measure, not on having any data at all. Half the
+     list had no Gini, so picking one of those drew the band and no line and
+     looked broken. Rebuilt whenever the measure changes; the selection is kept
+     if it survives, and falls back to all countries if it does not. */
   const rows = Object.values(DATA.countries)
-    .filter((c) => c.modern.top10.length || c.industrial.gini.length)
+    .filter((c) => (c.industrial[state.metric] || []).length
+                || (c.modern[state.metric] || []).length)
     .sort((a, b) => a.label.localeCompare(b.label));
   /* "All countries" is not a country: it drops the highlighted line and leaves
      the quartile band, which is every country at once. */
   sel.innerHTML = `<option value="${ALL}">All countries</option>`
     + rows.map((c) => `<option value="${c.iso}">${c.label}</option>`).join("");
+  if (state.country !== ALL && !rows.some((c) => c.iso === state.country)) {
+    state.country = ALL;
+  }
   sel.value = state.country;
   $("#metric-sel").value = state.metric;
 }
@@ -508,11 +750,17 @@ function readHash() {
   if (METRICS[p.get("metric")]) state.metric = p.get("metric");
   const c = p.get("country");
   if (c === ALL || (c && DATA.countries[c])) state.country = c;
+  for (const k of ["deep", "preindustrial"]) {
+    if (p.get(k) === "1" || p.get(k) === "0") state.scatter[k] = p.get(k) === "1";
+  }
 }
 
 function writeHash() {
   const p = new URLSearchParams();
   for (const k of ["metric", "country"]) if (state[k] !== DEFAULTS[k]) p.set(k, state[k]);
+  for (const k of ["deep", "preindustrial"]) {
+    if (state.scatter[k] !== DEFAULTS.scatter[k]) p.set(k, state.scatter[k] ? "1" : "0");
+  }
   const h = p.toString();
   try {
     history.replaceState(null, "", h ? `#${h}` : location.pathname + location.search);
@@ -522,6 +770,8 @@ function writeHash() {
 function render() {
   renderLegend();
   drawEras();
+  drawScale();
+  drawOldNew();
   if (state.country === ALL) {
     /* Count what the band is actually drawn from on THIS measure, not every
        country in the file. The two differ by a factor of five on the Gini. */
@@ -540,7 +790,9 @@ function render() {
 }
 
 function wire() {
-  $("#metric-sel").addEventListener("change", (e) => { state.metric = e.target.value; render(); });
+  $("#metric-sel").addEventListener("change", (e) => {
+    state.metric = e.target.value; buildPickers(); render();
+  });
   $("#country-sel").addEventListener("change", (e) => { state.country = e.target.value; render(); });
   let t = null;
   window.addEventListener("resize", () => { clearTimeout(t); t = setTimeout(render, 140); });
