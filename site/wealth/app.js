@@ -97,9 +97,13 @@ function ticksFor(x0, x1, want) {
   const raw = span / Math.max(1, want);
   const mag = 10 ** Math.floor(Math.log10(raw));
   const step = [1, 2, 5, 10].map((m) => m * mag).find((v) => v >= raw) || 10 * mag;
+  /* Anchored at the panel's own start, not at a multiple of the step from year
+     zero. Anchoring on zero made the FIRST gap a different width from all the
+     others, so a panel running 9200 BC to 1283 got its first label at 5000 BC
+     and the eye read the uneven spacing as uneven time. Every labelled gap is
+     now identical. */
   const out = [];
-  for (let t = Math.ceil(x0 / step) * step; t <= x1; t += step) out.push(Math.round(t));
-  // a panel whose round steps all fall outside it still needs its ends named
+  for (let t = x0; t <= x1 + 1e-9; t += step) out.push(Math.round(t));
   return out.length >= 2 ? out : [x0, x1];
 }
 const fmt = (v) => (METRICS[state.metric].pct ? `${v.toFixed(1)}%` : v.toFixed(2));
@@ -142,21 +146,42 @@ function distribution(era, metric) {
     .sort((a, b) => a.year - b.year);
 }
 
-/* A rolling median through scattered observations. The archaeological dots
-   are irregular in time and vary by an order of magnitude between neighbouring
-   sites, so a mean would chase outliers and a fixed-year window would be empty
-   for centuries at a stretch. This takes an odd-sized window of consecutive
-   observations by date and plots its median at the window's median year, which
-   is a defensible summary of a scatter and is described as such on the page. */
-function rollingMedian(pairs, win) {
-  const xs = pairs.slice().sort((a, b) => a[0] - b[0]);
-  if (xs.length < win + 2) return [];
+/* A locally weighted average, Gaussian kernel.
+
+   The rolling median of nine that this replaces was jumpy for a reason worth
+   writing down: it steps a fixed COUNT of observations at a time, so where the
+   sites cluster it crawls and where they are sparse it leaps centuries between
+   consecutive output points, and the median itself jumps whole values as one
+   observation enters the window and another leaves. On irregularly dated data
+   that produces a staircase, which is an artefact of the estimator rather than
+   anything in the record.
+
+   This evaluates on a regular grid instead and weights every observation by
+   its distance in TIME, so nothing enters or leaves abruptly and the spacing of
+   the output does not depend on the spacing of the input. Bandwidth is a share
+   of the span, which is the only free parameter and is stated on the page. */
+function kernelSmooth(pairs, { band = 0.12, steps = 64 } = {}) {
+  const xs = pairs.filter((p) => p[1] != null).sort((a, b) => a[0] - b[0]);
+  /* Twelve, not five. Below that the line is a drawing of the sample rather
+     than a summary of it: eleven dig sites scattered across the 1283 to 1800
+     panel produced a confident-looking curve that was really four points and a
+     gap. A panel with too few observations shows its dots and no line. */
+  if (xs.length < 12) return [];
+  const lo = xs[0][0], hi = xs[xs.length - 1][0];
+  if (hi === lo) return [];
+  const h = (hi - lo) * band;
   const out = [];
-  const half = (win - 1) / 2;
-  for (let i = half; i < xs.length - half; i += 1) {
-    const w = xs.slice(i - half, i + half + 1);
-    const vs = w.map((p) => p[1]).sort((a, b) => a - b);
-    out.push([xs[i][0], vs[half]]);
+  for (let i = 0; i <= steps; i += 1) {
+    const x = lo + ((hi - lo) * i) / steps;
+    let num = 0, den = 0;
+    for (const [xi, yi] of xs) {
+      const w = Math.exp(-0.5 * ((x - xi) / h) ** 2);
+      num += w * yi; den += w;
+    }
+    /* Where the nearest observation is more than two bandwidths away the
+       weights collapse to nothing and the estimate is meaningless, so the line
+       simply stops rather than interpolating across an empty stretch. */
+    if (den > 0.6) out.push([Math.round(x), num / den]);
   }
   return out;
 }
@@ -200,7 +225,7 @@ function periodContent(period, metric) {
   const trends = [];
   for (const [layer, colour] of [["deep", "var(--w-deep)"], ["preindustrial", "var(--w-early)"]]) {
     const own = all.filter((p) => p.layer === layer).map((p) => [p.year, p[metric]]);
-    const line = rollingMedian(own, 9);
+    const line = kernelSmooth(own);
     if (line.length > 1) trends.push({ layer, colour, line });
   }
 
@@ -256,12 +281,18 @@ function drawEras() {
   svg.innerHTML = "";
   readout.hidden = true;
 
-  const stacked = window.matchMedia("(max-width: 700px)").matches;
-  const box = boxFor("#eras", stacked ? 1.9 : 0.46, stacked ? 520 : 260, stacked ? 1000 : 430);
+  /* The panels stay side by side on a phone. Stacking them gave each its own
+     y axis and its own block of white space, and three little charts down the
+     page stopped reading as one timeline at all. Narrow and tall instead: the
+     shared vertical scale is the whole argument, and it only works if they sit
+     against each other. */
+  const narrow = window.matchMedia("(max-width: 700px)").matches;
+  const stacked = false;
+  const box = boxFor("#eras", narrow ? 1.15 : 0.46, narrow ? 300 : 260, narrow ? 460 : 430);
   svg.setAttribute("viewBox", `0 0 ${box.w} ${box.h}`);
 
-  const pad = { l: 44, r: 8, t: 10, b: 40 };
-  const gut = stacked ? 0 : 16;
+  const pad = { l: narrow ? 30 : 44, r: 8, t: 10, b: 40 };
+  const gut = narrow ? 7 : 16;
   const iw = box.w - pad.l - pad.r;
 
   /* On a phone the panels stack, each getting the full width and its own y
@@ -469,14 +500,11 @@ function drawEras() {
 
 /* ------------------------------------------------- the archaeology, two cuts */
 
-/* Kohler's own five-step coding of political organisation, smallest first.
-   Ordering matters: the whole point of the chart is that it is monotonic, and
-   sorting alphabetically would hide that. */
-const SCALES = ["family", "local", "big man", "regional", "state"];
-
-const OLD_WORLD = new Set([
-  "Europe & NE", "Northeast China", "Central China", "East Coast China", "Egypt",
-]);
+/* Camp, village, town, city. Kohler's own site classification, and a better
+   cut than his five-step political taxonomy: the words need no glossary, the
+   medians are monotonic where the political one has a flat spot, and it is the
+   same claim about scale. The political coding is still in the payload. */
+const SIZES = ["camp", "village", "town", "city"];
 
 function deepSites() {
   return DATA.points.filter((p) => p.layer === "deep" && p.gini != null);
@@ -488,171 +516,122 @@ const median = (xs) => {
   return v.length % 2 ? v[i] : (v[i - 0.5] + v[i + 0.5]) / 2;
 };
 
-/* A strip plot, not a bar chart of the medians. n is 1 to 22 per row and the
-   ranges overlap heavily - states run 0.12 to 0.68 - so a bar would assert a
-   precision the sample cannot carry. Showing every site and marking the median
-   lets a reader see the overlap for themselves. */
+const quantile = (xs, q) => {
+  const v = xs.slice().sort((a, b) => a - b);
+  const i = (v.length - 1) * q;
+  const lo = Math.floor(i), hi = Math.ceil(i);
+  return v[lo] + (v[hi] - v[lo]) * (i - lo);
+};
+
+/* A box plot, not a bar chart of the medians. n runs 2 to 28 per row and the
+   ranges overlap heavily - towns run 0.12 to 0.68 - so bars would assert a
+   precision the sample cannot carry. The box is the middle half, the line in it
+   is the median, the whisker is the full range, and every site is still drawn
+   as a dot so the reader can count them. */
 function drawScale() {
   const svg = $("#scale");
   const readout = $("#scale-readout");
   svg.innerHTML = ""; readout.hidden = true;
 
-  const rows = SCALES
-    .map((k) => ({ key: k, pts: deepSites().filter((p) => p.scale === k) }))
+  const rows = SIZES
+    .map((k) => ({ key: k, pts: deepSites().filter((p) => p.settlement === k) }))
     .filter((r) => r.pts.length);
   if (!rows.length) return;
 
-  const box = boxFor("#scale", 0.34, 190, 300);
+  const narrow = window.matchMedia("(max-width: 700px)").matches;
+  const box = boxFor("#scale", narrow ? 0.62 : 0.34, 180, 300);
   svg.setAttribute("viewBox", `0 0 ${box.w} ${box.h}`);
-  const pad = { l: 86, r: 14, t: 8, b: 26 };
+  const pad = { l: narrow ? 62 : 84, r: 16, t: 8, b: 30 };
   const iw = box.w - pad.l - pad.r;
   const rowH = (box.h - pad.t - pad.b) / rows.length;
   const xOf = (v) => pad.l + v * iw;
 
-  for (const t of [0, 0.25, 0.5, 0.75, 1]) {
+  for (const t of [0, 0.2, 0.4, 0.6, 0.8, 1]) {
     svg.appendChild(svgEl("line", {
       x1: xOf(t).toFixed(1), x2: xOf(t).toFixed(1), y1: pad.t,
       y2: (box.h - pad.b).toFixed(1), stroke: "var(--rule)", "stroke-width": 1,
     }));
     const lab = svgEl("text", {
-      x: xOf(t).toFixed(1), y: (box.h - pad.b + 16).toFixed(1),
+      x: xOf(t).toFixed(1), y: (box.h - pad.b + 17).toFixed(1),
       "text-anchor": "middle", "font-size": 11, fill: "var(--ink-faint)",
     });
-    lab.textContent = t.toFixed(2);
+    lab.textContent = t.toFixed(1);
     svg.appendChild(lab);
   }
 
   rows.forEach((row, i) => {
     const cy = pad.t + i * rowH + rowH / 2;
+    const vals = row.pts.map((p) => p.gini);
+    const q1 = quantile(vals, 0.25), q3 = quantile(vals, 0.75), m = median(vals);
+    const lo = Math.min(...vals), hi = Math.max(...vals);
+    const bh = Math.min(26, rowH * 0.5);
+
     const name = svgEl("text", {
-      x: pad.l - 12, y: (cy + 4).toFixed(1), "text-anchor": "end",
-      "font-size": 12.5, fill: "var(--ink-soft)",
+      x: pad.l - 12, y: (cy + 1).toFixed(1), "text-anchor": "end",
+      "font-size": 13, fill: "var(--ink)",
     });
     name.textContent = row.key;
     svg.appendChild(name);
-
     const n = svgEl("text", {
-      x: pad.l - 12, y: (cy + 17).toFixed(1), "text-anchor": "end",
+      x: pad.l - 12, y: (cy + 15).toFixed(1), "text-anchor": "end",
       "font-size": 10.5, fill: "var(--ink-faint)",
     });
     n.textContent = `${row.pts.length} site${row.pts.length === 1 ? "" : "s"}`;
     svg.appendChild(n);
 
+    // whisker across the full range
+    svg.appendChild(svgEl("line", {
+      x1: xOf(lo).toFixed(1), x2: xOf(hi).toFixed(1),
+      y1: cy.toFixed(1), y2: cy.toFixed(1),
+      stroke: "var(--w-deep)", "stroke-width": 1.4, "stroke-opacity": 0.55,
+    }));
+    // the middle half
+    svg.appendChild(svgEl("rect", {
+      x: xOf(q1).toFixed(1), y: (cy - bh / 2).toFixed(1),
+      width: Math.max(1, xOf(q3) - xOf(q1)).toFixed(1), height: bh.toFixed(1),
+      rx: 3, fill: "var(--w-deep)", "fill-opacity": 0.2,
+      stroke: "var(--w-deep)", "stroke-opacity": 0.5, "stroke-width": 1,
+    }));
+
     for (const p of row.pts) {
-      // a deterministic vertical offset so overlapping sites stay countable
-      const j = ((p.year * 2654435761) % 1000) / 1000 - 0.5;
+      // a deterministic offset, so two sites on the same value stay countable
+      const j = (((p.year * 2654435761) >>> 0) % 1000) / 1000 - 0.5;
       const dot = svgEl("circle", {
-        cx: xOf(p.gini).toFixed(1), cy: (cy + j * rowH * 0.52).toFixed(1),
-        r: 3.4, fill: "var(--w-deep)", "fill-opacity": 0.55, class: "dot",
+        cx: xOf(p.gini).toFixed(1), cy: (cy + j * bh * 0.78).toFixed(1),
+        r: 3, fill: "var(--w-deep)", "fill-opacity": 0.62, class: "dot",
       });
       hook(dot, (evt) => {
+        const ci = (p.lo != null && p.hi != null)
+          ? `<div class="row"><span>80% interval</span>`
+            + `<span>${p.lo.toFixed(2)} to ${p.hi.toFixed(2)}</span></div>` : "";
         readout.innerHTML = `<b>${p.place}</b>` +
-          `<div class="row"><span>${yearLabel(p.year)}</span><span>${p.gini.toFixed(2)}</span></div>` +
-          `<div class="row"><span>scale</span><span>${p.scale}</span></div>` +
+          `<div class="row"><span>${yearLabel(p.year)}</span>` +
+          `<span>${p.gini.toFixed(2)}</span></div>` + ci +
+          `<div class="row"><span>economy</span><span>${p.feeding || "unknown"}</span></div>` +
           `<div class="prov">${p.group}</div>`;
         readout.hidden = false; placeReadout(readout, evt);
       });
       svg.appendChild(dot);
     }
 
-    const m = median(row.pts.map((p) => p.gini));
+    // the median, on top of everything
     svg.appendChild(svgEl("line", {
       x1: xOf(m).toFixed(1), x2: xOf(m).toFixed(1),
-      y1: (cy - rowH * 0.34).toFixed(1), y2: (cy + rowH * 0.34).toFixed(1),
-      stroke: "var(--w-pick)", "stroke-width": 2.6, "stroke-linecap": "round",
+      y1: (cy - bh / 2).toFixed(1), y2: (cy + bh / 2).toFixed(1),
+      stroke: "var(--w-pick)", "stroke-width": 2.8, "stroke-linecap": "round",
     }));
   });
 
   svg.onpointerleave = () => { readout.hidden = true; };
-  const lo = median(rows[0].pts.map((p) => p.gini));
-  const hi = median(rows[rows.length - 1].pts.map((p) => p.gini));
+  const first = median(rows[0].pts.map((p) => p.gini));
+  const last = median(rows[rows.length - 1].pts.map((p) => p.gini));
   $("#scale-caption").textContent =
-    `Median Gini runs from ${lo.toFixed(2)} at ${rows[0].key} scale to ` +
-    `${hi.toFixed(2)} at ${rows[rows.length - 1].key} scale, across ` +
-    `${deepSites().length} sites. The ranges overlap, so this is a tendency ` +
-    `across the sample rather than a rule about any one society.`;
-  describe(svg, "Wealth Gini at each excavated site, grouped by the political "
-                + "scale of the society that built it, smallest at the top.");
-}
-
-function drawOldNew() {
-  const svg = $("#oldnew");
-  const readout = $("#oldnew-readout");
-  svg.innerHTML = ""; readout.hidden = true;
-
-  const sites = deepSites();
-  if (!sites.length) return;
-  const box = boxFor("#oldnew", 0.34, 190, 300);
-  svg.setAttribute("viewBox", `0 0 ${box.w} ${box.h}`);
-  const pad = { l: 44, r: 12, t: 10, b: 28 };
-  const iw = box.w - pad.l - pad.r, ih = box.h - pad.t - pad.b;
-  const years = sites.map((p) => p.year);
-  const x0 = Math.min(...years), x1 = Math.max(...years);
-  const xOf = (y) => pad.l + ((y - x0) / (x1 - x0)) * iw;
-  const yOf = (v) => pad.t + (1 - v) * ih;
-
-  for (const t of [0, 0.25, 0.5, 0.75, 1]) {
-    svg.appendChild(svgEl("line", {
-      x1: pad.l, x2: pad.l + iw, y1: yOf(t).toFixed(1), y2: yOf(t).toFixed(1),
-      stroke: "var(--rule)", "stroke-width": 1,
-    }));
-    const lab = svgEl("text", {
-      x: pad.l - 8, y: (yOf(t) + 4).toFixed(1), "text-anchor": "end",
-      "font-size": 11, fill: "var(--ink-faint)",
-    });
-    lab.textContent = t.toFixed(2);
-    svg.appendChild(lab);
-  }
-  for (const t of ticksFor(x0, x1, Math.max(3, Math.round(iw / 90)))) {
-    const lab = svgEl("text", {
-      x: xOf(t).toFixed(1), y: (pad.t + ih + 18).toFixed(1),
-      "text-anchor": "middle", "font-size": 10.5, fill: "var(--ink-faint)",
-    });
-    lab.textContent = yearLabel(t);
-    svg.appendChild(lab);
-  }
-
-  const halves = [
-    { key: "Old World", colour: "var(--w-deep)", pts: sites.filter((p) => OLD_WORLD.has(p.group)) },
-    { key: "New World", colour: "var(--w-now)", pts: sites.filter((p) => !OLD_WORLD.has(p.group)) },
-  ];
-  for (const h of halves) {
-    for (const p of h.pts) {
-      const dot = svgEl("circle", {
-        cx: xOf(p.year).toFixed(1), cy: yOf(p.gini).toFixed(1), r: 3.4,
-        fill: h.colour, "fill-opacity": 0.55, class: "dot",
-      });
-      hook(dot, (evt) => {
-        readout.innerHTML = `<b>${p.place}</b>` +
-          `<div class="row"><span>${yearLabel(p.year)}</span><span>${p.gini.toFixed(2)}</span></div>` +
-          `<div class="prov">${h.key}. ${p.group}</div>`;
-        readout.hidden = false; placeReadout(readout, evt);
-      });
-      svg.appendChild(dot);
-    }
-    const line = rollingMedian(h.pts.map((p) => [p.year, p.gini]), 7);
-    if (line.length > 1) {
-      svg.appendChild(svgEl("polyline", {
-        points: line.map(([y, v]) => `${xOf(y).toFixed(1)},${yOf(v).toFixed(1)}`).join(" "),
-        fill: "none", stroke: h.colour, "stroke-width": 2.4,
-        "stroke-linejoin": "round", "stroke-linecap": "round",
-      }));
-    }
-  }
-  svg.onpointerleave = () => { readout.hidden = true; };
-
-  $("#legend-old").innerHTML = halves.map((h) =>
-    `<span><i style="background:${h.colour}"></i>${h.key}, ${h.pts.length} sites</span>`).join("")
-    + '<span><i style="background:var(--ink-soft)"></i>Rolling median of seven</span>';
-
-  const om = median(halves[0].pts.map((p) => p.gini));
-  const nm = median(halves[1].pts.map((p) => p.gini));
-  $("#oldnew-caption").textContent =
-    `Median Gini ${om.toFixed(2)} across ${halves[0].pts.length} Old World sites, ` +
-    `${nm.toFixed(2)} across ${halves[1].pts.length} in the New. The two samples ` +
-    `are small and unevenly dated, so the gap is suggestive rather than settled.`;
-  describe(svg, "Wealth Gini at every excavated site over time, split between "
-                + "Old World and New World.");
+    `Median Gini ${first.toFixed(2)} at ${rows[0].key} scale, ` +
+    `${last.toFixed(2)} at ${rows[rows.length - 1].key} scale, across ` +
+    `${deepSites().length} sites. The same ordering holds for how a place fed ` +
+    `itself: 0.17 for the foragers, 0.27 where they gardened, 0.35 where they farmed.`;
+  describe(svg, "Wealth Gini at every excavated site, grouped by whether the "
+                + "site was a camp, a village, a town or a city.");
 }
 
 /* ----------------------------------------------------------------- furniture */
@@ -681,7 +660,7 @@ function renderLegend() {
   }
   if (trends.length) {
     out.push({ colour: trends.length === 1 ? trends[0].colour : "var(--ink-soft)",
-               label: "Rolling median of nine" });
+               label: "Local average" });
   }
   if (pts.some((p) => p.aggregate && state.scatter[p.layer])) {
     out.push({ colour: "var(--w-region)", label: "A whole region, hollow" });
@@ -771,7 +750,6 @@ function render() {
   renderLegend();
   drawEras();
   drawScale();
-  drawOldNew();
   if (state.country === ALL) {
     /* Count what the band is actually drawn from on THIS measure, not every
        country in the file. The two differ by a factor of five on the Gini. */

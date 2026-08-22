@@ -228,6 +228,14 @@ def deep() -> list[dict]:
             "rollup": False,
             "basis": f"house floor areas, {period}" if period else "house floor areas",
             "scale": (r.get("PolJE") or "").strip(),
+            # camp, village, town, city. A cleaner cut than the political
+            # taxonomy: the words need no glossary, the medians are monotonic,
+            # and it is the same underlying claim about scale.
+            "settlement": (r.get("Site_Type") or "").strip(),
+            "feeding": (r.get("Adaptation") or "").strip(),
+            # Kohler publishes an 80% interval per site. Drawing the point
+            # estimate alone implies a precision the method does not have.
+            "lo": num(r.get("Lower_B")), "hi": num(r.get("Upper_B")),
             "source": "Kohler et al. 2017",
         })
     return out
