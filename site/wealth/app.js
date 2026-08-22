@@ -32,24 +32,28 @@ const METRICS = {
     blurb: "0 is everyone equal, 1 is one household owning everything.",
   },
   top10: {
-    label: "Share held by the richest tenth", max: 100, pct: true,
+    label: "Share held by the richest 10%", max: 100, pct: true,
     blurb: "Out of all the household wealth there was.",
   },
   top1: {
-    label: "Share held by the richest hundredth", max: 100, pct: true,
+    label: "Share held by the richest 1%", max: 100, pct: true,
     blurb: "Out of all the household wealth there was.",
   },
 };
 
-/* `weight` is how much horizontal room an era gets. Not its length in years:
-   the archaeology spans 11,000 of them and the modern era 224, and sizing by
-   duration would leave the modern panel a sliver. Sized by how much there is
-   to look at instead. */
+/* Panels are periods, not sources. The historians' estimates and the national
+   accounts both cover 1800 onwards, so giving them a panel each put "1820 to
+   2010" next to "1820 to 2024" and read as two consecutive eras when it is one
+   era measured twice. They share the last panel and its time axis, and the
+   legend tells them apart instead.
+
+   Panel width is not proportional to length in years. The archaeology spans
+   11,000 and the last panel 224, and sizing by duration would leave the one
+   with all the data a sliver. */
 const ERAS = [
-  { key: "deep", kind: "dots" },
-  { key: "preindustrial", kind: "dots" },
-  { key: "industrial", kind: "band" },
-  { key: "modern", kind: "band" },
+  { key: "deep", layers: ["deep"], kind: "dots", label: "Dug-up houses" },
+  { key: "preindustrial", layers: ["preindustrial"], kind: "dots", label: "Tax registers" },
+  { key: "measured", layers: ["industrial", "modern"], kind: "band", label: "Whole countries" },
 ];
 
 const yearLabel = (y) => (y < 0 ? `${Math.abs(y)} BC` : `${y}`);
@@ -98,19 +102,26 @@ function eraContent(era, metric) {
     const pts = pointsIn(era.key, metric);
     const regions = era.key === "preindustrial"
       ? DATA.regions.filter((s) => (s[metric] || []).length) : [];
-    return { pts, regions, dist: [], sel: [] };
+    return { pts, regions, series: [] };
   }
+  /* One entry per source layer, drawn on the panel's shared axis. Dashed for
+     the reconstructed decadal estimates, solid for the measured annual ones. */
   return {
     pts: [], regions: [],
-    dist: distribution(era.key, metric),
-    sel: countrySeries(state.country, era.key, metric),
+    series: era.layers.map((key) => ({
+      key,
+      label: DATA.meta.layers[key].label,
+      dist: distribution(key, metric),
+      sel: countrySeries(state.country, key, metric),
+      dashed: key === "industrial",
+      colour: key === "industrial" ? "var(--w-mid)" : "var(--w-now)",
+    })).filter((s) => s.dist.length || s.sel.length),
   };
 }
 
 function activeEras(metric) {
-  return ERAS.map((e) => ({ ...e, ...DATA.meta.layers[e.key] }))
-    .map((e) => ({ ...e, content: eraContent(e, metric) }))
-    .filter((e) => e.content.pts.length || e.content.dist.length || e.content.regions.length);
+  return ERAS.map((e) => ({ ...e, content: eraContent(e, metric) }))
+    .filter((e) => e.content.pts.length || e.content.regions.length || e.content.series.length);
 }
 
 /* ------------------------------------------------------------------- drawing */
@@ -170,11 +181,11 @@ function drawEras() {
 
   eras.forEach((era, i) => {
     const lane = lanes[i];
-    const { pts, regions, dist, sel } = era.content;
+    const { pts, regions, series } = era.content;
     const years = [
       ...pts.map((p) => p.year),
       ...regions.flatMap((s) => s[metric].map(([y]) => y)),
-      ...dist.map((d) => d.year), ...sel.map(([y]) => y),
+      ...series.flatMap((s) => [...s.dist.map((d) => d.year), ...s.sel.map(([y]) => y)]),
     ];
     let x0 = Math.min(...years), x1 = Math.max(...years);
     if (x0 === x1) { x0 -= 1; x1 += 1; }
@@ -221,29 +232,31 @@ function drawEras() {
       }));
     }
 
-    // ---- the quartile band, for the two eras that have many countries
-    if (dist.length > 1) {
-      const top = dist.map((d) => `${xOf(d.year).toFixed(1)},${yOf(lane, d.p75).toFixed(1)}`);
-      const bot = dist.slice().reverse()
-        .map((d) => `${xOf(d.year).toFixed(1)},${yOf(lane, d.p25).toFixed(1)}`);
-      svg.appendChild(svgEl("polygon", {
-        points: [...top, ...bot].join(" "),
-        fill: `var(--w-${era.key === "modern" ? "now" : "mid"})`, "fill-opacity": 0.14,
-      }));
-      svg.appendChild(svgEl("polyline", {
-        points: dist.map((d) => `${xOf(d.year).toFixed(1)},${yOf(lane, d.p50).toFixed(1)}`).join(" "),
-        fill: "none", stroke: `var(--w-${era.key === "modern" ? "now" : "mid"})`,
-        "stroke-width": 1.6, "stroke-opacity": 0.55, "stroke-dasharray": "4 3",
-      }));
-    }
-
-    // ---- the chosen country, on top
-    if (sel.length > 1) {
-      svg.appendChild(svgEl("polyline", {
-        points: sel.map(([y, v]) => `${xOf(y).toFixed(1)},${yOf(lane, v).toFixed(1)}`).join(" "),
-        fill: "none", stroke: "var(--w-pick)", "stroke-width": 2.6,
-        "stroke-linejoin": "round", "stroke-linecap": "round",
-      }));
+    // ---- one quartile band and one country line per source on this panel
+    for (const src of series) {
+      if (src.dist.length > 1) {
+        const top = src.dist.map((d) => `${xOf(d.year).toFixed(1)},${yOf(lane, d.p75).toFixed(1)}`);
+        const bot = src.dist.slice().reverse()
+          .map((d) => `${xOf(d.year).toFixed(1)},${yOf(lane, d.p25).toFixed(1)}`);
+        svg.appendChild(svgEl("polygon", {
+          points: [...top, ...bot].join(" "),
+          fill: src.colour, "fill-opacity": src.dashed ? 0.1 : 0.15,
+        }));
+        svg.appendChild(svgEl("polyline", {
+          points: src.dist.map((d) => `${xOf(d.year).toFixed(1)},${yOf(lane, d.p50).toFixed(1)}`).join(" "),
+          fill: "none", stroke: src.colour, "stroke-width": 1.5,
+          "stroke-opacity": 0.5, "stroke-dasharray": "4 3",
+        }));
+      }
+      if (src.sel.length > 1) {
+        const line = svgEl("polyline", {
+          points: src.sel.map(([y, v]) => `${xOf(y).toFixed(1)},${yOf(lane, v).toFixed(1)}`).join(" "),
+          fill: "none", stroke: "var(--w-pick)", "stroke-width": src.dashed ? 2 : 2.6,
+          "stroke-linejoin": "round", "stroke-linecap": "round",
+        });
+        if (src.dashed) line.setAttribute("stroke-dasharray", "6 4");
+        svg.appendChild(line);
+      }
     }
 
     // ---- regional lines through the pre-industrial towns
@@ -275,7 +288,7 @@ function drawEras() {
 
     // ---- a hover band for the line eras, because annual points are smaller
     //      than a fingertip
-    if (dist.length || sel.length) {
+    if (series.length) {
       const band = svgEl("rect", {
         x: lane.x, y: lane.y, width: lane.w, height: lane.h, fill: "transparent",
       });
@@ -285,20 +298,25 @@ function drawEras() {
         const yr = Math.round((x0 - padY) + ((px - lane.x) / lane.w) * ((x1 + padY) - (x0 - padY)));
         const near = (arr, get) => arr.reduce((best, d) =>
           (!best || Math.abs(get(d) - yr) < Math.abs(get(best) - yr)) ? d : best, null);
-        const d = near(dist, (d) => d.year);
-        const s = near(sel, (p) => p[0]);
         const label = DATA.countries[state.country]?.label || state.country;
-        const bits = [`<b>${era.label}</b>`];
-        if (s && Math.abs(s[0] - yr) <= 12) {
-          bits.push(`<div class="row"><span>${label}, ${s[0]}</span><span>${fmt(s[1])}</span></div>`);
-        }
-        if (d && Math.abs(d.year - yr) <= 12) {
-          bits.push(`<div class="row"><span>middle country</span><span>${fmt(d.p50)}</span></div>`,
-            `<div class="row"><span>middle half</span><span>${fmt(d.p25)} to ${fmt(d.p75)}</span></div>`,
-            `<div class="prov">${d.n} countries in ${d.year}</div>`);
+        const bits = [`<b>${label}</b>`];
+        /* Both sources at once where both reach this year. Seeing a
+           reconstruction and a measurement disagree is the point of the panel,
+           not a glitch to hide. */
+        for (const src of series) {
+          const sp = near(src.sel, (p) => p[0]);
+          const dp = near(src.dist, (d) => d.year);
+          if (sp && Math.abs(sp[0] - yr) <= 8) {
+            bits.push(`<div class="row"><span>${src.label}, ${sp[0]}</span>` +
+                      `<span>${fmt(sp[1])}</span></div>`);
+          } else if (dp && Math.abs(dp.year - yr) <= 8) {
+            bits.push(`<div class="row"><span>${src.label}, ${dp.year}</span>` +
+                      `<span>middle ${fmt(dp.p50)}</span></div>`);
+          }
         }
         if (bits.length === 1) { readout.hidden = true; return; }
-        readout.innerHTML = bits.join("");
+        readout.innerHTML = bits.join("") +
+          `<div class="prov">dashed is reconstructed, solid is measured</div>`;
         readout.hidden = false;
         placeReadout(readout, evt);
       });
@@ -314,28 +332,27 @@ function drawEras() {
 
   $("#eras-title").textContent = M.label;
   $("#eras-blurb").textContent = M.blurb;
-  /* The count is spelt out because it changes with the measure: no national
-     accounts publish a Gini, and no historian's estimate reaches the richest
-     hundredth, so this is three panels as often as four. */
-  const n = ["", "one kind", "two kinds", "three kinds", "four kinds"][eras.length];
+  /* The count changes with the measure: no national accounts publish a Gini
+     and no historian's estimate reaches the
+     richest 1%, so the panel count follows the measure. */
+  const n = ["", "One panel", "Two panels", "Three panels", "Four panels"][eras.length];
   $("#eras-caption").textContent =
-    `${n[0].toUpperCase()}${n.slice(1)} of evidence, ${eras.length} panels. Each has its ` +
-    "own time scale, so the gaps between them are not gaps in history. They share the " +
-    "vertical scale, which is the only comparison the evidence supports.";
+    `${n}, one per period, each on its own time scale. The gaps between them are ` +
+    "not gaps in history. They share the vertical scale, which is the only " +
+    "comparison this evidence supports.";
 }
 
 /* ----------------------------------------------------------------- furniture */
 
 function renderLegend() {
-  const metric = state.metric;
-  const eras = activeEras(metric);
-  const kinds = new Set(eras.map((e) => e.kind));
+  const eras = activeEras(state.metric);
   const has = (k) => eras.some((e) => e.key === k);
+  const sources = eras.flatMap((e) => e.content.series || []);
   const out = [];
   if (has("deep")) out.push(["var(--w-deep)", "One dig site"]);
   if (has("preindustrial")) out.push(["var(--w-early)", "One tax assessment"]);
-  if (kinds.has("band")) {
-    out.push(["var(--w-mid)", "Middle half of countries"]);
+  for (const src of sources) out.push([src.colour, `${src.label}, middle half`]);
+  if (sources.length) {
     out.push(["var(--w-pick)", DATA.countries[state.country]?.label || state.country]);
   }
   $("#legend-eras").innerHTML = out.map(([c, t]) =>
@@ -344,7 +361,9 @@ function renderLegend() {
 
 function renderLayers() {
   const L = DATA.meta.layers;
-  const present = new Set(activeEras("gini").concat(activeEras("top10")).map((e) => e.key));
+  const present = new Set(
+    activeEras("gini").concat(activeEras("top10"))
+      .flatMap((e) => e.layers));
   const swatch = { deep: "--w-deep", preindustrial: "--w-early",
                    industrial: "--w-mid", modern: "--w-now" };
   $("#layers").innerHTML = Object.entries(L).map(([key, v]) =>

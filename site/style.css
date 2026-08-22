@@ -17,6 +17,12 @@
   --w-england: #4f7d5e;
   --w-piedmont: #9a5b8f;
   --w-pick: #2f6fb2;
+  /* The coin stack. Real metal hex is built for a dark ground: silver #c0c0c0
+     and gold #d4af37 both wash out on this near-white page, so the light values
+     are the same metals a couple of steps down. */
+  --coin-bronze: #a4692c;
+  --coin-silver: #8b939c;
+  --coin-gold: #b8860b;
   --max: 960px;
   /* The same serif stack charlietrenorden.com sets on its body. No webfont at
      all: nothing to request, nothing to swap in late, and the project reads as
@@ -208,6 +214,7 @@ a { color: var(--accent); }
        disappear into the panel at their light-mode values */
     --w-deep: #d4795c; --w-early: #e8b45f; --w-mid: #9aa8b4; --w-now: #6ea8e0;
     --w-england: #6fa583; --w-piedmont: #c383b6; --w-pick: #6ea8e0;
+    --coin-bronze: #cd7f32; --coin-silver: #c3cad2; --coin-gold: #e3b93f;
   }
   .segmented button[aria-checked="true"] { background: var(--accent); color: #0f1114; }
   .readout { background: rgba(26,29,34,0.97); }
@@ -460,3 +467,26 @@ footer .terms { display: block; color: var(--ink-faint); font-size: 12.5px; marg
 .sources li { margin-bottom: 9px; }
 .dot { cursor: pointer; }
 .dot:hover { fill-opacity: 1; }
+
+/* ---- the coin stack ----
+   The wealth page's own mark. The cradle belongs to the political story, which
+   swings; this one does not swing, it accumulates. Three stacks, bronze silver
+   gold, at two three and nine coins.
+
+   Same hover contract as the cradle: it moves only when the title itself is
+   hovered, and it holds still for anyone who has asked for less motion. */
+.coins .stack { transform-origin: 50% 100%; }
+h1:hover .coins .stack, h1:focus-within .coins .stack {
+  animation: coin-lift 1.5s ease-in-out infinite;
+}
+h1:hover .coins .s-silver, h1:focus-within .coins .s-silver { animation-delay: .12s; }
+h1:hover .coins .s-gold, h1:focus-within .coins .s-gold { animation-delay: .24s; }
+
+@keyframes coin-lift {
+  0%, 100% { transform: translateY(0); }
+  45%      { transform: translateY(-3px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  h1:hover .coins .stack, h1:focus-within .coins .stack { animation: none; }
+}
