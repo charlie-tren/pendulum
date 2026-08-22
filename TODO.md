@@ -40,44 +40,60 @@ this file is closed.
       a size worth checking before committing; and the year slider has to mean
       the same thing at both levels. Scope this properly before writing code -
       it is a second data model, not a wider version of the current one.
-- [ ] **D8. An inequality section** (asked 2026-08-19). Yes, the data exists, and
-      it reaches much further back than the political series. I probed the
-      endpoints rather than going from memory, so these are measured:
+- [ ] **D8. An inequality section, wealth-first** (asked 2026-08-19, scope
+      settled the same day: Charlie wants **wealth**, and wants it to go back
+      **thousands of years**, not centuries).
 
-      | Dataset | OWID slug | Span | Entities | Notes |
+      **Short answer: yes, thousands of years of wealth inequality data exists,
+      and it is good. But it comes in four layers that must not be drawn as one
+      line.** All measured by probing the sources, not recalled.
+
+      | Layer | Source | Span | Unit | Free? |
       |---|---|---|---|---|
-      | Income share by class | `income-share-distribution-before-tax-wid` | **1820-2024** | 165 | top 1 / next 9 / middle 40 / bottom 50, sums to 100 |
-      | Wealth share of the top 1% | `wealth-share-richest-1-percent` | **1800-2024** | 226 | 58 entities reach back past 1900 |
-      | Wealth share of the top 10% | `wealth-share-richest-10-percent` | 1800-2024 | 226 | bottom 90% is 100 minus this |
-      | Palma ratio | `palma-ratio-wid` | 1820-2024 | 165 | top 10% over bottom 40% |
-      | Gini | `economic-inequality-gini-index` | 1963-2025 | 183 | World Bank PIP |
+      | 1. Deep history | GINI Project (tDAR 496853) | **10500 BC - AD 1980** | wealth Gini from house floor areas, 47k dwellings at 1,100+ sites | free, **login required** |
+      | 2. Pre-industrial Europe | Alfani / EINITE | **1283 - 1800** | taxable wealth, Gini + quartile shares | free, no login |
+      | 3. The industrial era | Alfani & Schifano | 1820 - 2010, decadal | wealth Gini + top 10%, 39 countries | free, no login |
+      | 4. Modern | WID via OWID | 1800 - 2024, annual | top 1% / top 10% wealth share, 226 entities | free, no login |
 
-      **The Gini is the weak one, which is worth knowing before building around
-      it.** It only starts in 1963, and it is thin: 7 countries in 1980, 51 in
-      2000, 56 in 2023. It is survey-based, so it exists only where a survey was
-      run. If the section is meant to go back a long way, the class shares are
-      the series that does it and the Gini is a supporting panel at best. Long-run
-      Gini estimates do exist (van Zanden et al. 1820-2000, and Moatsos in the
-      OECD's *How Was Life?*) but they are global and regional reconstructions
-      from a paper, not a per-country annual panel, and would need hand-entering.
+      **Layer 1 is the answer to the actual question.** The Global Dynamics of
+      Inequality project measured house floor areas across the archaeological
+      record and computed a Gini per site. tDAR states its temporal coverage as
+      calendar date **-10500 to 1980**. Published as a PNAS Special Feature in
+      April 2025. The database is `GINI Database All Records 20240721` at
+      https://core.tdar.org/project/496853, doi:10.48512/XCV8502429.
+      **Needs Charlie: tDAR requires a free account to download.** Same shape as
+      D5 - registering is not mine to do. Everything else here I can fetch now.
 
-      **The one to build is the class-share chart.** It is the same stacked-area
-      shape the site already draws, it sums to 100 so the existing band tests
-      apply almost unchanged, and the World row alone is a story: the bottom
-      half's share of world income fell from 14.2% in 1820 to a trough of 6.0%
-      in 1980 and has recovered to 8.0%, while the top 1% went 19.7% to 25.0% by
-      1900, down to 16.0% by 1960, and back to 20.7% today. Verified, not
-      recalled - the four classes sum to 100.00 on every row sampled.
-      **Caveats to state on the page:** the World series has 56 observations
-      across 1820-2024, so it is decadal early and annual late, and it must not
-      be drawn as though it were measured every year; and WID's early figures
-      are reconstructions, not observations.
-      Fetching is free and needs no key - add the slugs to `scripts/fetch_owid.py`,
-      which already carries the User-Agent that OWID's Cloudflare requires. CC BY 4.0.
-      **Open question for Charlie:** income or wealth? They tell different
-      stories and wealth reaches further back, but income is the one with a
-      ready-made four-class split.
+      **Layers 2 and 3 are already downloaded and read**, from
+      https://guidoalfani.eu/data/ - plain xlsx, no login, no key:
+      - England, 27 counties, years 1283 to 1334 in the file itself, wealth Gini
+        plus quartile shares, each county given both observed and reconstructed
+      - Piedmont / northwestern Italy, 1450 to 1800
+      - Italy and the Low Countries 1500-1800; Apulia 1550-1800; Tuscany
+        1300-1800 as a PDF appendix only, so that one needs transcribing
+      - Alfani and Schifano, 39 countries, every decade 1820 to 2010, wealth
+        Gini and top-10% share
 
+      **THE THING TO GET RIGHT: these are four different measurements and
+      stitching them into one continuous line would be a lie.** Layer 1 is a
+      proxy (how big your house was) at site level. Layer 2 is taxable wealth at
+      county or city level. Layer 4 is financial wealth at national level. They
+      do not share a unit, a population, or a denominator. The site's whole
+      credibility rests on keeping `no_reading` apart from `unresolved`, and
+      this is the same discipline applied to a second dataset. Draw them as
+      separate layers with visibly different treatment - points and a fitted
+      band for the archaeology, a line only where there is an annual series -
+      and say on the page what each one measures.
+
+      **Worth adding as annotation, not as a series:** Milanovic, Lindert and
+      Williamson's social tables put Gini estimates on about 30 named ancient
+      societies - Rome AD 14, Byzantium 1000, England 1688, Mughal India 1750 -
+      via NBER working paper 13550. Single points with a story attached, which
+      is exactly what the deep end of a chart like this needs to stay legible.
+
+      Income remains available if it is ever wanted (`income-share-distribution-before-tax-wid`,
+      1820-2024, top 1 / next 9 / middle 40 / bottom 50, verified to sum to 100),
+      but wealth is the brief.
 
 Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
 
