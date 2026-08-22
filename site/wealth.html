@@ -24,7 +24,10 @@
 </head>
 <body class="loading">
 <header class="wrap">
-  <a class="home" href="./"><span class="back" aria-hidden="true">&larr;</span>&nbsp;Who governs</a>
+  <nav class="topnav">
+    <a href="./">Who governs</a>
+    <a class="home" href="https://charlietrenorden.com/"><span class="back" aria-hidden="true">&larr;</span>&nbsp;<span class="lbl-full">Other projects</span><span class="lbl-short">Projects</span></a>
+  </nav>
   <h1>
     <svg class="mark" viewBox="0 8 58 48" aria-hidden="true" focusable="false">
       <line x1="9" y1="12" x2="55" y2="12" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/>
@@ -42,53 +45,34 @@
     <div class="control">
       <label for="metric-sel">Measure</label>
       <select id="metric-sel">
+        <option value="gini">Wealth Gini</option>
         <option value="top10">Share held by the richest tenth</option>
         <option value="top1">Share held by the richest hundredth</option>
-        <option value="gini">Wealth Gini</option>
       </select>
-      <span class="hint" id="metric-hint"></span>
     </div>
     <div class="control">
       <label for="country-sel">Country</label>
       <select id="country-sel"></select>
       <span class="hint" id="country-hint"></span>
     </div>
-    <div class="control">
-      <span class="label">Before 1800</span>
-      <div class="segmented" role="radiogroup" aria-label="Early evidence">
-        <button type="button" data-early="show" role="radio" aria-checked="true">show</button>
-        <button type="button" data-early="hide" role="radio" aria-checked="false">hide</button>
-      </div>
-    </div>
   </section>
 
   <section class="panel">
-    <h2 id="long-title">Seven Centuries of Wealth</h2>
-    <div class="legend" id="legend-long"></div>
+    <h2 id="eras-title"></h2>
+    <p class="sub" id="eras-blurb"></p>
+    <div class="legend" id="legend-eras"></div>
     <figure class="chart">
-      <svg id="long" role="img"></svg>
-      <div class="readout" id="long-readout" hidden></div>
+      <svg id="eras" role="img"></svg>
+      <div class="readout" id="eras-readout" hidden></div>
     </figure>
-    <p class="caption" id="long-caption"></p>
-  </section>
-
-  <section class="panel">
-    <h2>Before the Statistics</h2>
-    <p class="sub" id="early-sub"></p>
-    <div class="legend" id="legend-early"></div>
-    <figure class="chart">
-      <svg id="early" role="img"></svg>
-      <div class="readout" id="early-readout" hidden></div>
-    </figure>
-    <p class="caption" id="early-caption"></p>
+    <p class="caption" id="eras-caption"></p>
   </section>
 
   <section class="panel">
     <h2>What Each Layer Measures</h2>
     <p class="sub">
-      Four kinds of evidence, drawn apart on purpose. They do not share a unit or a
-      population, and a single line through all of them would be a nicer chart than
-      the evidence supports.
+      Each one answers the same question with completely different evidence, and
+      none of them can check the others.
     </p>
     <dl id="layers" class="layer-list"></dl>
   </section>

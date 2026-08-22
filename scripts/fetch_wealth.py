@@ -4,10 +4,13 @@ Four layers, because no single source covers the range. Each is a different
 measurement and they are kept apart all the way through, exactly as
 `no_reading` is kept apart from `unresolved` on the political side.
 
-  1. deep          GINI Project, 10500 BC to AD 1980, wealth Gini from house
-                   floor areas. NOT fetched here: tDAR requires a free account,
-                   see TODO D8. Drop the export at data/raw/wealth/gini_project.csv
-                   and build_wealth.py will pick it up.
+  1. deep          Wealth Gini from house floor areas. Fetched here from Kohler
+                   et al. 2017, whose 63 sites run 9200 BC to AD 1970 and are
+                   openly downloadable from Springer. The far bigger GINI
+                   Project database that superseded it (47,000 houses) is NOT
+                   fetchable: tDAR requires a free account, see TODO D8. Drop
+                   that export at data/raw/wealth/gini_project.csv and
+                   build_wealth.py prefers it over this one automatically.
   2. preindustrial Alfani / EINITE, taxable wealth from tax records, Europe
   3. industrial    Alfani and Schifano, 39 countries, every decade 1820-2010
   4. modern        WID via Our World in Data, annual, 226 entities
@@ -56,6 +59,40 @@ def get(url: str) -> bytes:
     req = urllib.request.Request(url, headers={"User-Agent": UA})
     with urllib.request.urlopen(req, timeout=90) as resp:
         return resp.read()
+
+
+# Kohler et al. 2017, "Greater post-Neolithic wealth disparities in Eurasia than
+# in North America and Mesoamerica", Nature 551. Supplementary Table 2 is the
+# site-level Gini file, and Springer serves it without a login.
+KOHLER = ("https://media.springernature.com/original/springer-static/esm/"
+          "art%3A10.1038%2Fnature24646/MediaObjects/"
+          "41586_2017_BFnature24646_MOESM3_ESM.xls")
+
+
+def xls_to_csv(xls: Path, sheet: str, out: Path) -> int:
+    """Legacy .xls, so xlrd rather than openpyxl. Fetch-time only."""
+    import xlrd
+
+    wb = xlrd.open_workbook(str(xls))
+    ws = wb.sheet_by_name(sheet)
+    head = [str(ws.cell_value(0, c)).strip() for c in range(ws.ncols)]
+    body = []
+    for r in range(1, ws.nrows):
+        cells = []
+        for c in range(ws.ncols):
+            v = ws.cell_value(r, c)
+            # xlrd hands back every number as a float, so a year comes out
+            # "-9200.0" and a household count "106.0"
+            if isinstance(v, float) and v == int(v):
+                v = int(v)
+            cells.append(str(v).strip())
+        if any(cells):
+            body.append(cells)
+    with open(out, "w", encoding="utf-8", newline="") as fh:
+        w = csv.writer(fh)
+        w.writerow(head)
+        w.writerows(body)
+    return len(body)
 
 
 def sheet_to_csv(xlsx: Path, sheet: str, header_row: int, out: Path) -> int:
@@ -113,11 +150,18 @@ def main() -> int:
             print(f"  {out.name:44s} {n:>7,} rows")
         except Exception as err:                       # noqa: BLE001
             failed.append(f"{name}: {err}")
+    try:
+        tmp.write_bytes(get(KOHLER))
+        out = RAW / "kohler2017_sites.csv"
+        n = xls_to_csv(tmp, "Table 2 Data", out)
+        print(f"  {out.name:44s} {n:>7,} rows")
+    except Exception as err:                           # noqa: BLE001
+        failed.append(f"kohler2017: {err}")
     tmp.unlink(missing_ok=True)
 
-    deep = RAW / "gini_project.csv"
-    print(f"\n  layer 1, the archaeological record: "
-          f"{'present' if deep.exists() else 'NOT PRESENT, see TODO D8'}")
+    bigger = RAW / "gini_project.csv"
+    print(f"\n  the fuller GINI Project database: "
+          f"{'present' if bigger.exists() else 'not present, see TODO D8'}")
 
     for line in failed:
         print(f"  FAILED {line}", file=sys.stderr)

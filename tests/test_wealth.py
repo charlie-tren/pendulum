@@ -116,3 +116,32 @@ def test_metrics_the_page_offers_actually_exist_in_the_data():
 @pytest.mark.parametrize("key", ["layers", "sources", "year0", "year1", "deep_present"])
 def test_meta_carries_what_the_page_reads(key):
     assert key in W["meta"], f"the page reads meta.{key} and the build did not write it"
+
+
+def test_the_archaeological_layer_is_present_and_prehistoric():
+    """Kohler et al. 2017 ships by default, openly, from Springer. If the fetch
+    silently fails the page still draws three tidy panels and quietly stops
+    being about the deep past at all, which is the whole reason it exists."""
+    deep = [p for p in W["points"] if p["layer"] == "deep"]
+    assert len(deep) >= 50, f"only {len(deep)} archaeological sites"
+    assert min(p["year"] for p in deep) < -5000, "nothing older than 5000 BC"
+    assert W["meta"]["year0"] < -9000
+
+
+def test_each_era_carries_at_least_one_measure_the_page_can_draw():
+    """Every panel has to have something in it on at least one measure, or the
+    layer list names a layer the reader can never see."""
+    for era in ("deep", "preindustrial"):
+        pts = [p for p in W["points"] if p["layer"] == era]
+        assert any(p.get(m) is not None for p in pts for m in ("gini", "top10", "top1")), era
+    for era in ("industrial", "modern"):
+        assert any(any(c[era].values()) for c in W["countries"].values()), era
+
+
+def test_no_layer_claims_a_measure_it_cannot_support():
+    """The Gini is not a share and a share is not a Gini. The archaeological
+    layer has no decile breakdown at all, so it must not carry a top-tenth
+    figure that would silently plot on the same axis as a real one."""
+    for p in W["points"]:
+        if p["layer"] == "deep":
+            assert p.get("top10") is None and p.get("top1") is None,                 f"{p['place']} claims a share the house-size method cannot produce"

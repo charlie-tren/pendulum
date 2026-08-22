@@ -10,12 +10,13 @@
      because the thing a reader has to keep hold of is which layer they are
      looking at, not which nation. Warm for the deep past, cool for the
      measured present. */
-  --w-deep: #a1662f;
+  --w-deep: #9c5539;
   --w-early: #c08a3e;
   --w-mid: #7d8f9c;
   --w-now: #2f6fb2;
   --w-england: #4f7d5e;
   --w-piedmont: #9a5b8f;
+  --w-pick: #2f6fb2;
   --max: 960px;
   /* The same serif stack charlietrenorden.com sets on its body. No webfont at
      all: nothing to request, nothing to swap in late, and the project reads as
@@ -54,7 +55,7 @@ header.wrap {
   align-items: center;
 }
 header > h1, header > .standfirst { grid-column: 1 / -1; }
-.home { grid-column: 2; justify-self: end; }
+
 h1 {
   font-family: var(--font-title);
   font-weight: 400;
@@ -205,8 +206,8 @@ a { color: var(--accent); }
     --rule: #2b2f36; --bg: #131519; --panel: #1a1d22; --accent: #6ea8e0;
     /* lifted off the dark ground: the mid-grey and the greens in particular
        disappear into the panel at their light-mode values */
-    --w-deep: #c98a4d; --w-early: #e0a95a; --w-mid: #9aa8b4; --w-now: #6ea8e0;
-    --w-england: #6fa583; --w-piedmont: #c383b6;
+    --w-deep: #d4795c; --w-early: #e8b45f; --w-mid: #9aa8b4; --w-now: #6ea8e0;
+    --w-england: #6fa583; --w-piedmont: #c383b6; --w-pick: #6ea8e0;
   }
   .segmented button[aria-checked="true"] { background: var(--accent); color: #0f1114; }
   .readout { background: rgba(26,29,34,0.97); }
@@ -277,9 +278,28 @@ h1 { display: flex; align-items: center; gap: 26px; }
 @media (max-width: 640px) {
   header.wrap { padding-top: 14px; }
   h1 { gap: 10px; }
-  /* Level with the title rather than stacked above it. */
-  header > h1 { grid-column: 1; grid-row: 1; }
-  .home { grid-row: 1; }
+  /* Level with the title rather than stacked above it. Two links now share the
+     row with the title, so both sides give ground: the nav loses its arrow and
+     some padding, and the title takes the smaller end of its clamp. Without
+     that the nav lands on top of the title at 375px. */
+  header > h1 {
+    grid-column: 1; grid-row: 1;
+    /* Measured, not guessed. Two nav links plus the wordmark have to share
+       375px, and at the desktop clamp the nav landed on top of the title. This
+       is the largest title that still leaves a real gap at 320px. */
+    font-size: clamp(23px, 6.2vw, 34px);
+    padding-right: 10px;
+  }
+  .topnav { grid-row: 1; gap: 0; }
+  .topnav > a { font-size: 12.5px; padding: 5px 6px; }
+  .topnav > a:first-child::after { margin-left: 7px; margin-right: -1px; }
+  .topnav .back { display: none; }
+  .topnav > a { white-space: nowrap; }
+  /* Below 480 the full label will not fit beside the wordmark and the sibling
+     link, and shrinking the title any further to make room costs more than the
+     word "Other" is worth. */
+  .lbl-full { display: none; }
+  .lbl-short { display: inline; }
   header > .standfirst { grid-row: 2; }
 }
 
@@ -400,21 +420,23 @@ h1:hover .mark .bob-r, h1:focus-within .mark .bob-r { animation: cradle-right 1.
 /* Licence and retrieval date sit under each source, quieter than the role. */
 footer .terms { display: block; color: var(--ink-faint); font-size: 12.5px; margin-top: 2px; }
 
-/* ---- the wealth page ----
-   A link out of the top of the main page, and the two blocks the wealth page
-   adds to the shared furniture. */
-.crosslink {
-  display: block; margin: 0 0 26px;
-  padding: 14px 18px; border: 1px solid var(--rule); border-radius: 12px;
-  background: var(--panel); color: var(--ink); text-decoration: none;
-  transition: border-color .18s, transform .18s;
+/* ---- the wealth page ---- */
+/* Both pages carry the same pair of links, so they sit in one nav in the
+   header grid rather than one being a card in the body. The sibling page reads
+   as a peer of "Other projects", which is what it is. */
+.topnav { grid-column: 2; justify-self: end; display: flex; align-items: center; gap: 4px; }
+.topnav > a {
+  display: inline-flex; align-items: center;
+  font-size: 14px; color: var(--ink-soft); text-decoration: none;
+  padding: 6px 10px; border-radius: 7px;
 }
-.crosslink:hover, .crosslink:focus-visible { border-color: var(--accent); }
-.crosslink b { display: block; font-family: var(--font-title); font-weight: 400;
-               font-size: 20px; letter-spacing: -0.01em; }
-.crosslink span { display: block; margin-top: 3px; font-size: 14px; color: var(--ink-soft); }
-.crosslink .go { float: right; color: var(--ink-faint); font-size: 20px; line-height: 1.6; }
-.crosslink:hover .go { color: var(--accent); }
+.topnav > a:hover { background: var(--panel); color: var(--ink); }
+.topnav > a + a { margin-right: -8px; }
+.lbl-short { display: none; }
+.topnav > a:first-child::after {
+  content: ""; width: 1px; height: 14px; background: var(--rule);
+  margin-left: 11px; margin-right: -3px;
+}
 
 .layer-list { margin: 0; }
 .layer-list dt {

@@ -188,11 +188,12 @@ def load_countries() -> dict[str, dict]:
 # ------------------------------------------------------------------------ deep
 
 def deep() -> list[dict]:
-    """The archaeological layer, if the tDAR export has been dropped in.
+    """The archaeological layer: a wealth Gini per dig site, from house sizes.
 
-    Not fetched automatically: tDAR needs a free account. See TODO D8. The
-    expected shape is one row per site with a Gini and a date, which is what
-    the GINI Project's site-level files carry.
+    Two possible sources, and the bigger one wins if it is there. Kohler et al.
+    2017 is 63 sites and openly downloadable, so it ships by default. The GINI
+    Project database that superseded it is 47,000 houses at 1,100 sites but
+    tDAR requires a free account, so it arrives by hand. See TODO D8.
     """
     out = []
     for r in rows("gini_project.csv"):
@@ -204,32 +205,54 @@ def deep() -> list[dict]:
             "group": (r.get("region") or r.get("Region") or "").strip() or "Archaeology",
             "layer": "deep", "year": int(year), "gini": gini,
             "top10": None, "top1": None, "n": num(r.get("n") or r.get("N")),
-            "basis": "house floor areas",
+            "rollup": False, "basis": "house floor areas",
+            "source": "The GINI Project",
+        })
+    if out:
+        return out
+
+    for r in rows("kohler2017_sites.csv"):
+        year, gini = num(r.get("Date_AD")), num(r.get("Gini"))
+        if year is None or gini is None:
+            continue
+        # "various" is the site column's placeholder where a phase pools several
+        # excavations; the Sites column carries the label the paper plots.
+        name = (r.get("Sites") or "").strip() or (r.get("Site") or "").strip()
+        period = (r.get("Period") or "").strip()
+        out.append({
+            "place": name or period or "site",
+            "group": (r.get("Big_Region") or "").strip() or "Archaeology",
+            "layer": "deep", "year": int(year), "gini": gini,
+            "top10": None, "top1": None,
+            "n": num(r.get("Households_in_sample")),
+            "rollup": False,
+            "basis": f"house floor areas, {period}" if period else "house floor areas",
+            "scale": (r.get("PolJE") or "").strip(),
+            "source": "Kohler et al. 2017",
         })
     return out
 
 
 LAYERS = {
     "deep": {
-        "label": "The archaeological record",
-        "note": "A wealth Gini computed from the floor areas of houses at one "
-                "dig site. Bigger houses meant more wealth, and the spread of "
-                "house sizes is what survives to be measured.",
+        "label": "Dug-up houses",
+        "note": "How unevenly floor space was shared out at one settlement. "
+                "Where nothing else survives, the spread of house sizes does.",
     },
     "preindustrial": {
-        "label": "Tax records, 1283 to 1800",
-        "note": "Taxable wealth in a single town or county, from the registers "
-                "the tax was actually levied on. One dot is one assessment.",
+        "label": "Tax registers",
+        "note": "What one town or county was assessed as owning, taken from the "
+                "registers the tax was actually charged on.",
     },
     "industrial": {
-        "label": "Estimates, 1820 to 2010",
-        "note": "Household wealth for a whole country, estimated per decade "
-                "from a mix of probate, survey and national-accounts evidence.",
+        "label": "Historians' estimates",
+        "note": "A whole country, once a decade, reconstructed from probate "
+                "records, surveys and whatever else the period left behind.",
     },
     "modern": {
-        "label": "National accounts, 1800 to today",
-        "note": "Shares of total household wealth, from tax data and national "
-                "accounts. Annual, and the only layer that is.",
+        "label": "National accounts",
+        "note": "Tax returns and national accounts, added up every year. The "
+                "only layer measured rather than reconstructed.",
     },
 }
 
@@ -256,11 +279,16 @@ SOURCES = [
      "url": "https://ourworldindata.org/grapher/wealth-share-richest-1-percent",
      "licence": "CC BY 4.0",
      "role": "Annual shares of household wealth held by the richest 1% and 10%."},
+    {"name": "Greater post-Neolithic wealth disparities in Eurasia",
+     "publisher": "Kohler and others, Nature 551 (2017)",
+     "url": "https://www.nature.com/articles/nature24646",
+     "licence": "",
+     "role": "Wealth Ginis from house floor areas at 63 sites, 9200 BC to AD 1970."},
     {"name": "The Global Dynamics of Inequality (GINI) Project",
      "publisher": "Ortman, Kohler, Bogaard and others, via tDAR",
      "url": "https://core.tdar.org/project/496853/the-global-dynamics-of-inequality-gini-project",
-     "licence": "Free, registration required",
-     "role": "Wealth Ginis from house floor areas, 10500 BC to AD 1980."},
+     "licence": "",
+     "role": "The 47,000-house successor to the above. Not yet loaded."},
 ]
 
 
