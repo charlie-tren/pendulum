@@ -235,24 +235,31 @@ def deep() -> list[dict]:
 
 LAYERS = {
     "deep": {
-        "label": "Dug-up houses",
-        "note": "How unevenly floor space was shared out at one settlement. "
-                "Where nothing else survives, the spread of house sizes does.",
+        "label": "Excavated settlements",
+        "note": "The Gini of house floor areas within one settlement phase. "
+                "Floor area is the standard archaeological proxy for household "
+                "wealth: it survives, it scales with what a household could "
+                "command, and it is measurable from a plan.",
     },
     "preindustrial": {
         "label": "Tax registers",
-        "note": "What one town or county was assessed as owning, taken from the "
-                "registers the tax was actually charged on.",
+        "note": "Assessed wealth across the households of one town or county, "
+                "from the register the levy was charged on. The English "
+                "figures are reconstructed to add back households too poor to "
+                "be assessed, which raises them substantially.",
     },
     "industrial": {
-        "label": "Historians' estimates",
-        "note": "A whole country, once a decade, reconstructed from probate "
-                "records, surveys and whatever else the period left behind.",
+        "label": "Reconstructed estimates",
+        "note": "Whole-country household wealth at decade intervals, "
+                "reconstructed from probate inventories, estate duty returns "
+                "and household surveys. Coverage thins the further back it "
+                "goes.",
     },
     "modern": {
         "label": "National accounts",
-        "note": "Tax returns and national accounts, added up every year. The "
-                "only layer measured rather than reconstructed.",
+        "note": "Shares of total household net wealth, from tax records and "
+                "national balance sheets, annual. The only layer measured "
+                "contemporaneously rather than reconstructed after the fact.",
     },
 }
 

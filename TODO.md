@@ -94,6 +94,45 @@ this file is closed.
       Income remains available if it is ever wanted (`income-share-distribution-before-tax-wid`,
       1820-2024, top 1 / next 9 / middle 40 / bottom 50, verified to sum to 100),
       but wealth is the brief.
+- [ ] **D9. Two more charts, from data already downloaded** (scoped 2026-08-22,
+      after Charlie asked whether anything else is worth adding). Neither needs
+      a new source: both dimensions are already in `wealth.json`, carried
+      through from Kohler's Supplementary Table 2 and never plotted.
+
+      **The strong one: Gini against political scale.** Kohler codes every dig
+      site by the political complexity of the society that built it, and the
+      medians rise monotonically:
+
+      | Scale | n | Median Gini |
+      |---|---|---|
+      | family | 1 | 0.17 |
+      | local | 12 | 0.21 |
+      | big man | 11 | 0.28 |
+      | regional | 22 | 0.28 |
+      | state | 17 | 0.38 |
+
+      That is the whole site's two subjects in one chart: how a society is
+      governed against how unevenly it holds wealth. It belongs on Pendulum
+      more than on anyone else's page. A box plot or a strip plot per scale,
+      not a bar chart of the medians, because n is small and the ranges overlap
+      heavily (state runs 0.12 to 0.68).
+
+      **The second: Old World against New World.** Kohler's own headline
+      finding, reproducible from the same field. Old World median 0.35 across
+      24 sites, New World 0.25 across 39. The paper's argument is that draught
+      animals and the plough let Eurasian elites accumulate in a way the
+      Americas could not. Two scatters on one time axis would carry it.
+
+      **Checked and NOT available**: OWID has no wealth-to-income ratio, no
+      capital-to-income ratio and no inheritance-flow grapher, so Piketty's
+      wealth-to-income series would need the WID bulk API rather than the
+      grapher CSVs this project already uses. Ten candidate slugs, all 404.
+
+      **Available but a different page**: `income-share-distribution-before-tax-wid`
+      (1820-2024, top 1 / next 9 / middle 40 / bottom 50, verified to sum to
+      100) and `palma-ratio-wid`. Income rather than wealth, so it would be a
+      second axis on this page rather than more of the same one. Charlie's call.
+
 
 Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
 

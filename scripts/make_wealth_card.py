@@ -42,7 +42,7 @@ def panels():
     for c in DATA["countries"].values():
         country += [(y, v) for y, v in c["industrial"]["gini"]]
     return [
-        {"label": "Dug-up houses", "dots": deep, "colour": DEEP, "lines": []},
+        {"label": "Excavated settlements", "dots": deep, "colour": DEEP, "lines": []},
         {"label": "Tax registers", "dots": early, "colour": EARLY,
          "lines": [s["gini"] for s in DATA["regions"] if s.get("gini")]},
         {"label": "Whole countries", "dots": [], "colour": MID,
@@ -125,7 +125,7 @@ HTML = f"""<!doctype html><meta charset="utf-8">
 <svg class="chart" width="{W}" height="{H}">{draw()}</svg>
 <div class="top">
   <div class="head">{MARK}<h1>Inequality</h1></div>
-  <p>Who owned what, from dug-up houses in 9200 BC to national accounts today.</p>
+  <p>Who owned what, from excavated settlements in 9200 BC to national accounts today.</p>
 </div>
 """
 
