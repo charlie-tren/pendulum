@@ -31,13 +31,28 @@ METAL = {
 
 
 def stack_svg(metal: str, cx: float, n: int) -> str:
+    """One stack, each coin its own group so it can move on its own.
+
+    The body of every coin runs STEP + RY tall rather than STEP. At exactly
+    STEP it stopped level with the CENTRE of the coin below, leaving the lower
+    half of that coin's face sticking out, and a stack of nine rendered as a
+    stack of nine visible rings rather than a pile with one face on top. The
+    extra RY is the ellipse's own half-height, which is exactly what it takes
+    to cover it.
+    """
     body, face, edge = METAL[metal]
     top = BASE - (n - 1) * STEP
     coins = "".join(
         f'<g class="coin" style="--i:{i}">'
-        f'<path d="M{cx - RX:.2f} {BASE - i * STEP:.2f} L{cx - RX:.2f} {BASE - i * STEP + STEP:.2f} '
-        f'A{RX:.2f} {RY:.2f} 0 0 0 {cx + RX:.2f} {BASE - i * STEP + STEP:.2f} '
-        f'L{cx + RX:.2f} {BASE - i * STEP:.2f} Z" fill="{body}"/>'
+        f'<path d="M{cx - RX:.2f} {BASE - i * STEP:.2f} '
+        f'L{cx - RX:.2f} {BASE - i * STEP + STEP + RY:.2f} '
+        f'A{RX:.2f} {RY:.2f} 0 0 0 {cx + RX:.2f} {BASE - i * STEP + STEP + RY:.2f} '
+        f'L{cx + RX:.2f} {BASE - i * STEP:.2f} Z" fill="{body}" '
+        # the body is outlined, which puts a seam on its BOTTOM arc. That arc is
+        # the only part of a buried coin that stays visible once the coin above
+        # covers its face, and it is what makes a pile read as coins rather than
+        # as one smooth cylinder.
+        f'stroke="{edge}" stroke-width=".4" stroke-opacity=".5"/>'
         f'<ellipse cx="{cx:.2f}" cy="{BASE - i * STEP:.2f}" rx="{RX:.2f}" ry="{RY:.2f}" fill="{face}"/>'
         f"</g>"
         for i in range(n)

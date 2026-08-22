@@ -100,25 +100,17 @@ def _span(lo: int, hi: int) -> str:
     return f"{fmt(lo)} to {fmt(hi)}"
 
 
-MARK = f"""<svg viewBox="0 8 58 48" width="96" height="80">
-  <g fill="{BRONZE}"><ellipse cx="13" cy="50" rx="6.4" ry="2.5"/><ellipse cx="13" cy="45" rx="6.4" ry="2.5"/></g>
-  <g fill="{SILVER}"><ellipse cx="29" cy="50" rx="6.4" ry="2.5"/><ellipse cx="29" cy="45" rx="6.4" ry="2.5"/>
-     <ellipse cx="29" cy="40" rx="6.4" ry="2.5"/></g>
-  <g fill="{GOLD}"><ellipse cx="45" cy="50" rx="6.4" ry="2.5"/><ellipse cx="45" cy="45" rx="6.4" ry="2.5"/>
-     <ellipse cx="45" cy="40" rx="6.4" ry="2.5"/><ellipse cx="45" cy="35" rx="6.4" ry="2.5"/>
-     <ellipse cx="45" cy="30" rx="6.4" ry="2.5"/><ellipse cx="45" cy="25" rx="6.4" ry="2.5"/>
-     <ellipse cx="45" cy="20" rx="6.4" ry="2.5"/><ellipse cx="45" cy="15" rx="6.4" ry="2.5"/>
-     <ellipse cx="45" cy="10" rx="6.4" ry="2.5"/></g>
-</svg>"""
+MARK = """<svg viewBox="0 8 58 48" width="104" height="86"><path d="M6.40 51.00 L6.40 57.80 A6.60 2.60 0 0 0 19.60 57.80 L19.60 51.00 Z" fill="#b06a28" stroke="#f0b982" stroke-width=".4" stroke-opacity=".5"/><path d="M6.40 46.80 L6.40 53.60 A6.60 2.60 0 0 0 19.60 53.60 L19.60 46.80 Z" fill="#b06a28" stroke="#f0b982" stroke-width=".4" stroke-opacity=".5"/><ellipse cx="13.00" cy="46.80" rx="6.60" ry="2.60" fill="#d98f45"/><ellipse cx="13.00" cy="46.80" rx="4.70" ry="1.80" fill="none" stroke="#f0b982" stroke-width=".5" opacity=".8"/><path d="M22.40 51.00 L22.40 57.80 A6.60 2.60 0 0 0 35.60 57.80 L35.60 51.00 Z" fill="#98a2ac" stroke="#e3e9ef" stroke-width=".4" stroke-opacity=".5"/><path d="M22.40 46.80 L22.40 53.60 A6.60 2.60 0 0 0 35.60 53.60 L35.60 46.80 Z" fill="#98a2ac" stroke="#e3e9ef" stroke-width=".4" stroke-opacity=".5"/><path d="M22.40 42.60 L22.40 49.40 A6.60 2.60 0 0 0 35.60 49.40 L35.60 42.60 Z" fill="#98a2ac" stroke="#e3e9ef" stroke-width=".4" stroke-opacity=".5"/><ellipse cx="29.00" cy="42.60" rx="6.60" ry="2.60" fill="#c6ced7"/><ellipse cx="29.00" cy="42.60" rx="4.70" ry="1.80" fill="none" stroke="#e3e9ef" stroke-width=".5" opacity=".8"/><path d="M38.40 51.00 L38.40 57.80 A6.60 2.60 0 0 0 51.60 57.80 L51.60 51.00 Z" fill="#c69a22" stroke="#f7e2a4" stroke-width=".4" stroke-opacity=".5"/><path d="M38.40 46.80 L38.40 53.60 A6.60 2.60 0 0 0 51.60 53.60 L51.60 46.80 Z" fill="#c69a22" stroke="#f7e2a4" stroke-width=".4" stroke-opacity=".5"/><path d="M38.40 42.60 L38.40 49.40 A6.60 2.60 0 0 0 51.60 49.40 L51.60 42.60 Z" fill="#c69a22" stroke="#f7e2a4" stroke-width=".4" stroke-opacity=".5"/><path d="M38.40 38.40 L38.40 45.20 A6.60 2.60 0 0 0 51.60 45.20 L51.60 38.40 Z" fill="#c69a22" stroke="#f7e2a4" stroke-width=".4" stroke-opacity=".5"/><path d="M38.40 34.20 L38.40 41.00 A6.60 2.60 0 0 0 51.60 41.00 L51.60 34.20 Z" fill="#c69a22" stroke="#f7e2a4" stroke-width=".4" stroke-opacity=".5"/><path d="M38.40 30.00 L38.40 36.80 A6.60 2.60 0 0 0 51.60 36.80 L51.60 30.00 Z" fill="#c69a22" stroke="#f7e2a4" stroke-width=".4" stroke-opacity=".5"/><path d="M38.40 25.80 L38.40 32.60 A6.60 2.60 0 0 0 51.60 32.60 L51.60 25.80 Z" fill="#c69a22" stroke="#f7e2a4" stroke-width=".4" stroke-opacity=".5"/><path d="M38.40 21.60 L38.40 28.40 A6.60 2.60 0 0 0 51.60 28.40 L51.60 21.60 Z" fill="#c69a22" stroke="#f7e2a4" stroke-width=".4" stroke-opacity=".5"/><path d="M38.40 17.40 L38.40 24.20 A6.60 2.60 0 0 0 51.60 24.20 L51.60 17.40 Z" fill="#c69a22" stroke="#f7e2a4" stroke-width=".4" stroke-opacity=".5"/><ellipse cx="45.00" cy="17.40" rx="6.60" ry="2.60" fill="#ecc457"/><ellipse cx="45.00" cy="17.40" rx="4.70" ry="1.80" fill="none" stroke="#f7e2a4" stroke-width=".5" opacity=".8"/></svg>"""
 
 HTML = f"""<!doctype html><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400&display=block" rel="stylesheet">
 <style>
   * {{ margin:0; box-sizing:border-box; }}
   body {{ width:{W}px; height:{H}px; background:{BG}; overflow:hidden;
-         font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif; }}
+         font-family:'Libre Baskerville',Georgia,serif; }}
   .top {{ padding:66px 70px 0; }}
   .head {{ display:flex; align-items:center; gap:24px; }}
-  h1 {{ font-size:78px; letter-spacing:-.015em; color:{INK}; font-weight:400; }}
+  h1 {{ font-size:66px; letter-spacing:-.015em; color:{INK}; font-weight:400; }}
   p {{ margin-top:20px; font-size:31px; color:{INK_SOFT}; }}
   svg.chart {{ position:absolute; left:0; top:0; }}
 </style>
@@ -138,7 +130,7 @@ def main() -> int:
         br = pw.chromium.launch()
         pg = br.new_page(viewport={"width": W, "height": H}, device_scale_factor=2)
         pg.goto(tmp.as_uri())
-        pg.wait_for_timeout(400)
+        pg.wait_for_timeout(2500)  # the webfont has to arrive
         pg.screenshot(path=str(out))
         br.close()
     tmp.unlink()

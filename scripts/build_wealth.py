@@ -241,6 +241,30 @@ def deep() -> list[dict]:
     return out
 
 
+def industrial_provenance() -> dict:
+    """How the decadal estimates were actually arrived at.
+
+    Alfani and Schifano record a source per figure, and the honest summary is
+    that most of the layer is not a measurement: 81 of the Gini figures are
+    marked Interpolate, another 80 are derived from the top-tenth series
+    through a fitted correlation, and the rest come from named studies (WID,
+    Roine and Waldenstrom, Davies and others, the Credit Suisse databook).
+    Counted at build time so the note on the page cannot go stale.
+    """
+    kinds = {"named": 0, "interpolated": 0, "correlated": 0}
+    for r in rows("alfani_countries_1820_2010.csv"):
+        src = (r.get("SourceGini") or "").strip().lower()
+        if not src:
+            continue
+        if src.startswith("interpolate"):
+            kinds["interpolated"] += 1
+        elif src.startswith("correlation"):
+            kinds["correlated"] += 1
+        else:
+            kinds["named"] += 1
+    return kinds
+
+
 LAYERS = {
     "deep": {
         "label": "Excavated settlements",
@@ -255,8 +279,10 @@ LAYERS = {
     },
     "industrial": {
         "label": "Reconstructed estimates",
-        "note": "Whole-country household wealth every decade, from probate "
-                "inventories, estate duty returns and surveys.",
+        "note": "Whole-country household wealth every decade. About a third of "
+                "the figures come from named studies, a third are interpolated "
+                "between them, and a third are inferred from the other measure "
+                "through a fitted correlation.",
     },
     "modern": {
         "label": "National accounts",
@@ -307,6 +333,7 @@ def main() -> int:
     payload = {
         "meta": {
             "layers": LAYERS,
+            "industrial_provenance": industrial_provenance(),
             "sources": SOURCES,
             "year0": min(years), "year1": max(years),
             "deep_present": bool(deep()),

@@ -9,18 +9,20 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Charlie Trenorden">
 <meta property="og:title" content="Pendulum: eleven thousand years of wealth inequality">
-<meta property="og:description" content="From a Syrian village in 9200 BC to last year&#39;s tax returns.">
+<meta property="og:description" content="The bigger the settlement, the wider the gap, and it has held since the first villages.">
 <meta property="og:url" content="https://charlietrenorden.com/inequality/">
 <meta property="og:image" content="https://charlietrenorden.com/inequality/og-card.png">
 <meta property="og:image:width" content="2400">
 <meta property="og:image:height" content="1260">
 <meta property="og:image:alt" content="Pendulum: how unequally wealth has been held, from the archaeological record to today.">
 <meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
-<link rel="icon" href="favicon.svg" type="image/svg+xml">
-<link rel="icon" href="favicon.ico" sizes="any">
-<link rel="icon" href="favicon-192.png" type="image/png" sizes="192x192">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="coins.svg" type="image/svg+xml">
+
+
+<link rel="apple-touch-icon" href="coins-180.png">
 </head>
 <body class="loading">
 <header class="wrap">
@@ -32,26 +34,23 @@
   <h1>
     <svg class="mark coins" viewBox="0 8 58 48" aria-hidden="true" focusable="false">
       <g class="stack s-bronze">
-        <path d="M6.40 46.80 L6.40 51.00 A6.60 2.60 0 0 0 19.60 51.00 L19.60 46.80 Z" fill="var(--coin-bronze)"/>
-        <path d="M6.40 51.00 A6.60 2.60 0 0 0 19.60 51.00" fill="none" stroke="var(--coin-bronze-edge)" stroke-width=".55"/>
+        <path d="M6.40 51.00 L6.40 57.80 A6.60 2.60 0 0 0 19.60 57.80 L19.60 51.00 Z" fill="var(--coin-bronze)" stroke="var(--coin-bronze-edge)" stroke-width=".4" stroke-opacity=".5"/><path d="M6.40 46.80 L6.40 53.60 A6.60 2.60 0 0 0 19.60 53.60 L19.60 46.80 Z" fill="var(--coin-bronze)" stroke="var(--coin-bronze-edge)" stroke-width=".4" stroke-opacity=".5"/>
         <ellipse cx="13.00" cy="46.80" rx="6.60" ry="2.60" fill="var(--coin-bronze-face)"/>
         <ellipse cx="13.00" cy="46.80" rx="4.70" ry="1.80" fill="none" stroke="var(--coin-bronze-edge)" stroke-width=".5" opacity=".8"/>
       </g>
       <g class="stack s-silver">
-        <path d="M22.40 42.60 L22.40 51.00 A6.60 2.60 0 0 0 35.60 51.00 L35.60 42.60 Z" fill="var(--coin-silver)"/>
-        <path d="M22.40 51.00 A6.60 2.60 0 0 0 35.60 51.00" fill="none" stroke="var(--coin-silver-edge)" stroke-width=".55"/><path d="M22.40 46.80 A6.60 2.60 0 0 0 35.60 46.80" fill="none" stroke="var(--coin-silver-edge)" stroke-width=".55"/>
+        <path d="M22.40 51.00 L22.40 57.80 A6.60 2.60 0 0 0 35.60 57.80 L35.60 51.00 Z" fill="var(--coin-silver)" stroke="var(--coin-silver-edge)" stroke-width=".4" stroke-opacity=".5"/><path d="M22.40 46.80 L22.40 53.60 A6.60 2.60 0 0 0 35.60 53.60 L35.60 46.80 Z" fill="var(--coin-silver)" stroke="var(--coin-silver-edge)" stroke-width=".4" stroke-opacity=".5"/><path d="M22.40 42.60 L22.40 49.40 A6.60 2.60 0 0 0 35.60 49.40 L35.60 42.60 Z" fill="var(--coin-silver)" stroke="var(--coin-silver-edge)" stroke-width=".4" stroke-opacity=".5"/>
         <ellipse cx="29.00" cy="42.60" rx="6.60" ry="2.60" fill="var(--coin-silver-face)"/>
         <ellipse cx="29.00" cy="42.60" rx="4.70" ry="1.80" fill="none" stroke="var(--coin-silver-edge)" stroke-width=".5" opacity=".8"/>
       </g>
       <g class="stack s-gold">
-        <path d="M38.40 17.40 L38.40 51.00 A6.60 2.60 0 0 0 51.60 51.00 L51.60 17.40 Z" fill="var(--coin-gold)"/>
-        <path d="M38.40 51.00 A6.60 2.60 0 0 0 51.60 51.00" fill="none" stroke="var(--coin-gold-edge)" stroke-width=".55"/><path d="M38.40 46.80 A6.60 2.60 0 0 0 51.60 46.80" fill="none" stroke="var(--coin-gold-edge)" stroke-width=".55"/><path d="M38.40 42.60 A6.60 2.60 0 0 0 51.60 42.60" fill="none" stroke="var(--coin-gold-edge)" stroke-width=".55"/><path d="M38.40 38.40 A6.60 2.60 0 0 0 51.60 38.40" fill="none" stroke="var(--coin-gold-edge)" stroke-width=".55"/><path d="M38.40 34.20 A6.60 2.60 0 0 0 51.60 34.20" fill="none" stroke="var(--coin-gold-edge)" stroke-width=".55"/><path d="M38.40 30.00 A6.60 2.60 0 0 0 51.60 30.00" fill="none" stroke="var(--coin-gold-edge)" stroke-width=".55"/><path d="M38.40 25.80 A6.60 2.60 0 0 0 51.60 25.80" fill="none" stroke="var(--coin-gold-edge)" stroke-width=".55"/><path d="M38.40 21.60 A6.60 2.60 0 0 0 51.60 21.60" fill="none" stroke="var(--coin-gold-edge)" stroke-width=".55"/>
+        <path d="M38.40 51.00 L38.40 57.80 A6.60 2.60 0 0 0 51.60 57.80 L51.60 51.00 Z" fill="var(--coin-gold)" stroke="var(--coin-gold-edge)" stroke-width=".4" stroke-opacity=".5"/><path d="M38.40 46.80 L38.40 53.60 A6.60 2.60 0 0 0 51.60 53.60 L51.60 46.80 Z" fill="var(--coin-gold)" stroke="var(--coin-gold-edge)" stroke-width=".4" stroke-opacity=".5"/><path d="M38.40 42.60 L38.40 49.40 A6.60 2.60 0 0 0 51.60 49.40 L51.60 42.60 Z" fill="var(--coin-gold)" stroke="var(--coin-gold-edge)" stroke-width=".4" stroke-opacity=".5"/><path d="M38.40 38.40 L38.40 45.20 A6.60 2.60 0 0 0 51.60 45.20 L51.60 38.40 Z" fill="var(--coin-gold)" stroke="var(--coin-gold-edge)" stroke-width=".4" stroke-opacity=".5"/><path d="M38.40 34.20 L38.40 41.00 A6.60 2.60 0 0 0 51.60 41.00 L51.60 34.20 Z" fill="var(--coin-gold)" stroke="var(--coin-gold-edge)" stroke-width=".4" stroke-opacity=".5"/><path d="M38.40 30.00 L38.40 36.80 A6.60 2.60 0 0 0 51.60 36.80 L51.60 30.00 Z" fill="var(--coin-gold)" stroke="var(--coin-gold-edge)" stroke-width=".4" stroke-opacity=".5"/><path d="M38.40 25.80 L38.40 32.60 A6.60 2.60 0 0 0 51.60 32.60 L51.60 25.80 Z" fill="var(--coin-gold)" stroke="var(--coin-gold-edge)" stroke-width=".4" stroke-opacity=".5"/><path d="M38.40 21.60 L38.40 28.40 A6.60 2.60 0 0 0 51.60 28.40 L51.60 21.60 Z" fill="var(--coin-gold)" stroke="var(--coin-gold-edge)" stroke-width=".4" stroke-opacity=".5"/><path d="M38.40 17.40 L38.40 24.20 A6.60 2.60 0 0 0 51.60 24.20 L51.60 17.40 Z" fill="var(--coin-gold)" stroke="var(--coin-gold-edge)" stroke-width=".4" stroke-opacity=".5"/>
         <ellipse cx="45.00" cy="17.40" rx="6.60" ry="2.60" fill="var(--coin-gold-face)"/>
         <ellipse cx="45.00" cy="17.40" rx="4.70" ry="1.80" fill="none" stroke="var(--coin-gold-edge)" stroke-width=".5" opacity=".8"/>
       </g>
     </svg>Inequality</h1>
   <p class="standfirst">
-    From a Syrian village in 9200 BC to last year's tax returns.
+    The bigger the settlement, the wider the gap. That has held since the first villages.
   </p>
 </header>
 

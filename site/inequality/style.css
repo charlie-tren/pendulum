@@ -28,8 +28,15 @@
   /* The same serif stack charlietrenorden.com sets on its body. No webfont at
      all: nothing to request, nothing to swap in late, and the project reads as
      part of the site rather than beside it. Title at 400, headings at 600. */
-  --font-title: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia,
-                "Times New Roman", serif;
+  /* Libre Baskerville, Charlie's pick from eleven faces on 2026-08-22. It is
+     the first webfont on this project, which had deliberately used the system
+     serif to avoid a request and a late swap. The cost is paid for two reasons:
+     it holds a one-word title where the system stack goes thin, and both pages
+     are one word. `display=swap` means the system stack renders first and is
+     replaced, so nothing is invisible while it loads. Baskerville runs large
+     for its point size, hence the smaller clamp on h1 below. */
+  --font-title: "Libre Baskerville", "Iowan Old Style", "Palatino Linotype",
+                Palatino, Georgia, "Times New Roman", serif;
   --font-display: var(--font-title);
 }
 
@@ -68,7 +75,7 @@ h1 {
   font-weight: 400;
   /* smaller than the Instrument Serif setting: this stack has a far larger
      x-height, so it carries the same presence at less size */
-  font-size: clamp(33px, 6.4vw, 50px);
+  font-size: clamp(28px, 5.4vw, 42px);
   letter-spacing: -0.015em;
   line-height: 1.04;
   margin: 0 0 10px;
@@ -147,8 +154,10 @@ select:focus-visible, .segmented button:focus-visible { outline: 2px solid var(-
   margin: 0 0 22px;
 }
 .panel h2 {
-  font-family: var(--font-display); font-weight: 600;
-  font-size: 21px; margin: 0 0 5px; letter-spacing: -0.008em;
+  /* 400, not 600: this face has no semibold, and asking for one makes the
+     browser synthesise a smeared fake. The size carries the hierarchy. */
+  font-family: var(--font-display); font-weight: 400;
+  font-size: 20px; margin: 0 0 5px; letter-spacing: -0.008em;
 }
 .sub, .caption {
   font-size: 14px;
@@ -288,7 +297,8 @@ h1 { display: flex; align-items: center; gap: 26px; width: fit-content; }
 }
 @media (max-width: 640px) {
   header.wrap { padding-top: 14px; }
-  h1 { gap: 10px; }
+  h1 { gap: 8px; }
+  .mark.coins { height: 1.5em; }
   /* Level with the title rather than stacked above it. Two links now share the
      row with the title, so both sides give ground: the nav loses its arrow and
      some padding, and the title takes the smaller end of its clamp. Without
@@ -298,7 +308,10 @@ h1 { display: flex; align-items: center; gap: 26px; width: fit-content; }
     /* Measured, not guessed. Two nav links plus the wordmark have to share
        375px, and at the desktop clamp the nav landed on top of the title. This
        is the largest title that still leaves a real gap at 320px. */
-    font-size: clamp(23px, 6.2vw, 34px);
+    /* Baskerville sets wider than the stack it replaced, so the floor drops
+       from 20px to 16. Measured at 320, 360, 375 and 390 with both wordmarks
+       and both nav links present; the tightest is Inequality at 320. */
+    font-size: clamp(16px, 5.2vw, 30px);
     padding-right: 10px;
   }
   .topnav { grid-row: 1; gap: 0; }
@@ -482,6 +495,9 @@ footer .terms { display: block; color: var(--ink-faint); font-size: 12.5px; marg
 
    Same hover contract as the cradle: it moves only when the title itself is
    hovered, and it holds still for anyone who has asked for less motion. */
+/* Taller than the cradle. A coin stack is a narrow vertical thing and at the
+   cradle's 1.06em it read as a smudge beside a Baskerville capital. */
+.mark.coins { height: 1.34em; }
 .coins .stack { transform-origin: 50% 100%; }
 h1:hover .coins .stack, h1:focus-within .coins .stack {
   animation: coin-lift 1.5s ease-in-out infinite;
@@ -512,3 +528,17 @@ h1:hover .coins .s-gold, h1:focus-within .coins .s-gold { animation-delay: .24s;
 .legend .key[aria-pressed="false"] { color: var(--ink-faint); }
 .legend .key[aria-pressed="false"] i { background: none !important;
   box-shadow: inset 0 0 0 1.5px var(--ink-faint); }
+
+/* Under 380 the wordmark, the sibling link and the projects link no longer fit
+   on one row at any size still worth reading, so the nav gives up its last few
+   pixels and the mark shrinks. Top level, not nested inside the 640 block: a
+   nested @media parses, but keeping it flat makes the cascade obvious.
+   Measured at 320, 360, 375 and 390 across both pages; Inequality at 320 is
+   the tightest of the four combinations. */
+@media (max-width: 380px) {
+  .topnav > a { font-size: 11px; padding: 4px 3px; }
+  .topnav .sep { margin: 0 2px; }
+  .mark.coins { height: 1.1em; }
+  h1 { gap: 5px; }
+  header > h1 { font-size: 15px; padding-right: 6px; }
+}

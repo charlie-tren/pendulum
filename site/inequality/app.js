@@ -20,12 +20,16 @@
    archaeology opens open, because 52 sites over 10,000 years is the finding
    rather than clutter, and there is no denser summary to fall back on. Both
    are toggled from the key. */
+/* Three separate scatters, all off. The page opens on four summary lines,
+   which is the argument; the observations underneath are there for anyone who
+   wants to check it, one layer at a time, from the key. */
 const DEFAULTS = {
-  metric: "gini", country: "GBR",
-  scatter: { deep: true, preindustrial: false },
+  metric: "gini", country: "USA",
+  scatter: { deep: false, town: false, region: false },
 };
 const ALL = "__all";
 const state = { ...DEFAULTS, scatter: { ...DEFAULTS.scatter } };
+const SCATTERS = ["deep", "town", "region"];
 let DATA = null;
 
 const $ = (sel) => document.querySelector(sel);
@@ -39,8 +43,8 @@ const svgEl = (name, attrs = {}) => {
 const METRICS = {
   gini: {
     label: "Wealth Gini", max: 1, pct: false,
-    blurb: "Half the mean absolute difference between any two households, over "
-         + "the mean. 0 is an even distribution, 1 is one household with all of it.",
+    blurb: "0 if every household owns the same, 1 if one household owns "
+         + "everything. Most real societies land between 0.2 and 0.9.",
   },
   top10: {
     label: "Share held by the richest 10%", max: 100, pct: true,
@@ -82,6 +86,16 @@ const PERIODS = [
 const SRC_KEY = {
   industrial: "Estimates, middle half",
   modern: "Accounts, middle half",
+};
+
+const SRC_NOTE = {
+  industrial: "Whole-country wealth every decade, Alfani and Schifano. The band "
+            + "is the middle half of countries. Roughly a third of the figures "
+            + "come from named studies, a third are interpolated between them, "
+            + "and a third are inferred from the other measure by correlation.",
+  modern: "Shares of household net wealth from tax records and national balance "
+        + "sheets, annual, WID via Our World in Data. The band is the middle "
+        + "half of countries. The only layer measured at the time.",
 };
 
 const SOURCE_STYLE = {
@@ -207,7 +221,8 @@ function inPeriod(period, year) {
 
 function periodContent(period, metric) {
   const pts = DATA.points.filter((p) =>
-    !p.rollup && p[metric] != null && inPeriod(period, p.year));
+    !p.rollup && p[metric] != null && inPeriod(period, p.year))
+    .map((p) => ({ ...p, toggle: p.layer === "deep" ? "deep" : "town" }));
 
   /* Alfani's regional figures are point estimates every fifty years, not a
      continuous series, so they are drawn as dots like everything else in the
@@ -219,7 +234,7 @@ function periodContent(period, metric) {
   const regionPts = DATA.regions.flatMap((r) =>
     (r[metric] || []).filter(([y]) => inPeriod(period, y)).map(([y, v]) => ({
       place: r.label, group: "Regional estimate", layer: "preindustrial",
-      year: y, [metric]: v, aggregate: true, n: null,
+      year: y, [metric]: v, aggregate: true, n: null, toggle: "region",
       basis: "Alfani's estimate for the whole state, every fifty years",
     })));
 
@@ -246,6 +261,18 @@ function periodContent(period, metric) {
   }
 
   return { pts: all, regions: [], series, trends };
+}
+
+/* How many years a panel covers, from its own bounds where they are finite
+   and from its data where they are not. */
+function spanOf(era) {
+  const c = era.content;
+  const ys = [...c.pts.map((p) => p.year),
+              ...c.series.flatMap((x) => [...x.dist.map((d) => d.year),
+                                          ...x.sel.map(([y]) => y)])];
+  const lo = era.from > -1e8 ? era.from : (ys.length ? Math.min(...ys) : 0);
+  const hi = era.to < 1e8 ? era.to : (ys.length ? Math.max(...ys) : 1);
+  return Math.max(1, hi - lo);
 }
 
 function activeEras(metric) {
@@ -318,8 +345,17 @@ function drawEras() {
       const laneH = (box.h - pad.t - pad.b) / eras.length;
       return { x: pad.l, w: iw, y: pad.t + i * laneH, h: laneH - 34 };
     }
-    const each = (iw - gut * (eras.length - 1)) / eras.length;
-    return { x: pad.l + i * (each + gut), w: each, y: pad.t, h: box.h - pad.t - pad.b };
+    /* Width by the LOG of the span. Equal widths made 10,000 years and 200
+       years the same size, which is what an inconsistent timescale looks like.
+       Strictly proportional leaves the modern panel four pixels wide, and the
+       square root was still harsh enough to squash the panel holding most of
+       the data into an unreadable scribble. Log is the gentle version: the
+       first panel is visibly the longest and the last is still legible. */
+    const room = iw - gut * (eras.length - 1);
+    const wts = eras.map((e) => Math.log10(Math.max(10, spanOf(e))));
+    const total = wts.reduce((a, v) => a + v, 0);
+    const x = pad.l + wts.slice(0, i).reduce((a, v) => a + (v / total) * room, 0) + i * gut;
+    return { x, w: (wts[i] / total) * room, y: pad.t, h: box.h - pad.t - pad.b };
   });
 
   const ticks = M.max === 1 ? [0, 0.25, 0.5, 0.75, 1] : [0, 25, 50, 75, 100];
@@ -443,17 +479,17 @@ function drawEras() {
        they are actually good for. */
     const better = i > 0;
     for (const p of pts) {
-      if (!state.scatter[p.layer]) continue;
+      if (!state.scatter[p.toggle]) continue;
       if (p.layer === "deep" && better) continue;
-      const hue = `var(--w-${p.layer === "deep" ? "deep" : "early"})`;
+      /* A whole region is the same shape as a single town, a shade
+         darker. Hollow rings read as a different KIND of thing and drew more
+         attention than an aggregate deserves next to the towns it averages. */
+      const hue = p.layer === "deep" ? "var(--w-deep)"
+        : p.aggregate ? "var(--w-region)" : "var(--w-early)";
       const dot = svgEl("circle", {
         cx: xOf(p.year).toFixed(1), cy: yOf(lane, p[metric]).toFixed(1),
-        r: p.aggregate ? 4.2 : 3.2, class: "dot",
-        // hollow says "this is many places averaged", solid says "one place"
-        fill: p.aggregate ? "none" : hue,
-        "fill-opacity": p.aggregate ? 1 : 0.6,
-        stroke: p.aggregate ? "var(--w-region)" : "none",
-        "stroke-width": p.aggregate ? 1.6 : 0,
+        r: p.aggregate ? 3.8 : 3.2, class: "dot",
+        fill: hue, "fill-opacity": p.aggregate ? 0.85 : 0.6,
       });
       hook(dot, (evt) => {
         readout.innerHTML = `<b>${p.place}</b>` +
@@ -623,11 +659,11 @@ function drawScale() {
     }));
 
     for (const p of row.pts) {
-      // a deterministic offset, so two sites on the same value stay countable
-      const j = (((p.year * 2654435761) >>> 0) % 1000) / 1000 - 0.5;
+      // on the line, not scattered around it: the vertical axis here is the
+      // category, so vertical position carried no meaning and read as one
       const dot = svgEl("circle", {
-        cx: xOf(p.gini).toFixed(1), cy: (cy + j * bh * 0.78).toFixed(1),
-        r: 3, fill: "var(--w-deep)", "fill-opacity": 0.62, class: "dot",
+        cx: xOf(p.gini).toFixed(1), cy: cy.toFixed(1),
+        r: 3, fill: "var(--w-deep)", "fill-opacity": 0.5, class: "dot",
       });
       hook(dot, (evt) => {
         const ci = (p.lo != null && p.hi != null)
@@ -647,7 +683,7 @@ function drawScale() {
     svg.appendChild(svgEl("line", {
       x1: xOf(m).toFixed(1), x2: xOf(m).toFixed(1),
       y1: (cy - bh / 2).toFixed(1), y2: (cy + bh / 2).toFixed(1),
-      stroke: "var(--w-pick)", "stroke-width": 2.8, "stroke-linecap": "round",
+      stroke: "var(--ink)", "stroke-width": 2.6, "stroke-linecap": "round",
     }));
   });
 
@@ -663,15 +699,28 @@ function drawScale() {
 
 /* ----------------------------------------------------------------- furniture */
 
+/* colour, label, and what it actually is. The explanation is on the key
+   itself because that is where a reader is when the question occurs to them,
+   and the panel that spells all four out is a long way down the page. */
 const LAYER_DOT = {
-  deep: ["var(--w-deep)", "Dig sites"],
-  preindustrial: ["var(--w-early)", "Tax records"],
+  deep: ["var(--w-deep)", "Dig sites",
+         "One excavated settlement. The Gini of its house floor areas, which is "
+         + "the standard proxy for household wealth where no records survive. "
+         + "Kohler and others, 63 sites, 9200 BC to AD 1970."],
+  town: ["var(--w-early)", "Tax records",
+         "One town or county, from the register a wealth tax was charged on. "
+         + "English lay subsidies and Piedmontese estimi, via Alfani. The "
+         + "English figures add back households too poor to be assessed."],
+  region: ["var(--w-region)", "Whole regions",
+           "Alfani's estimate for an entire state rather than one town, every "
+           + "fifty years: Holland, Flanders and Brabant, Tuscany, Piedmont. "
+           + "The only evidence here for the Low Countries."],
 };
 
 function renderLegend() {
   const eras = activeEras(state.metric);
   const pts = eras.flatMap((e) => e.content.pts);
-  const has = (k) => pts.some((p) => p.layer === k);
+  const hasToggle = (k) => pts.some((p) => p.toggle === k);
   const trends = eras.flatMap((e) => e.content.trends);
   const sources = eras.flatMap((e) => e.content.series);
 
@@ -680,30 +729,36 @@ function renderLegend() {
      entries are buttons: pressing one folds its observations away and leaves
      the median. */
   const out = [];
-  for (const key of ["deep", "preindustrial"]) {
-    if (!has(key)) continue;
-    const [colour, label] = LAYER_DOT[key];
-    out.push({ colour, label, toggle: key, on: state.scatter[key] });
-  }
   if (trends.length) {
     out.push({ colour: trends.length === 1 ? trends[0].colour : "var(--ink-soft)",
-               label: "Average" });
-  }
-  if (pts.some((p) => p.aggregate && state.scatter[p.layer])) {
-    out.push({ colour: "var(--w-region)", label: "Whole regions, hollow" });
+               label: "Average",
+               note: "A locally weighted average of the observations in that "
+                   + "panel, Gaussian kernel, bandwidth an eighth of the span. "
+                   + "It stops rather than crossing a stretch with no data." });
   }
   for (const src of sources) {
-    out.push({ colour: src.colour, label: SRC_KEY[src.key] || src.label });
+    out.push({ colour: src.colour, label: SRC_KEY[src.key] || src.label,
+               note: SRC_NOTE[src.key] });
   }
   if (sources.length && state.country !== ALL) {
     out.push({ colour: "var(--w-pick)",
-               label: DATA.countries[state.country]?.label || state.country });
+               label: DATA.countries[state.country]?.label || state.country,
+               note: "The country picked above, drawn over the spread so you can "
+                   + "see where it sits. Dashed where the figure is an estimate." });
+  }
+  for (const key of SCATTERS) {
+    if (!hasToggle(key)) continue;
+    const [colour, label, note] = LAYER_DOT[key];
+    out.push({ colour, label, note, toggle: key, on: state.scatter[key] });
   }
 
+  const tip = (n) => (n ? ` title="${n.replace(/"/g, "&quot;")}"` : "");
   $("#legend-eras").innerHTML = out.map((e) => (e.toggle
-    ? `<button type="button" class="key" data-scatter="${e.toggle}" `
-      + `aria-pressed="${e.on}"><i style="background:${e.colour}"></i>${e.label}</button>`
-    : `<span><i style="background:${e.colour}"></i>${e.label}</span>`)).join("");
+    ? `<button type="button" class="key" data-scatter="${e.toggle}"`
+      + `${tip(e.note)} aria-pressed="${e.on}">`
+      + `<i style="background:${e.colour}"></i>${e.label}</button>`
+    : `<span class="explained"${tip(e.note)} tabindex="0">`
+      + `<i style="background:${e.colour}"></i>${e.label}</span>`)).join("");
 
   for (const btn of $("#legend-eras").querySelectorAll("[data-scatter]")) {
     btn.addEventListener("click", () => {
@@ -756,7 +811,7 @@ function readHash() {
   if (METRICS[p.get("metric")]) state.metric = p.get("metric");
   const c = p.get("country");
   if (c === ALL || (c && DATA.countries[c])) state.country = c;
-  for (const k of ["deep", "preindustrial"]) {
+  for (const k of SCATTERS) {
     if (p.get(k) === "1" || p.get(k) === "0") state.scatter[k] = p.get(k) === "1";
   }
 }
@@ -764,7 +819,7 @@ function readHash() {
 function writeHash() {
   const p = new URLSearchParams();
   for (const k of ["metric", "country"]) if (state[k] !== DEFAULTS[k]) p.set(k, state[k]);
-  for (const k of ["deep", "preindustrial"]) {
+  for (const k of SCATTERS) {
     if (state.scatter[k] !== DEFAULTS.scatter[k]) p.set(k, state.scatter[k] ? "1" : "0");
   }
   const h = p.toString();
