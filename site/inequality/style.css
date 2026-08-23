@@ -497,7 +497,11 @@ footer .terms { display: block; color: var(--ink-faint); font-size: 12.5px; marg
    hovered, and it holds still for anyone who has asked for less motion. */
 /* Taller than the cradle. A coin stack is a narrow vertical thing and at the
    cradle's 1.06em it read as a smudge beside a Baskerville capital. */
-.mark.coins { height: 1.34em; }
+.mark.coins {
+  height: 1.34em;
+  /* nudged down and left against the cap height of the Baskerville I */
+  transform: translate(-3px, 3px);
+}
 .coins .stack { transform-origin: 50% 100%; }
 h1:hover .coins .stack, h1:focus-within .coins .stack {
   animation: coin-lift 1.5s ease-in-out infinite;

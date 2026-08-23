@@ -43,8 +43,7 @@ const svgEl = (name, attrs = {}) => {
 const METRICS = {
   gini: {
     label: "Wealth Gini", max: 1, pct: false,
-    blurb: "0 if every household owns the same, 1 if one household owns "
-         + "everything. Most real societies land between 0.2 and 0.9.",
+    blurb: "0 if every household owns the same, 1 if one household owns everything.",
   },
   top10: {
     label: "Share held by the richest 10%", max: 100, pct: true,
@@ -133,7 +132,8 @@ const yearLabel = (y) => (y < 0 ? `${Math.abs(y).toLocaleString()} BC` : `${y}`)
 function ticksFor(x0, x1, want) {
   const span = x1 - x0;
   if (span <= 0) return [x0];
-  const n = Math.max(2, Math.min(6, want));
+  // one interval is allowed, so a phone can ask for just the two ends
+  const n = Math.max(1, Math.min(6, want));
   const step = span / n;
   const grain = step > 1000 ? 100 : step > 200 ? 50 : step > 40 ? 10 : 1;
   /* The two ends are the panel's exact bounds, never rounded. Rounding them
@@ -210,7 +210,15 @@ function kernelSmooth(pairs, { band = 0.12, steps = 64 } = {}) {
   if (xs.length < 12) return [];
   const lo = xs[0][0], hi = xs[xs.length - 1][0];
   if (hi === lo) return [];
-  const h = (hi - lo) * band;
+  /* The bandwidth is a share of the SPAN, floored at a multiple of the typical
+     SPACING. On the decadal estimates a span-only bandwidth came out at 9.5
+     years against a 10-year step, so each output point was dominated by the
+     single nearest observation and the "smoothed" line was the raw staircase.
+     Floored at two and a half steps it is a smooth curve, and short holes in
+     the annual series close while the twenty and thirty year ones stay open. */
+  const gaps = xs.slice(1).map((p, i) => p[0] - xs[i][0]).sort((a, b) => a - b);
+  const step = gaps[Math.floor(gaps.length / 2)] || 1;
+  const h = Math.max((hi - lo) * band, step * 2.5);
   const out = [];
   for (let i = 0; i <= steps; i += 1) {
     const x = lo + ((hi - lo) * i) / steps;
@@ -366,7 +374,9 @@ function drawEras() {
   const box = boxFor("#eras", narrow ? 1.15 : 0.46, narrow ? 300 : 260, narrow ? 460 : 430);
   svg.setAttribute("viewBox", `0 0 ${box.w} ${box.h}`);
 
-  const pad = { l: narrow ? 30 : 44, r: 8, t: 22, b: 40 };
+  /* More room on the right at phone width: the last tick is centred on the
+     panel's right edge, so at r=8 the "2010" ran off the side of the SVG. */
+  const pad = { l: narrow ? 30 : 44, r: narrow ? 20 : 8, t: narrow ? 10 : 22, b: 40 };
   const gut = narrow ? 7 : 16;
   const iw = box.w - pad.l - pad.r;
 
@@ -431,16 +441,22 @@ function drawEras() {
     /* The panel is named by the period it covers, and the axis underneath
        carries real dated ticks rather than one range caption. A single "9200
        BC to 1283" told a reader nothing about where inside it a dot sat. */
-    const name = svgEl("text", {
-      x: lane.x, y: (lane.y - 8).toFixed(1), "font-size": 12,
-      "font-weight": 600, fill: "var(--ink-soft)",
-    });
-    name.textContent = `${yearLabel(x0)} to ${yearLabel(era.labelTo ?? x1)}`;
-    svg.appendChild(name);
+    /* No header on a phone. Three of them across 375px collided with each
+       other, and they say the same thing as the first and last tick directly
+       underneath, so the duplicate is the one to lose. */
+    if (!narrow) {
+      const name = svgEl("text", {
+        x: lane.x, y: (lane.y - 8).toFixed(1), "font-size": 12,
+        "font-weight": 600, fill: "var(--ink-soft)",
+      });
+      name.textContent = `${yearLabel(x0)} to ${yearLabel(era.labelTo ?? x1)}`;
+      svg.appendChild(name);
+    }
 
     /* The panels share their boundary years, so without this the same year is
        printed twice, once either side of the gutter. The left panel keeps it. */
-    const xticks = ticksFor(x0, x1, Math.max(2, Math.round(lane.w / 78)));
+    // ends only on a phone: a 100px lane cannot hold three dates
+    const xticks = ticksFor(x0, x1, narrow ? 1 : Math.max(2, Math.round(lane.w / 78)));
     for (const [ti, t] of xticks.entries()) {
       if (i > 0 && ti === 0) continue;
       const tx = xOf(t);
@@ -451,7 +467,8 @@ function drawEras() {
         stroke: "var(--rule)", "stroke-width": 1,
       }));
       const lab = svgEl("text", {
-        x: tx.toFixed(1), y: (lane.y + lane.h + 17).toFixed(1),
+        // 20, not 17: at 17 the first x label's box clipped the bottom y label's
+        x: tx.toFixed(1), y: (lane.y + lane.h + 20).toFixed(1),
         "text-anchor": "middle", "font-size": 10.5, fill: "var(--ink-faint)",
       });
       // the last tick names the period's end, which is the header's year
@@ -539,7 +556,7 @@ function drawEras() {
 
     // ---- a hover band for the line eras, because annual points are smaller
     //      than a fingertip
-    if (series.length) {
+    if (series.length || trends.length) {
       const band = svgEl("rect", {
         x: lane.x, y: lane.y, width: lane.w, height: lane.h, fill: "transparent",
       });
@@ -551,7 +568,17 @@ function drawEras() {
           (!best || Math.abs(get(d) - yr) < Math.abs(get(best) - yr)) ? d : best, null);
         const label = state.country === ALL
           ? "All countries" : (DATA.countries[state.country]?.label || state.country);
-        const bits = [`<b>${label}</b>`];
+        const bits = [`<b>${yearLabel(yr)}</b>`];
+        /* The averages are the only thing drawn in two of the three panels, so
+           without these the left of the chart had no readout at all. */
+        for (const tr of trends) {
+          const near = tr.line.reduce((best, p) =>
+            (!best || Math.abs(p[0] - yr) < Math.abs(best[0] - yr)) ? p : best, null);
+          if (near && Math.abs(near[0] - yr) <= Math.max(8, (x1 - x0) / 40)) {
+            bits.push(`<div class="row"><span>${LAYER_DOT[tr.layer === "deep"
+              ? "deep" : "town"][1]}, average</span><span>${fmt(near[1])}</span></div>`);
+          }
+        }
         /* Both sources at once where both reach this year. Seeing a
            reconstruction and a measurement disagree is the point of the panel,
            not a glitch to hide. */
@@ -559,16 +586,18 @@ function drawEras() {
           const sp = near(src.sel, (p) => p[0]);
           const dp = near(src.dist, (d) => d.year);
           if (sp && Math.abs(sp[0] - yr) <= 8) {
-            bits.push(`<div class="row"><span>${src.label}, ${sp[0]}</span>` +
+            bits.push(`<div class="row"><span>${label}</span>` +
                       `<span>${fmt(sp[1])}</span></div>`);
-          } else if (dp && Math.abs(dp.year - yr) <= 8) {
-            bits.push(`<div class="row"><span>${src.label}, ${dp.year}</span>` +
-                      `<span>middle ${fmt(dp.p50)}</span></div>`);
+          }
+          if (dp && Math.abs(dp.year - yr) <= 8) {
+            bits.push(`<div class="row"><span>middle country</span>` +
+                      `<span>${fmt(dp.p50)}</span></div>`,
+              `<div class="row"><span>middle half</span>` +
+              `<span>${fmt(dp.p25)} to ${fmt(dp.p75)}</span></div>`);
           }
         }
         if (bits.length === 1) { readout.hidden = true; return; }
-        readout.innerHTML = bits.join("") +
-          `<div class="prov">dashed is reconstructed, solid is measured</div>`;
+        readout.innerHTML = bits.join("");
         readout.hidden = false;
         placeReadout(readout, evt);
       });
