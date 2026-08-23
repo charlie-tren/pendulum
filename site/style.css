@@ -545,13 +545,14 @@ h1.coin-title {
    That came out at 0.305em on a laptop and 0.275em on a phone, on top of the
    0.26em already applied, which put the baseline exactly on the coins at 0.55em.
 
-   0.45, not 0.55: exact alignment turned out to be a hair too low by eye, which
+   0.38, not the measured 0.55: exact alignment turned out to be too low by eye,
+   which
    is the usual result of optical versus geometric centring - the coins are a
    solid mass and the word is mostly white space, so sitting them on one line
    makes the word read as having sunk. The measurement was still the point,
    because it is what turned a fifth guess into one adjustment from a known
    position. */
-.title-word { display: inline-block; transform: translateY(0.45em); }
+.title-word { display: inline-block; transform: translateY(0.38em); }
 
 /* More air under the title on a phone, where the standfirst wraps to two lines
    and ran straight into the coins. This has to come AFTER the base rule above:
