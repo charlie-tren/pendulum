@@ -84,14 +84,22 @@ const PERIODS = [
 
 /* The key is read at a glance, so it takes the shortest name that is still
    true. The long ones belong in the panel that explains the layers. */
-/* Named for what the evidence IS, not for the shape it is drawn as. "Estimates,
-   middle half" described the polygon; a reader deciding whether to trust the
-   line needs to know it was reconstructed rather than measured, and the
-   middle-half part is in the note a hover away. These are the same names the
-   layers panel uses, so one thing is not called two things on one page. */
+/* Both sources get the SAME key entry, because on the chart they are the same
+   mark: every country with a reading that year, shaded from the 25th to the
+   75th, median dashed through the middle. Only one of them is ever drawn, since
+   the Gini comes from Alfani and Schifano and the shares from WID, so there is
+   no year in which two things called "All countries" appear together.
+
+   It reads as a pair against the entry beside it - all countries, then the one
+   you picked - and that pairing is the whole point of drawing them together.
+   Naming the band after its SOURCE instead put "Reconstructed estimates" next
+   to "United States", which are not two of a kind. Provenance has not gone
+   anywhere: it is the first thing in the hover note, the dash pattern still
+   separates a reconstruction from a measurement, and the layers panel still
+   lists the two sources under their own names. */
 const SRC_KEY = {
-  industrial: "Reconstructed estimates",
-  modern: "National accounts",
+  industrial: "All countries",
+  modern: "All countries",
 };
 
 /* The provenance split is COUNTED in the build and carried in the payload, so
