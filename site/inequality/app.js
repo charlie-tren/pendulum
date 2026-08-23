@@ -887,7 +887,7 @@ const LAYER_DOT = {
          () => `${MEASURE_NOUN[state.metric]} of taxable wealth from lay subsidies `
              + "and estimi, one jurisdiction per observation. Alfani. English "
              + "figures corrected for households below the assessment threshold."],
-  region: ["var(--w-region)", "Whole regions",
+  region: ["var(--w-region)", "Regional estimates",
            "Alfani's state-level estimates, fifty-year intervals. Aggregated "
            + "over many local registers."],
 };
