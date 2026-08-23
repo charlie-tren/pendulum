@@ -1,9 +1,17 @@
-"""Build the inequality page's own favicon: the coin stack, square.
+"""Build the inequality page's own favicon: one gold stack, square.
 
 The wordmark's SVG is 58x48 and cropped tight to the artwork, so a browser
-squashes it into a 16x13 sliver where the coins vanish. This draws the same
-three stacks into a square box with its own padding and a solid ground, which
-is the same lesson the pendulum favicon already carries.
+squashes it into a 16x13 sliver where the coins vanish. This draws into a
+square box with its own padding and a solid ground, which is the same lesson
+the pendulum favicon already carries.
+
+It is ONE stack rather than the wordmark's three, and that is a deliberate
+divergence rather than an oversight. A favicon is read at 16 CSS pixels: three
+stacks put 13 coins, 3 face ellipses and 3 milled rings inside 16px of height,
+which is roughly one shape per pixel, and rendered at that size they collapsed
+into a brown-grey-yellow smudge. Five coins in one column is the same idea with
+enough room for the ridges between them to survive. Contact sheet of the ten
+candidates: scripts/favicon_options.py.
 
 Colours are baked rather than taken from CSS variables: a favicon is fetched
 outside the page, so `var(--coin-gold)` resolves to nothing.
@@ -26,12 +34,23 @@ METAL = {
     "silver": ("#98a2ac", "#c6ced7", "#e3e9ef"),
     "gold": ("#c69a22", "#ecc457", "#f7e2a4"),
 }
-# a squarer box than the wordmark, and fatter coins so they survive 16px
-RX, RY, STEP, BASE = 9.0, 3.4, 5.6, 82.0
-STACKS = [("bronze", 22.0, 2), ("silver", 50.0, 3), ("gold", 78.0, 8)]
+# A squarer box than the wordmark, and much fatter coins so they survive 16px.
+# The stack is sized to FIT: the top ellipse's crown sits at y=6.4 and the
+# bottom body's skirt at y=94.8, because at the contact sheet's proportions the
+# skirt ran off the bottom of the tile and the flat cut read as a broken render
+# rather than a crop.
+RX, RY, STEP, BASE = 26.0, 9.2, 14.0, 71.6
+STACKS = [("gold", 50.0, 5)]
 
 
 def stack(metal: str, cx: float, n: int) -> str:
+    """A pile of n coins seen slightly from above, drawn bottom up.
+
+    Each body is STEP + RY tall, not STEP. At STEP alone a coin covers only the
+    flat half of the ellipse below it and the curved half shows through as a
+    ring. That bug shipped in the wordmark, was fixed there, and then shipped
+    again in the GIF renderer, which had its own copy of this function.
+    """
     body, face, edge = METAL[metal]
     top = BASE - (n - 1) * STEP
     coins = "".join(
