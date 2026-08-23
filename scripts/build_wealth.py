@@ -333,6 +333,11 @@ def industrial_provenance() -> dict:
     return kinds
 
 
+def _year(y: int) -> str:
+    """9,200 BC or AD 1970, the way the page writes it."""
+    return f"{abs(y):,} BC" if y < 0 else f"AD {y}"
+
+
 def layers() -> dict:
     """The four layers and what each one actually measures.
 
@@ -344,13 +349,16 @@ def layers() -> dict:
     """
     p = industrial_provenance()
     n = p["named"] + p["interpolated"] + p["correlated"]
+    dig = [d["year"] for d in deep()]
     return {
         "deep": {
             "label": "Excavated settlements",
-            "note": "A settlement whose houses have been dug and measured. Where "
-                    "nothing was written down, the spread of floor areas across a "
-                    "site is the standard stand-in for the spread of household "
-                    "wealth: bigger house, richer household.",
+            # counted and dated from the points themselves, like the provenance
+            # split below it, so no number in this panel is typed by hand
+            "note": f"{len(dig)} settlements that have been dug and measured, "
+                    f"spanning {_year(min(dig))} to {_year(max(dig))}. Each one "
+                    "gives a single Gini, calculated from the floor areas of its "
+                    "houses.",
         },
         "preindustrial": {
             "label": "Tax registers",

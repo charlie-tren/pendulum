@@ -876,9 +876,8 @@ const LAYER_DOT = {
          () => {
            const ys = DATA.points.filter((p) => p.layer === "deep").map((p) => p.year);
            return `Kohler and others, ${ys.length} excavated sites, `
-                + `${yearLabel(Math.min(...ys))} to AD ${Math.max(...ys)}. Each Gini `
-                + "is taken across house floor areas, the standard proxy for "
-                + "household wealth where nothing was written down.";
+                + `${yearLabel(Math.min(...ys))} to AD ${Math.max(...ys)}. `
+                + "One Gini per site, calculated from the floor areas of its houses.";
          }],
   /* A FUNCTION, because this layer supplies deciles as well as Ginis and the
      note names the measure. Written as a fixed string it said "Gini of taxable
