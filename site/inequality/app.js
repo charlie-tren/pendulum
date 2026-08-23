@@ -834,20 +834,35 @@ function drawScale() {
 /* colour, label, and what it actually is. The explanation is on the key
    itself because that is where a reader is when the question occurs to them,
    and the panel that spells all four out is a long way down the page. */
+/* The measure as a noun that fits mid-sentence. METRICS[].label is the control's
+   wording ("Share held by the richest 10%") and does not. */
+const MEASURE_NOUN = {
+  gini: "Gini", top10: "Top-decile share", top1: "Top-percentile share",
+};
+
 const LAYER_DOT = {
   deep: ["var(--w-deep)", "Excavated sites",
-         "A settlement whose houses have been dug and measured. Where nothing "
-         + "was written down, the spread of floor areas across a site is the "
-         + "standard stand-in for the spread of household wealth: bigger house, "
-         + "richer household. Kohler and others, 63 sites, 9200 BC to AD 1970."],
+         "Kohler and others, 63 excavated sites, 9200 BC to AD 1970. Each Gini "
+         + "is taken across house floor areas, the standard proxy for household "
+         + "wealth where nothing was written down."],
+  /* A FUNCTION, because this layer supplies deciles as well as Ginis and the
+     note names the measure. Written as a fixed string it said "Gini of taxable
+     wealth" while the chart was drawing the top-decile share. */
   town: ["var(--w-early)", "Tax records",
-         "One town or county, from the register a wealth tax was charged on. "
-         + "English lay subsidies and Piedmontese estimi, via Alfani. The "
-         + "English figures add back households too poor to be assessed."],
+         () => `${MEASURE_NOUN[state.metric]} of taxable wealth from lay subsidies `
+             + "and estimi, one jurisdiction per observation. Alfani. English "
+             + "figures corrected for households below the assessment threshold."],
   region: ["var(--w-region)", "Whole regions",
-           "Alfani's estimate for an entire state rather than one town, every "
-           + "fifty years: Holland, Flanders and Brabant, Tuscany, Piedmont."],
+           "Alfani's state-level estimates, fifty-year intervals. Aggregated "
+           + "over many local registers."],
 };
+
+/* Which scatter layers have an average drawn through them. The line is the same
+   colour as its own dots, which is why it needs no key entry of its own: see
+   the note in renderLegend. */
+const TRENDED = new Set(["deep", "town"]);
+const TREND_NOTE = " The line through them is a locally weighted average, "
+                 + "Gaussian kernel.";
 
 function renderLegend() {
   const eras = activeEras(state.metric);
@@ -869,14 +884,18 @@ function renderLegend() {
   const out = [];
   for (const key of SCATTERS) {
     if (!hasToggle(key)) continue;
-    const [colour, label, note] = LAYER_DOT[key];
-    out.push({ colour, label, note, toggle: key, on: state.scatter[key] });
-  }
-  if (trends.length) {
-    out.push({ colour: trends.length === 1 ? trends[0].colour : "var(--ink-soft)",
-               label: "Average",
-               note: "A locally weighted average of the observations in that "
-                   + "panel, Gaussian kernel, bandwidth an eighth of the span." });
+    const [colour, label, rawNote] = LAYER_DOT[key];
+    const note = typeof rawNote === "function" ? rawNote() : rawNote;
+    /* The average line has no entry of its own. It used to, and the entry was
+       wrong twice over: it read as a duplicate of the quartile band, which is a
+       different layer entirely rather than a second summary of the same one,
+       and where BOTH a terracotta and a gold average were drawn the single
+       entry took a neutral grey swatch matching neither line. Folded into the
+       dots it runs through, the key is one entry per colour again. */
+    const trended = TRENDED.has(key === "town" ? "town" : key)
+      && trends.some((t) => (t.layer === "deep" ? "deep" : "town") === key);
+    out.push({ colour, label, note: note + (trended ? TREND_NOTE : ""),
+               toggle: key, on: state.scatter[key] });
   }
   for (const src of sources) {
     out.push({ colour: src.colour, label: SRC_KEY[src.key] || src.label,
