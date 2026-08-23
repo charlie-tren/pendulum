@@ -140,20 +140,27 @@ def load_countries() -> dict[str, dict]:
     def slot(iso: str, label: str) -> dict:
         return out.setdefault(iso, {
             "iso": iso, "label": label,
-            "industrial": {"gini": [], "top10": []},
+            "industrial": {"gini": []},
             "modern": {"top1": [], "top10": []},
         })
 
     for r in rows("alfani_countries_1820_2010.csv"):
         iso = (r.get("iso3") or "").strip()
-        year, gini, top10 = num(r.get("Year")), num(r.get("Gini")), num(r.get("Top10per"))
+        year, gini = num(r.get("Year")), num(r.get("Gini"))
         if not iso or year is None:
             continue
         s = slot(iso, (r.get("Country") or iso).strip())
         if gini is not None:
             s["industrial"]["gini"].append([int(year), round(gini, 4)])
-        if top10 is not None:
-            s["industrial"]["top10"].append([int(year), round(top10, 2)])
+        # Alfani's Top10per column is deliberately NOT loaded. It is never drawn
+        # - METRIC_SOURCE sends the Gini to this layer and both shares to WID -
+        # and where the two overlap they disagree by a median of 5.7 points and
+        # by up to 41. Japan is the extreme: Alfani puts its top decile at 35%
+        # of wealth across the whole twentieth century, WID at 70 to 77%, and
+        # the Alfani figure is not a measurement at all, its SourceTop10 column
+        # reads "CorrelationGini". Shipping a second, contradictory top-decile
+        # series that nothing plots is the conflation this file exists to avoid,
+        # and it costs 5KB of payload for the privilege.
 
     for name, key in (("wealth-share-richest-1-percent.csv", "top1"),
                       ("wealth-share-richest-10-percent.csv", "top10")):

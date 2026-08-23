@@ -194,3 +194,49 @@ def test_twin_flags_are_symmetric():
         for other in c.get("twin_of") or []:
             mate = next(x for x in W["countries"].values() if x["label"] == other)
             assert c["label"] in (mate.get("twin_of") or []), f"{iso} -> {other}"
+
+
+def test_only_one_source_supplies_each_measure():
+    """The page's rule is one source per measure: the Gini from Alfani and
+    Schifano, both shares from WID. Alfani's own top-decile column used to be
+    loaded as well, never drawn, and disagreeing with WID by a median of 5.7
+    points and by as much as 41 - Japan's top decile is 35% of wealth in one and
+    70 to 77% in the other, and the Alfani figure is not a measurement, its
+    SourceTop10 column reads CorrelationGini.
+
+    A payload that carries two contradictory series for one measure is one
+    refactor away from plotting both on one axis, which is the conflation this
+    whole file exists to prevent."""
+    for iso, c in W["countries"].items():
+        assert "top10" not in c["industrial"], (
+            f"{iso} carries an industrial top-decile series again")
+        assert "top1" not in c["industrial"], iso
+    assert any(c["industrial"].get("gini") for c in W["countries"].values())
+    assert any(c["modern"].get("top10") for c in W["countries"].values())
+
+
+def test_shares_are_ordered_and_in_range_everywhere():
+    """The top 1% cannot hold more than the top 10%, in any layer, ever. Cheap
+    to check and it catches a column read into the wrong slot, which is the most
+    likely way this data goes wrong."""
+    for p in W["points"]:
+        if p.get("top1") is not None and p.get("top10") is not None:
+            assert p["top1"] <= p["top10"] + 1e-9, f"{p['place']} {p['year']}"
+    for iso, c in W["countries"].items():
+        t1, t10 = dict(c["modern"]["top1"]), dict(c["modern"]["top10"])
+        for y in set(t1) & set(t10):
+            assert t1[y] <= t10[y] + 1e-9, f"{iso} {y}: {t1[y]} > {t10[y]}"
+    for p in W["points"]:
+        if p.get("gini") is not None:
+            assert 0 <= p["gini"] <= 1, f"{p['place']} {p['year']} gini {p['gini']}"
+
+
+def test_every_kohler_interval_brackets_its_own_estimate():
+    """Kohler publishes an 80% interval per site. A lo above the point estimate
+    would mean the two columns were read the wrong way round."""
+    checked = 0
+    for p in W["points"]:
+        if p.get("lo") is not None and p.get("hi") is not None:
+            assert p["lo"] <= p["gini"] <= p["hi"], f"{p['place']}: {p['lo']}/{p['gini']}/{p['hi']}"
+            checked += 1
+    assert checked > 20, f"only {checked} intervals found, so this could not fail"

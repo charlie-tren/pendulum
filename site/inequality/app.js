@@ -119,9 +119,20 @@ function srcNote(key) {
        + " inferred from the top-decile share.";
 }
 
+/* ONE COLOUR for the band, on both measures, because the key now gives it one
+   name. Grey is the neutral everybody-colour and it leaves the blue to mean the
+   single country the reader picked, which is the comparison the panel exists to
+   make. The accounts band used to be --w-now, the same #2f6fb2 as --w-pick, so
+   the spread of every country and the one country chosen out of it were drawn
+   in one colour and the key printed the swatch twice. Teal fixed the collision
+   and introduced a hue the palette had no other use for. --w-now still names
+   the modern layer in the panel that lists the four sources.
+
+   The dash pattern, not the hue, is what separates a reconstruction from a
+   measurement. */
 const SOURCE_STYLE = {
   industrial: { colour: "var(--w-mid)", dashed: true },
-  modern: { colour: "var(--w-now)", dashed: false },
+  modern: { colour: "var(--w-mid)", dashed: false },
 };
 
 /* One country-level source per measure, not two. WID publishes no Gini, so
@@ -392,9 +403,26 @@ function placeReadout(el, evt) {
   el.style.top = `${clamp(4, y - h / 2, Math.max(4, fig.height - h - 4))}px`;
 }
 
+/* A touch screen has no hover, so pointerenter fired on tap and pointerleave
+   fired again the moment the finger lifted: the readout appeared and vanished
+   inside the same gesture and a dot was effectively unreadable on a phone. On a
+   coarse pointer the readout is PINNED instead - one tap opens it, and it stays
+   until the next tap somewhere else. Nothing closes it in between, which is the
+   point: a reader wants to look at the number, not hold a finger still. */
+const COARSE = window.matchMedia("(hover: none)").matches;
+
 const hook = (el, show) => {
+  if (COARSE) {
+    el.addEventListener("pointerdown", show);
+    return;
+  }
   el.addEventListener("pointerenter", show);
   el.addEventListener("pointermove", show);
+};
+
+/* Only a mouse leaving the chart clears it. */
+const clearOnLeave = (svg, readout) => {
+  svg.onpointerleave = COARSE ? null : () => { readout.hidden = true; };
 };
 
 function drawEras() {
@@ -672,7 +700,7 @@ function drawEras() {
 
   });
 
-  svg.onpointerleave = () => { readout.hidden = true; };
+  clearOnLeave(svg, readout);
   svg.setAttribute("aria-label",
     `${M.label}, in ${eras.length} panels: ` +
     eras.map((e) => e.label).join(", ") +
@@ -815,7 +843,7 @@ function drawScale() {
     }));
   });
 
-  svg.onpointerleave = () => { readout.hidden = true; };
+  clearOnLeave(svg, readout);
   const first = median(rows[0].pts.map((p) => p.gini));
   const last = median(rows[rows.length - 1].pts.map((p) => p.gini));
   const yrs = deepSites().map((p) => p.year);
@@ -840,10 +868,18 @@ const MEASURE_NOUN = {
 };
 
 const LAYER_DOT = {
+  /* Counted, not typed. "63 excavated sites, 9200 BC to AD 1970" was three
+     numbers written into a string beside a payload that already knows all
+     three, which is how a caption ends up describing the file it used to be
+     built from. */
   deep: ["var(--w-deep)", "Excavated sites",
-         "Kohler and others, 63 excavated sites, 9200 BC to AD 1970. Each Gini "
-         + "is taken across house floor areas, the standard proxy for household "
-         + "wealth where nothing was written down."],
+         () => {
+           const ys = DATA.points.filter((p) => p.layer === "deep").map((p) => p.year);
+           return `Kohler and others, ${ys.length} excavated sites, `
+                + `${yearLabel(Math.min(...ys))} to AD ${Math.max(...ys)}. Each Gini `
+                + "is taken across house floor areas, the standard proxy for "
+                + "household wealth where nothing was written down.";
+         }],
   /* A FUNCTION, because this layer supplies deciles as well as Ginis and the
      note names the measure. Written as a fixed string it said "Gini of taxable
      wealth" while the chart was drawing the top-decile share. */
@@ -883,7 +919,7 @@ function renderLegend() {
   const out = [];
   for (const key of SCATTERS) {
     if (!hasToggle(key)) continue;
-    const [colour, label, rawNote] = LAYER_DOT[key];
+    const [colour, label, rawNote] = LAYER_DOT[key];  // note may be a function
     const note = typeof rawNote === "function" ? rawNote() : rawNote;
     /* The average line has no entry of its own. It used to, and the entry was
        wrong twice over: it read as a duplicate of the quartile band, which is a
