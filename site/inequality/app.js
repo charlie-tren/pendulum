@@ -99,16 +99,16 @@ const SRC_KEY = {
    a third" could. */
 function srcNote(key) {
   if (key === "modern") {
-    return "Shares of household net wealth taken from tax records and national "
-         + "balance sheets, annual, WID via Our World in Data. The band covers "
-         + "the middle half of countries.";
+    return "WID via Our World in Data, annual. Shares of household net wealth from "
+         + "fiscal data and national balance sheets, interquartile range across "
+         + "countries.";
   }
   const p = DATA.meta.industrial_provenance || {};
   const n = (p.named || 0) + (p.interpolated || 0) + (p.correlated || 0);
-  return "Whole-country wealth every decade, Alfani and Schifano. The band covers "
-       + "the middle half of countries. " + p.named + " of the " + n + " country-decades "
-       + "come from a national study, " + p.interpolated + " are interpolated between two "
-       + "of them, and " + p.correlated + " are inferred from the top-decile share.";
+  return "Alfani and Schifano, whole-country wealth per decade, interquartile range "
+       + "across countries. " + p.named + " of " + n + " country-decades are taken from "
+       + "a national study, " + p.interpolated + " interpolated, " + p.correlated
+       + " inferred from the top-decile share.";
 }
 
 const SOURCE_STYLE = {
@@ -901,11 +901,14 @@ function renderLegend() {
     out.push({ colour: src.colour, label: SRC_KEY[src.key] || src.label,
                note: srcNote(src.key) });
   }
+  /* No note. The entry is the country's own name in the same blue as its line,
+     which is the whole of what it means, and an explainer that only restated
+     the drawing conventions was the least useful thing in the key. Entries with
+     no note also lose the dotted underline, so nothing invites a hover that
+     returns nothing. */
   if (sources.length && state.country !== ALL) {
     out.push({ colour: "var(--w-pick)",
-               label: DATA.countries[state.country]?.label || state.country,
-               note: "The country picked above, drawn over the spread so you can "
-                   + "see where it sits. Dashed where the figure is an estimate." });
+               label: DATA.countries[state.country]?.label || state.country });
   }
 
   const tip = (n) => (n ? ` title="${n.replace(/"/g, "&quot;")}"` : "");
@@ -913,8 +916,10 @@ function renderLegend() {
     ? `<button type="button" class="key" data-scatter="${e.toggle}"`
       + `${tip(e.note)} aria-pressed="${e.on}">`
       + `<i style="background:${e.colour}"></i>${e.label}</button>`
-    : `<span class="explained"${tip(e.note)} tabindex="0">`
-      + `<i style="background:${e.colour}"></i>${e.label}</span>`)).join("");
+    : e.note
+      ? `<span class="explained"${tip(e.note)} tabindex="0">`
+        + `<i style="background:${e.colour}"></i>${e.label}</span>`
+      : `<span><i style="background:${e.colour}"></i>${e.label}</span>`)).join("");
 
   for (const btn of $("#legend-eras").querySelectorAll("[data-scatter]")) {
     btn.addEventListener("click", () => {
