@@ -526,8 +526,26 @@ footer .terms { display: block; color: var(--ink-faint); font-size: 12.5px; marg
    way round the file is read, which is the failure that put an empty nav label
    on the phone header a fortnight ago. The pendulum wordmark has no span and
    no class here, so none of this touches it. */
-h1.coin-title { gap: 0.12em; }
-.title-word { display: inline-block; transform: translateY(0.26em); }
+h1.coin-title {
+  gap: 0.12em;
+  /* The word is dropped by a transform below, and a transform does not take up
+     space, so the room it needs is added back here or it lands on the
+     standfirst. 0.3em is the same distance, in the same unit. */
+  margin-bottom: calc(10px + 0.3em);
+}
+/* MEASURED, not nudged. This had been moved down four times in increments and
+   asked for a fifth, which meant the target was wrong rather than the distance:
+   the word was being centred on the mark's box while the mark's own ink hangs
+   below that box, because .mark carries overflow:visible and the coins draw to
+   y=60.4 in a viewBox that stops at 56.
+
+   So the word now stands on the same ground line as the coins. The probe: put a
+   zero-height inline span inside .title-word to find the true baseline, compare
+   it with the mark's box top plus (60.4-8)/48 of its height, and close the gap.
+   That came out at 0.305em on a laptop and 0.275em on a phone, on top of the
+   0.26em already applied. Hence 0.55em, and it holds at both ends because every
+   term in the sum is in em. */
+.title-word { display: inline-block; transform: translateY(0.55em); }
 
 /* More air under the title on a phone, where the standfirst wraps to two lines
    and ran straight into the coins. This has to come AFTER the base rule above:

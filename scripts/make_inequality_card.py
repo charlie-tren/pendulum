@@ -10,6 +10,14 @@ panels, so the card carries the actual shape of the finding: it climbs through
 the archaeology, climbs again through the tax registers, and falls in the
 twentieth century.
 
+It also has to carry the page's own MARKS and NAMES, which is the half that
+drifted. The card was drawing Alfani's regional series as four lines through
+the middle panel while the page draws them as dots and keeps them folded away
+by default, and it labelled the panels "Excavated settlements", "Tax registers"
+and "Whole countries" after the key had settled on "Excavated sites", "Tax
+records" and "All countries". A preview that shows a chart the reader will not
+find is worse than no preview.
+
     python scripts/make_wealth_card.py
 """
 from __future__ import annotations
@@ -24,7 +32,8 @@ DATA = json.loads((ROOT / "data" / "out" / "wealth.json").read_text(encoding="ut
 
 W, H = 1200, 630
 BG, INK, INK_SOFT, INK_FAINT, RULE = "#131519", "#e9ecf0", "#a7aeb8", "#98a0aa", "#2b2f36"
-DEEP, EARLY, MID, PICK = "#d4795c", "#e8b45f", "#9aa8b4", "#6ea8e0"
+# the page's own dark-mode values, which is what a chat window shows
+DEEP, EARLY, MID = "#d4795c", "#f0ca8b", "#9aa8b4"
 BRONZE, SILVER, GOLD = "#cd7f32", "#c3cad2", "#e3b93f"
 
 # the chart strip
@@ -33,31 +42,47 @@ GUT = 26
 
 
 def panels():
-    """The same three the page draws, on the Gini."""
+    """The same three the page draws, on the Gini, with the same names.
+
+    Dots and a band, no trend lines. The page fits a Gaussian kernel through
+    each scatter, and reimplementing that here would be a second copy of an
+    estimator to keep in step with the first; dots alone are still honestly
+    what the page shows, just without the summary drawn over them.
+    """
     deep = [(p["year"], p["gini"]) for p in DATA["points"]
             if p["layer"] == "deep" and p.get("gini") is not None]
     early = [(p["year"], p["gini"]) for p in DATA["points"]
-             if p["layer"] == "preindustrial" and not p.get("rollup") and p.get("gini") is not None]
-    country = []
-    for c in DATA["countries"].values():
-        country += [(y, v) for y, v in c["industrial"]["gini"]]
+             if p["layer"] == "preindustrial" and not p.get("rollup")
+             and p.get("gini") is not None]
     return [
-        {"label": "Excavated settlements", "dots": deep, "colour": DEEP, "lines": []},
-        {"label": "Tax registers", "dots": early, "colour": EARLY,
-         "lines": [s["gini"] for s in DATA["regions"] if s.get("gini")]},
-        {"label": "Whole countries", "dots": [], "colour": MID,
-         "lines": [_median(country)]},
+        {"label": "Excavated sites", "dots": deep, "colour": DEEP, "band": []},
+        {"label": "Tax records", "dots": early, "colour": EARLY, "band": []},
+        {"label": "All countries", "dots": [], "colour": MID, "band": _quartiles()},
     ]
 
 
-def _median(pairs):
+def _quartiles():
+    """p25, p50 and p75 across every country with a Gini that decade.
+
+    The same shape the page's third panel draws. A single median line, which is
+    what the card had, said nothing about how far apart countries were.
+    """
     by = {}
-    for y, v in pairs:
-        by.setdefault(y, []).append(v)
+    for c in DATA["countries"].values():
+        for y, v in c["industrial"]["gini"]:
+            by.setdefault(y, []).append(v)
+
+    def q(vs, p):
+        i = (len(vs) - 1) * p
+        lo, hi = int(i), min(int(i) + 1, len(vs) - 1)
+        return vs[lo] + (vs[hi] - vs[lo]) * (i - lo)
+
     out = []
     for y in sorted(by):
         vs = sorted(by[y])
-        out.append([y, vs[len(vs) // 2]])
+        if len(vs) < 4:          # a quartile over three countries is noise
+            continue
+        out.append((y, q(vs, 0.25), q(vs, 0.5), q(vs, 0.75)))
     return out
 
 
@@ -66,7 +91,7 @@ def draw() -> str:
     parts = []
     for i, pan in enumerate(panels()):
         x0 = CX + i * (each + GUT)
-        years = [y for y, _ in pan["dots"]] + [y for ln in pan["lines"] for y, _ in ln]
+        years = [y for y, _ in pan["dots"]] + [b[0] for b in pan["band"]]
         lo, hi = min(years), max(years)
         span = (hi - lo) or 1
         sx = lambda y: x0 + (y - lo) / span * each          # noqa: E731
@@ -75,10 +100,18 @@ def draw() -> str:
         for t in (0.25, 0.5, 0.75, 1.0):
             parts.append(f'<line x1="{x0:.0f}" y1="{sy(t):.1f}" x2="{x0 + each:.0f}" '
                          f'y2="{sy(t):.1f}" stroke="{RULE}" stroke-width="1"/>')
-        for ln in pan["lines"]:
-            pts = " ".join(f"{sx(y):.1f},{sy(v):.1f}" for y, v in ln)
-            parts.append(f'<polyline points="{pts}" fill="none" stroke="{pan["colour"]}" '
-                         f'stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>')
+        if pan["band"]:
+            top = [f"{sx(y):.1f},{sy(p75):.1f}" for y, _, _, p75 in pan["band"]]
+            bot = [f"{sx(y):.1f},{sy(p25):.1f}" for y, p25, _, _ in reversed(pan["band"])]
+            parts.append(f'<polygon points="{" ".join(top + bot)}" '
+                         # .3, not the page's .15: the page shades against white
+                         # and this shades against #131519, where a fill that
+                         # light is invisible
+                         f'fill="{pan["colour"]}" fill-opacity=".3"/>')
+            mid = " ".join(f"{sx(y):.1f},{sy(p50):.1f}" for y, _, p50, _ in pan["band"])
+            parts.append(f'<polyline points="{mid}" fill="none" stroke="{pan["colour"]}" '
+                         f'stroke-width="2.6" stroke-opacity=".75" stroke-dasharray="7 5" '
+                         f'stroke-linejoin="round" stroke-linecap="round"/>')
         for y, v in pan["dots"]:
             parts.append(f'<circle cx="{sx(y):.1f}" cy="{sy(v):.1f}" r="3.4" '
                          f'fill="{pan["colour"]}" fill-opacity=".62"/>')
@@ -109,15 +142,19 @@ HTML = f"""<!doctype html><meta charset="utf-8">
   body {{ width:{W}px; height:{H}px; background:{BG}; overflow:hidden;
          font-family:'Libre Baskerville',Georgia,serif; }}
   .top {{ padding:66px 70px 0; }}
-  .head {{ display:flex; align-items:center; gap:24px; }}
+  .head {{ display:flex; align-items:center; gap:8px; }}
+  .head span {{ display:inline-block; transform:translateY(.55em); }}
   h1 {{ font-size:66px; letter-spacing:-.015em; color:{INK}; font-weight:400; }}
-  p {{ margin-top:20px; font-size:31px; color:{INK_SOFT}; }}
+  /* 56, not 20. The word is dropped .55em by a transform, which takes up no
+     space, so without this the descenders of "Inequality" land on top of the
+     standfirst. Same correction the page needed for the same reason. */
+  p {{ margin-top:56px; font-size:31px; color:{INK_SOFT}; }}
   svg.chart {{ position:absolute; left:0; top:0; }}
 </style>
 <svg class="chart" width="{W}" height="{H}">{draw()}</svg>
 <div class="top">
-  <div class="head">{MARK}<h1>Inequality</h1></div>
-  <p>From a Syrian village in 9200 BC to last year&#8217;s tax returns.</p>
+  <div class="head">{MARK}<h1><span>Inequality</span></h1></div>
+  <p>Wealth concentration, from the first villages to the present.</p>
 </div>
 """
 
