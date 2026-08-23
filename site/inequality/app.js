@@ -20,12 +20,16 @@
    archaeology opens open, because 52 sites over 10,000 years is the finding
    rather than clutter, and there is no denser summary to fall back on. Both
    are toggled from the key. */
-/* Three separate scatters, all off. The page opens on four summary lines,
-   which is the argument; the observations underneath are there for anyone who
-   wants to check it, one layer at a time, from the key. */
+/* Two of the three scatters open on. The test is whether the layer has a
+   denser summary to fall back on: the excavated sites and the tax registers are
+   drawn as dots and a kernel average and nothing else, so folded away they left
+   their panels holding a bare line with no visible evidence under it. The
+   regional estimates do have somewhere to hide, because each one is an average
+   of towns already on the chart, so they stay off and are the one thing the key
+   adds rather than the two things it takes away. */
 const DEFAULTS = {
   metric: "gini", country: "USA",
-  scatter: { deep: false, town: false, region: false },
+  scatter: { deep: true, town: true, region: false },
 };
 const ALL = "__all";
 const state = { ...DEFAULTS, scatter: { ...DEFAULTS.scatter } };
@@ -82,20 +86,33 @@ const PERIODS = [
 
 /* The key is read at a glance, so it takes the shortest name that is still
    true. The long ones belong in the panel that explains the layers. */
+/* Named for what the evidence IS, not for the shape it is drawn as. "Estimates,
+   middle half" described the polygon; a reader deciding whether to trust the
+   line needs to know it was reconstructed rather than measured, and the
+   middle-half part is in the note a hover away. These are the same names the
+   layers panel uses, so one thing is not called two things on one page. */
 const SRC_KEY = {
-  industrial: "Estimates, middle half",
-  modern: "Accounts, middle half",
+  industrial: "Reconstructed estimates",
+  modern: "National accounts",
 };
 
-const SRC_NOTE = {
-  industrial: "Whole-country wealth every decade, Alfani and Schifano. The band "
-            + "is the middle half of countries. Roughly a third of the figures "
-            + "come from named studies, a third are interpolated between them, "
-            + "and a third are inferred from the other measure by correlation.",
-  modern: "Shares of household net wealth from tax records and national balance "
-        + "sheets, annual, WID via Our World in Data. The band is the middle "
-        + "half of countries. The only layer measured at the time.",
-};
+/* The provenance split is COUNTED in the build and carried in the payload, so
+   the sentence cannot drift away from the data the way a hand-written "roughly
+   a third" could. */
+function srcNote(key) {
+  if (key === "modern") {
+    return "Shares of household net wealth taken from tax records and national "
+         + "balance sheets, annual, WID via Our World in Data. The band covers "
+         + "the middle half of countries. The only layer measured at the time.";
+  }
+  const p = DATA.meta.industrial_provenance || {};
+  const n = (p.named || 0) + (p.interpolated || 0) + (p.correlated || 0);
+  return "Whole-country wealth every decade, Alfani and Schifano. The band covers "
+       + "the middle half of countries. Of " + n + " country-decades, " + p.named
+       + " are read straight from a national study, " + p.interpolated + " are "
+       + "interpolated between two of them, and " + p.correlated + " are inferred "
+       + "from the top-decile share through a correlation fitted on the rest.";
+}
 
 const SOURCE_STYLE = {
   industrial: { colour: "var(--w-mid)", dashed: true },
@@ -233,6 +250,25 @@ function kernelSmooth(pairs, { band = 0.12, steps = 64 } = {}) {
     if (den > 0.6) out.push([Math.round(x), num / den]);
   }
   return out;
+}
+
+/* Split a series wherever it jumps a hole big enough that joining across it
+   would be an assertion rather than a drawing. The threshold is five times the
+   series' own typical step, floored at fifteen years, which keeps an annual
+   series continuous through the odd missing year and through the ten-year steps
+   of the nineteenth century, and breaks it over the twenty and thirty year ones
+   that the quartile band beside it also declines to cross. */
+function breakOnGaps(pairs) {
+  if (pairs.length < 2) return pairs.length ? [pairs] : [];
+  const gaps = pairs.slice(1).map((p, i) => p[0] - pairs[i][0]).sort((a, b) => a - b);
+  const step = gaps[Math.floor(gaps.length / 2)] || 1;
+  const max = Math.max(15, step * 5);
+  const out = [[pairs[0]]];
+  for (let i = 1; i < pairs.length; i += 1) {
+    if (pairs[i][0] - pairs[i - 1][0] > max) out.push([]);
+    out[out.length - 1].push(pairs[i]);
+  }
+  return out.filter((seg) => seg.length);
 }
 
 function inPeriod(period, year) {
@@ -500,9 +536,37 @@ function drawEras() {
           "stroke-opacity": 0.5, "stroke-dasharray": "4 3",
         }));
       }
-      if (src.sel.length > 1) {
+      /* NOT smoothed, unlike the band above it, and the difference is the
+         point. The band wobbles because the SET of reporting countries changes
+         from year to year, which is an artefact of the sample. One country's
+         line wobbles because that country's wealth moved, which is the thing
+         you picked the country to see. Britain's top decile shifts 2.9 points
+         inside a single year at the 90th percentile of its own steps, and a
+         kernel wide enough to calm that would also flatten 1929 to 1932.
+
+         What the country line DID borrow from the band is where to stop. The
+         modern series is annual from about 1910 and decadal or worse before
+         it, so a plain polyline drew a confident straight segment across the
+         thirty-year hole either side of 1850, while the band beside it, which
+         stops once the nearest reading is more than about sixteen years away,
+         correctly showed nothing there. Two lines disagreeing about whether
+         data exists reads as a bug. */
+      for (const seg of breakOnGaps(src.sel)) {
+        /* A reading with no neighbour close enough to join to is drawn as a
+           dot rather than dropped. Britain and America both have single
+           readings at 1820, 1850 and 1880 with thirty years either side, and
+           silently discarding them would have replaced one wrong impression,
+           that the series is continuous, with another, that nothing was
+           measured before 1900. */
+        if (seg.length === 1) {
+          svg.appendChild(svgEl("circle", {
+            cx: xOf(seg[0][0]).toFixed(1), cy: yOf(lane, seg[0][1]).toFixed(1),
+            r: 2.8, fill: "var(--w-pick)",
+          }));
+          continue;
+        }
         const line = svgEl("polyline", {
-          points: src.sel.map(([y, v]) => `${xOf(y).toFixed(1)},${yOf(lane, v).toFixed(1)}`).join(" "),
+          points: seg.map(([y, v]) => `${xOf(y).toFixed(1)},${yOf(lane, v).toFixed(1)}`).join(" "),
           fill: "none", stroke: "var(--w-pick)", "stroke-width": src.dashed ? 2 : 2.6,
           "stroke-linejoin": "round", "stroke-linecap": "round",
         });
@@ -526,36 +590,15 @@ function drawEras() {
        them there put a scatter of orange next to far better measurements of the
        same centuries. They stay in the settlement-size chart, which is what
        they are actually good for. */
-    const better = i > 0;
-    for (const p of pts) {
-      if (!state.scatter[p.toggle]) continue;
-      if (p.layer === "deep" && better) continue;
-      /* A whole region is the same shape as a single town, a shade
-         darker. Hollow rings read as a different KIND of thing and drew more
-         attention than an aggregate deserves next to the towns it averages. */
-      const hue = p.layer === "deep" ? "var(--w-deep)"
-        : p.aggregate ? "var(--w-region)" : "var(--w-early)";
-      const dot = svgEl("circle", {
-        cx: xOf(p.year).toFixed(1), cy: yOf(lane, p[metric]).toFixed(1),
-        r: p.aggregate ? 3.8 : 3.2, class: "dot",
-        fill: hue, "fill-opacity": p.aggregate ? 0.85 : 0.6,
-      });
-      hook(dot, (evt) => {
-        readout.innerHTML = `<b>${p.place}</b>` +
-          `<div class="row"><span>${yearLabel(p.year)}</span><span>${fmt(p[metric])}</span></div>` +
-          (p.n ? `<div class="row"><span>households sampled</span>` +
-                 `<span>${Math.round(p.n).toLocaleString()}</span></div>` : "") +
-          (p.aggregate ? "" : "") +
-          (p.group ? `<div class="row"><span>region</span><span>${p.group}</span></div>` : "") +
-          `<div class="prov">${DATA.meta.layers[p.layer].label}. ${p.basis}</div>`;
-        readout.hidden = false;
-        placeReadout(readout, evt);
-      });
-      svg.appendChild(dot);
-    }
+    /* ---- a hover band for the line panels, because an annual point is
+       smaller than a fingertip.
 
-    // ---- a hover band for the line eras, because annual points are smaller
-    //      than a fingertip
+       It is appended BEFORE the dots, not after. SVG hit-testing gives the
+       pointer to whatever was drawn last, so a full-lane transparent rect
+       added at the end covered all 63 excavated sites and every tax
+       assessment: their hover handlers were wired correctly and could never
+       fire, and hovering a dot produced the panel's readout instead of that
+       site's. */
     if (series.length || trends.length) {
       const band = svgEl("rect", {
         x: lane.x, y: lane.y, width: lane.w, height: lane.h, fill: "transparent",
@@ -603,6 +646,34 @@ function drawEras() {
       });
       svg.appendChild(band);
     }
+
+    const better = i > 0;
+    for (const p of pts) {
+      if (!state.scatter[p.toggle]) continue;
+      if (p.layer === "deep" && better) continue;
+      /* A whole region is the same shape as a single town, a shade
+         darker. Hollow rings read as a different KIND of thing and drew more
+         attention than an aggregate deserves next to the towns it averages. */
+      const hue = p.layer === "deep" ? "var(--w-deep)"
+        : p.aggregate ? "var(--w-region)" : "var(--w-early)";
+      const dot = svgEl("circle", {
+        cx: xOf(p.year).toFixed(1), cy: yOf(lane, p[metric]).toFixed(1),
+        r: p.aggregate ? 3.8 : 3.2, class: "dot",
+        fill: hue, "fill-opacity": p.aggregate ? 0.85 : 0.6,
+      });
+      hook(dot, (evt) => {
+        readout.innerHTML = `<b>${p.place}</b>` +
+          `<div class="row"><span>${yearLabel(p.year)}</span><span>${fmt(p[metric])}</span></div>` +
+          (p.n ? `<div class="row"><span>households sampled</span>` +
+                 `<span>${Math.round(p.n).toLocaleString()}</span></div>` : "") +
+          (p.group ? `<div class="row"><span>region</span><span>${p.group}</span></div>` : "") +
+          `<div class="prov">${DATA.meta.layers[p.layer].label}. ${p.basis}</div>`;
+        readout.hidden = false;
+        placeReadout(readout, evt);
+      });
+      svg.appendChild(dot);
+    }
+
   });
 
   svg.onpointerleave = () => { readout.hidden = true; };
@@ -767,18 +838,18 @@ function drawScale() {
    itself because that is where a reader is when the question occurs to them,
    and the panel that spells all four out is a long way down the page. */
 const LAYER_DOT = {
-  deep: ["var(--w-deep)", "Dig sites",
-         "One excavated settlement. The Gini of its house floor areas, which is "
-         + "the standard proxy for household wealth where no records survive. "
-         + "Kohler and others, 63 sites, 9200 BC to AD 1970."],
+  deep: ["var(--w-deep)", "Excavated sites",
+         "A settlement whose houses have been dug and measured. Where nothing "
+         + "was written down, the spread of floor areas across a site is the "
+         + "standard stand-in for the spread of household wealth: bigger house, "
+         + "richer household. Kohler and others, 63 sites, 9200 BC to AD 1970."],
   town: ["var(--w-early)", "Tax records",
          "One town or county, from the register a wealth tax was charged on. "
          + "English lay subsidies and Piedmontese estimi, via Alfani. The "
          + "English figures add back households too poor to be assessed."],
   region: ["var(--w-region)", "Whole regions",
            "Alfani's estimate for an entire state rather than one town, every "
-           + "fifty years: Holland, Flanders and Brabant, Tuscany, Piedmont. "
-           + "The only evidence here for the Low Countries."],
+           + "fifty years: Holland, Flanders and Brabant, Tuscany, Piedmont."],
 };
 
 function renderLegend() {
@@ -797,12 +868,11 @@ function renderLegend() {
     out.push({ colour: trends.length === 1 ? trends[0].colour : "var(--ink-soft)",
                label: "Average",
                note: "A locally weighted average of the observations in that "
-                   + "panel, Gaussian kernel, bandwidth an eighth of the span. "
-                   + "It stops rather than crossing a stretch with no data." });
+                   + "panel, Gaussian kernel, bandwidth an eighth of the span." });
   }
   for (const src of sources) {
     out.push({ colour: src.colour, label: SRC_KEY[src.key] || src.label,
-               note: SRC_NOTE[src.key] });
+               note: srcNote(src.key) });
   }
   if (sources.length && state.country !== ALL) {
     out.push({ colour: "var(--w-pick)",

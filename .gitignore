@@ -24,3 +24,5 @@ msg.tmp
 site/_coin_anim_*.gif
 site/_title_fonts.png
 site/_fonts.html
+site/inequality/_*.png
+site/inequality/_*.html

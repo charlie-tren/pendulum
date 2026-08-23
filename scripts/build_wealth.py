@@ -265,31 +265,45 @@ def industrial_provenance() -> dict:
     return kinds
 
 
-LAYERS = {
-    "deep": {
-        "label": "Excavated settlements",
-        "note": "The Gini of house floor areas at one settlement. Floor area is "
-                "the standard proxy for household wealth where no records survive.",
-    },
-    "preindustrial": {
-        "label": "Tax registers",
-        "note": "Assessed wealth across one town or county, from the register the "
-                "levy was charged on. The English figures add back households "
-                "too poor to be assessed.",
-    },
-    "industrial": {
-        "label": "Reconstructed estimates",
-        "note": "Whole-country household wealth every decade. About a third of "
-                "the figures come from named studies, a third are interpolated "
-                "between them, and a third are inferred from the other measure "
-                "through a fitted correlation.",
-    },
-    "modern": {
-        "label": "National accounts",
-        "note": "Shares of household net wealth from tax records and national "
-                "balance sheets. The only layer measured at the time.",
-    },
-}
+def layers() -> dict:
+    """The four layers and what each one actually measures.
+
+    A function rather than a constant because the industrial note QUOTES the
+    provenance split, and a hand-written "about a third" is a second copy of a
+    number the build already counts. The two drifted the moment the counts came
+    out at 79, 81 and 80 rather than 80 apiece, and the page carried the vaguer
+    of the two in the one place a reader goes to check the layer.
+    """
+    p = industrial_provenance()
+    n = p["named"] + p["interpolated"] + p["correlated"]
+    return {
+        "deep": {
+            "label": "Excavated settlements",
+            "note": "A settlement whose houses have been dug and measured. Where "
+                    "nothing was written down, the spread of floor areas across a "
+                    "site is the standard stand-in for the spread of household "
+                    "wealth: bigger house, richer household.",
+        },
+        "preindustrial": {
+            "label": "Tax registers",
+            "note": "Assessed wealth across one town or county, from the register "
+                    "the levy was charged on. The English figures add back "
+                    "households too poor to be assessed.",
+        },
+        "industrial": {
+            "label": "Reconstructed estimates",
+            "note": f"Whole-country household wealth every decade. Of {n} "
+                    f"country-decades, {p['named']} are read straight from a "
+                    f"national study, {p['interpolated']} are interpolated between "
+                    f"two of them, and {p['correlated']} are inferred from the "
+                    "top-decile share through a correlation fitted on the rest.",
+        },
+        "modern": {
+            "label": "National accounts",
+            "note": "Shares of household net wealth from tax records and national "
+                    "balance sheets. The only layer measured at the time.",
+        },
+    }
 
 SOURCES = [
     {"name": "EINITE, wealth inequality in England 1283 to 1334",
@@ -332,7 +346,7 @@ def main() -> int:
 
     payload = {
         "meta": {
-            "layers": LAYERS,
+            "layers": layers(),
             "industrial_provenance": industrial_provenance(),
             "sources": SOURCES,
             "year0": min(years), "year1": max(years),
@@ -349,7 +363,7 @@ def main() -> int:
     print(f"  {len(pts):,} place observations, {min(years)} to {max(years)}")
     print(f"  {len(regs)} regional series")
     print(f"  {len(ctry)} countries")
-    for key in LAYERS:
+    for key in payload["meta"]["layers"]:
         n = sum(1 for p in pts if p["layer"] == key)
         if key == "industrial":
             n = sum(1 for c in ctry.values() if c["industrial"]["gini"])

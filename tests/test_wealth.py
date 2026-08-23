@@ -145,3 +145,23 @@ def test_no_layer_claims_a_measure_it_cannot_support():
     for p in W["points"]:
         if p["layer"] == "deep":
             assert p.get("top10") is None and p.get("top1") is None,                 f"{p['place']} claims a share the house-size method cannot produce"
+
+
+def test_the_two_stylesheets_are_byte_identical():
+    """`site/inequality/style.css` is a DEPLOY copy that lives in the source
+    tree, because the two pages ship to sibling directories at the site root and
+    a shared `../style.css` there would resolve to the personal site's own
+    stylesheet, not this one. CLAUDE.md names `site/style.css` as the single
+    source, but nothing enforced it, so an edit to the source silently missed
+    the page that actually loads the copy: four colour variables and a title
+    nudge went into a file the inequality page never reads.
+
+    The negative control for this test is simply changing one byte of either
+    file, which is what produced it."""
+    src = (ROOT / "site" / "style.css").read_bytes()
+    dup = (ROOT / "site" / "inequality" / "style.css").read_bytes()
+    assert src, "the source stylesheet is empty, so this check could not fail"
+    assert src == dup, (
+        "site/inequality/style.css has drifted from site/style.css; "
+        "copy the source over it rather than editing the copy"
+    )
