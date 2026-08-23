@@ -2,8 +2,9 @@
 
 ## Needs Charlie
 
-Both are parked on a decision or an account, not on work. Everything else in
-this file is closed.
+Six open. D5, D6, D10 and S6 are parked on a decision or a free account, not on
+work. D7 is real unbuilt scope. V6 is live copy he has already rejected, so it
+is the one worth doing first.
 
 - [ ] **D5. Manifesto Project.** Needs a free account for the API key, which is
       not mine to create. Register at https://manifesto-project.wzb.eu and I
@@ -40,99 +41,52 @@ this file is closed.
       a size worth checking before committing; and the year slider has to mean
       the same thing at both levels. Scope this properly before writing code -
       it is a second data model, not a wider version of the current one.
-- [ ] **D8. An inequality section, wealth-first** (asked 2026-08-19, scope
-      settled the same day: Charlie wants **wealth**, and wants it to go back
-      **thousands of years**, not centuries).
+- [x] ~~**D8. An inequality section, wealth-first**~~ - **BUILT AND LIVE
+      2026-08-22/23** at https://charlietrenorden.com/inequality/. Verified live:
+      the payload spans -9200 to 2024 and carries all four layers.
+      Three of the four layers shipped from open sources. The fourth, the
+      archaeology, did NOT need the tDAR account after all: Kohler et al. 2017,
+      Nature 551, is the published precursor and Springer serves its
+      supplementary table with no login. 63 sites, 9200 BC to AD 1970. See D10
+      for the upgrade path.
+- [x] ~~**D9. Two more charts from data already in the payload**~~ - PART DONE,
+      PART REVERSED, 2026-08-22/23.
+      **Inequality by Size of Settlement** is live, cut by Kohler's camp /
+      village / town / city classification rather than his five-step political
+      taxonomy: the words need no glossary and the medians are monotonic where
+      the political cut has a flat spot. Village 0.24, town 0.28, city 0.38.
+      **Two Hemispheres** was built and then removed on Charlie's call.
+      **Cities and Countryside in Piedmont** was built as a third, testing the
+      settlement-size claim against the tax records, and also removed on his
+      call. Worth knowing what it showed if it is ever revived: the towns run
+      about 0.07 above the countryside from 1500 to 1700 and then the gap closes
+      and reverses by 1800. The roll-up rows it needed are in
+      `alfani_piedmont_places.csv` as "Piedmont (cities only)" and
+      "(rural areas only)".
 
-      **Short answer: yes, thousands of years of wealth inequality data exists,
-      and it is good. But it comes in four layers that must not be drawn as one
-      line.** All measured by probing the sources, not recalled.
+- [ ] **D10. The fuller GINI Project database.** The page currently runs on
+      Kohler et al. 2017: 63 sites. The successor is 47,000 houses at 1,100+
+      sites, 10500 BC to AD 1980, and `build_wealth.py` already prefers it the
+      moment the file exists at `data/raw/wealth/gini_project.csv`.
+      **Needs Charlie:** tDAR requires a free account, which is not mine to
+      create. https://core.tdar.org/project/496853
 
-      | Layer | Source | Span | Unit | Free? |
-      |---|---|---|---|---|
-      | 1. Deep history | GINI Project (tDAR 496853) | **10500 BC - AD 1980** | wealth Gini from house floor areas, 47k dwellings at 1,100+ sites | free, **login required** |
-      | 2. Pre-industrial Europe | Alfani / EINITE | **1283 - 1800** | taxable wealth, Gini + quartile shares | free, no login |
-      | 3. The industrial era | Alfani & Schifano | 1820 - 2010, decadal | wealth Gini + top 10%, 39 countries | free, no login |
-      | 4. Modern | WID via OWID | 1800 - 2024, annual | top 1% / top 10% wealth share, 226 entities | free, no login |
+- [ ] **S6. Decide whether `charlie-tren/pendulum` goes public.** The footer on
+      both pages said "Built from open data. Code and data." and linked to this
+      repo, which is PRIVATE while the site is public, so it was a 404 for every
+      visitor. The link is removed rather than left broken. If the repo goes
+      public the link goes straight back; if not, it stays off. Charlie's call.
 
-      **Layer 1 is the answer to the actual question.** The Global Dynamics of
-      Inequality project measured house floor areas across the archaeological
-      record and computed a Gini per site. tDAR states its temporal coverage as
-      calendar date **-10500 to 1980**. Published as a PNAS Special Feature in
-      April 2025. The database is `GINI Database All Records 20240721` at
-      https://core.tdar.org/project/496853, doi:10.48512/XCV8502429.
-      **Needs Charlie: tDAR requires a free account to download.** Same shape as
-      D5 - registering is not mine to do. Everything else here I can fetch now.
-
-      **Layers 2 and 3 are already downloaded and read**, from
-      https://guidoalfani.eu/data/ - plain xlsx, no login, no key:
-      - England, 27 counties, years 1283 to 1334 in the file itself, wealth Gini
-        plus quartile shares, each county given both observed and reconstructed
-      - Piedmont / northwestern Italy, 1450 to 1800
-      - Italy and the Low Countries 1500-1800; Apulia 1550-1800; Tuscany
-        1300-1800 as a PDF appendix only, so that one needs transcribing
-      - Alfani and Schifano, 39 countries, every decade 1820 to 2010, wealth
-        Gini and top-10% share
-
-      **THE THING TO GET RIGHT: these are four different measurements and
-      stitching them into one continuous line would be a lie.** Layer 1 is a
-      proxy (how big your house was) at site level. Layer 2 is taxable wealth at
-      county or city level. Layer 4 is financial wealth at national level. They
-      do not share a unit, a population, or a denominator. The site's whole
-      credibility rests on keeping `no_reading` apart from `unresolved`, and
-      this is the same discipline applied to a second dataset. Draw them as
-      separate layers with visibly different treatment - points and a fitted
-      band for the archaeology, a line only where there is an annual series -
-      and say on the page what each one measures.
-
-      **Worth adding as annotation, not as a series:** Milanovic, Lindert and
-      Williamson's social tables put Gini estimates on about 30 named ancient
-      societies - Rome AD 14, Byzantium 1000, England 1688, Mughal India 1750 -
-      via NBER working paper 13550. Single points with a story attached, which
-      is exactly what the deep end of a chart like this needs to stay legible.
-
-      Income remains available if it is ever wanted (`income-share-distribution-before-tax-wid`,
-      1820-2024, top 1 / next 9 / middle 40 / bottom 50, verified to sum to 100),
-      but wealth is the brief.
-- [ ] **D9. Two more charts, from data already downloaded** (scoped 2026-08-22,
-      after Charlie asked whether anything else is worth adding). Neither needs
-      a new source: both dimensions are already in `wealth.json`, carried
-      through from Kohler's Supplementary Table 2 and never plotted.
-
-      **The strong one: Gini against political scale.** Kohler codes every dig
-      site by the political complexity of the society that built it, and the
-      medians rise monotonically:
-
-      | Scale | n | Median Gini |
-      |---|---|---|
-      | family | 1 | 0.17 |
-      | local | 12 | 0.21 |
-      | big man | 11 | 0.28 |
-      | regional | 22 | 0.28 |
-      | state | 17 | 0.38 |
-
-      That is the whole site's two subjects in one chart: how a society is
-      governed against how unevenly it holds wealth. It belongs on Pendulum
-      more than on anyone else's page. A box plot or a strip plot per scale,
-      not a bar chart of the medians, because n is small and the ranges overlap
-      heavily (state runs 0.12 to 0.68).
-
-      **The second: Old World against New World.** Kohler's own headline
-      finding, reproducible from the same field. Old World median 0.35 across
-      24 sites, New World 0.25 across 39. The paper's argument is that draught
-      animals and the plough let Eurasian elites accumulate in a way the
-      Americas could not. Two scatters on one time axis would carry it.
-
-      **Checked and NOT available**: OWID has no wealth-to-income ratio, no
-      capital-to-income ratio and no inheritance-flow grapher, so Piketty's
-      wealth-to-income series would need the WID bulk API rather than the
-      grapher CSVs this project already uses. Ten candidate slugs, all 404.
-
-      **Available but a different page**: `income-share-distribution-before-tax-wid`
-      (1820-2024, top 1 / next 9 / middle 40 / bottom 50, verified to sum to
-      100) and `palma-ratio-wid`. Income rather than wealth, so it would be a
-      second axis on this page rather than more of the same one. Charlie's call.
-
+- [ ] **V6. Pick a standfirst for the inequality page.** Twenty options were
+      given on 23/08/2026, grouped by angle. The page currently carries "How
+      unevenly wealth has been held, as far back as anything survives to measure
+      it.", which he has said he does not like, so this is live copy he has
+      already rejected. Recommended: "It has fallen twice in eleven thousand
+      years. Once after the Black Death, once after 1940." Both halves are in
+      the data: the tax-register median runs 0.78 in the 1280s to 0.61 in the
+      century after the plague, and the modern top-tenth share goes 77% in 1940
+      to 61% by 1980. The dates are the data; the causes are Alfani's and
+      Scheidel's argument, not something this page demonstrates.
 
 Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
 
