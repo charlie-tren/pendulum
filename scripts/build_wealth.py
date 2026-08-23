@@ -286,22 +286,21 @@ def layers() -> dict:
         },
         "preindustrial": {
             "label": "Tax registers",
-            "note": "Assessed wealth across one town or county, from the register "
-                    "the levy was charged on. The English figures add back "
-                    "households too poor to be assessed.",
+            "note": "Assessed wealth, household by household, from the roll the "
+                    "levy was charged on. The untaxed poor are added back where "
+                    "the roll leaves them out.",
         },
         "industrial": {
             "label": "Reconstructed estimates",
-            "note": f"Whole-country household wealth every decade. Of {n} "
-                    f"country-decades, {p['named']} are read straight from a "
-                    f"national study, {p['interpolated']} are interpolated between "
-                    f"two of them, and {p['correlated']} are inferred from the "
-                    "top-decile share through a correlation fitted on the rest.",
+            "note": f"Whole-country wealth every decade. {p['named']} of the {n} "
+                    f"country-decades come from a national study, "
+                    f"{p['interpolated']} are interpolated between two of them, and "
+                    f"{p['correlated']} are inferred from the top-decile share.",
         },
         "modern": {
             "label": "National accounts",
-            "note": "Shares of household net wealth from tax records and national "
-                    "balance sheets. The only layer measured at the time.",
+            "note": "Shares of household net wealth from tax data and balance "
+                    "sheets.",
         },
     }
 

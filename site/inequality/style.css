@@ -18,6 +18,15 @@
   --w-piedmont: #9a5b8f;
   --w-pick: #2f6fb2;
   --w-region: #462c0c;
+  /* The median inside the settlement box plot. Near-black was iterated three
+     times and rejected each time: at 2.6px through a pale terracotta box it
+     read as a mark from a different chart. This is the box's own hue taken
+     down, so it separates from the fill without introducing a fourth colour.
+
+     The dark value is LIGHTER than the box rather than darker, which is not an
+     inconsistency: what the eye is judging is contrast against the ground, and
+     on a #1a1d22 panel a darker terracotta is a mark you cannot see. */
+  --w-median: #5d2f1c;
   /* The coin stack. Real metal hex is built for a dark ground: silver #c0c0c0
      and gold #d4af37 both wash out on this near-white page, so the light values
      are the same metals a couple of steps down. */
@@ -225,6 +234,7 @@ a { color: var(--accent); }
     --w-deep: #d4795c; --w-early: #f0ca8b; --w-mid: #9aa8b4; --w-now: #6ea8e0;
     --w-england: #6fa583; --w-piedmont: #c383b6; --w-pick: #6ea8e0;
     --w-region: #8a5313;
+    --w-median: #f4a98e;
     --coin-bronze: #b06a28; --coin-bronze-face: #d98f45; --coin-bronze-edge: #f0b982;
     --coin-silver: #98a2ac; --coin-silver-face: #c6ced7; --coin-silver-edge: #e3e9ef;
     --coin-gold:   #c69a22; --coin-gold-face:   #ecc457; --coin-gold-edge:   #f7e2a4;

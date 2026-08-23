@@ -108,10 +108,9 @@ function srcNote(key) {
   const p = DATA.meta.industrial_provenance || {};
   const n = (p.named || 0) + (p.interpolated || 0) + (p.correlated || 0);
   return "Whole-country wealth every decade, Alfani and Schifano. The band covers "
-       + "the middle half of countries. Of " + n + " country-decades, " + p.named
-       + " are read straight from a national study, " + p.interpolated + " are "
-       + "interpolated between two of them, and " + p.correlated + " are inferred "
-       + "from the top-decile share through a correlation fitted on the rest.";
+       + "the middle half of countries. " + p.named + " of the " + n + " country-decades "
+       + "come from a national study, " + p.interpolated + " are interpolated between two "
+       + "of them, and " + p.correlated + " are inferred from the top-decile share.";
 }
 
 const SOURCE_STYLE = {
@@ -815,7 +814,7 @@ function drawScale() {
     svg.appendChild(svgEl("line", {
       x1: xOf(m).toFixed(1), x2: xOf(m).toFixed(1),
       y1: (cy - bh / 2).toFixed(1), y2: (cy + bh / 2).toFixed(1),
-      stroke: "var(--ink)", "stroke-width": 2.6, "stroke-linecap": "round",
+      stroke: "var(--w-median)", "stroke-width": 2.6, "stroke-linecap": "round",
     }));
   });
 
