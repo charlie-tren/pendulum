@@ -527,7 +527,14 @@ footer .terms { display: block; color: var(--ink-faint); font-size: 12.5px; marg
    on the phone header a fortnight ago. The pendulum wordmark has no span and
    no class here, so none of this touches it. */
 h1.coin-title { gap: 0.12em; }
-.title-word { display: inline-block; transform: translateY(0.14em); }
+.title-word { display: inline-block; transform: translateY(0.2em); }
+
+/* The standfirst follows the title down. Only on the coin page: the cradle
+   sits on the text baseline and needs no correction, while the coin stack hangs
+   below it and pulls the whole lockup down with it, which closed the gap under
+   the title. em again, so it tracks the clamped title rather than fighting it
+   at 390px. */
+h1.coin-title + .standfirst { margin-top: 0.3em; }
 .coins .stack { transform-origin: 50% 100%; }
 h1:hover .coins .stack, h1:focus-within .coins .stack {
   animation: coin-lift 1.5s ease-in-out infinite;

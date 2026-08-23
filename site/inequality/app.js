@@ -51,13 +51,11 @@ const METRICS = {
   },
   top10: {
     label: "Share held by the richest 10%", max: 100, pct: true,
-    blurb: "The top decile's share of household wealth in one settlement, "
-         + "county or country.",
+    blurb: "The top decile's share of household wealth.",
   },
   top1: {
     label: "Share held by the richest 1%", max: 100, pct: true,
-    blurb: "The top percentile's share of household wealth in one settlement, "
-         + "county or country.",
+    blurb: "The top percentile's share of household wealth.",
   },
 };
 
@@ -103,7 +101,7 @@ function srcNote(key) {
   if (key === "modern") {
     return "Shares of household net wealth taken from tax records and national "
          + "balance sheets, annual, WID via Our World in Data. The band covers "
-         + "the middle half of countries. The only layer measured at the time.";
+         + "the middle half of countries.";
   }
   const p = DATA.meta.industrial_provenance || {};
   const n = (p.named || 0) + (p.interpolated || 0) + (p.correlated || 0);
@@ -859,10 +857,21 @@ function renderLegend() {
   const sources = eras.flatMap((e) => e.content.series);
 
   /* Every entry is a thing on the chart, and every thing on the chart has an
-     entry. Both halves of that have been broken before. The two scatter
-     entries are buttons: pressing one folds its observations away and leaves
-     the median. */
+     entry. Both halves of that have been broken before. The three scatter
+     entries are buttons: pressing one folds its observations away.
+
+     ORDER FOLLOWS THE CHART, left to right. The key used to lead with the two
+     summary lines and finish with the observations, which put "Excavated sites"
+     at the far right of the key and its dots at the far left of the panel.
+     Reading order now matches: the dig sites and the tax records first, because
+     that is the order their panels appear in, then the two things drawn across
+     the top of the panels they belong to, then the country the reader picked. */
   const out = [];
+  for (const key of SCATTERS) {
+    if (!hasToggle(key)) continue;
+    const [colour, label, note] = LAYER_DOT[key];
+    out.push({ colour, label, note, toggle: key, on: state.scatter[key] });
+  }
   if (trends.length) {
     out.push({ colour: trends.length === 1 ? trends[0].colour : "var(--ink-soft)",
                label: "Average",
@@ -878,11 +887,6 @@ function renderLegend() {
                label: DATA.countries[state.country]?.label || state.country,
                note: "The country picked above, drawn over the spread so you can "
                    + "see where it sits. Dashed where the figure is an estimate." });
-  }
-  for (const key of SCATTERS) {
-    if (!hasToggle(key)) continue;
-    const [colour, label, note] = LAYER_DOT[key];
-    out.push({ colour, label, note, toggle: key, on: state.scatter[key] });
   }
 
   const tip = (n) => (n ? ` title="${n.replace(/"/g, "&quot;")}"` : "");
