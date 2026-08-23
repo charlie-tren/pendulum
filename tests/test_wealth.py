@@ -165,3 +165,32 @@ def test_the_two_stylesheets_are_byte_identical():
         "site/inequality/style.css has drifted from site/style.css; "
         "copy the source over it rather than editing the copy"
     )
+
+
+def test_imputed_regional_twins_are_flagged_and_real_countries_are_not():
+    """WID has no wealth survey for most microstates and imputes them from a
+    regional group, so fifteen Caribbean entries carry the same curve to within
+    a hundredth of a point. The page offered each one in its country picker as
+    though it were that country's own measurement.
+
+    Both halves matter. The flag has to catch the twins, and it has to leave
+    alone countries that merely happen to sit at a similar level: Australia and
+    Montenegro agree to 0.78 points across 45 years and are not twins."""
+    twinned = [c for c in W["countries"].values() if c.get("twin_of")]
+    assert len(twinned) > 20, "the detector found almost nothing, so it cannot fail"
+
+    aia = W["countries"]["AIA"]
+    assert "Antigua and Barbuda" in (aia.get("twin_of") or []), aia.get("twin_of")
+
+    for iso in ("USA", "GBR", "AUS", "FRA", "DEU", "JPN", "CHN", "IND"):
+        assert not W["countries"][iso].get("twin_of"), (
+            f"{iso} was flagged as an imputed twin, which it is not")
+
+
+def test_twin_flags_are_symmetric():
+    """A one-sided flag would tell the reader that Anguilla is a copy of
+    Antigua while Antigua looks like an original. Neither is."""
+    for iso, c in W["countries"].items():
+        for other in c.get("twin_of") or []:
+            mate = next(x for x in W["countries"].values() if x["label"] == other)
+            assert c["label"] in (mate.get("twin_of") or []), f"{iso} -> {other}"

@@ -1,16 +1,17 @@
-"""Build the inequality page's own favicon: one gold stack, square.
+"""Build the inequality page's own favicon: one gold coin, face on, square.
 
 The wordmark's SVG is 58x48 and cropped tight to the artwork, so a browser
 squashes it into a 16x13 sliver where the coins vanish. This draws into a
 square box with its own padding and a solid ground, which is the same lesson
 the pendulum favicon already carries.
 
-It is ONE stack rather than the wordmark's three, and that is a deliberate
-divergence rather than an oversight. A favicon is read at 16 CSS pixels: three
-stacks put 13 coins, 3 face ellipses and 3 milled rings inside 16px of height,
-which is roughly one shape per pixel, and rendered at that size they collapsed
-into a brown-grey-yellow smudge. Five coins in one column is the same idea with
-enough room for the ridges between them to survive. Contact sheet of the ten
+It is ONE coin rather than the wordmark's three stacks, and that is a
+deliberate divergence rather than an oversight. A favicon is read at 16 CSS
+pixels: three stacks put 13 coins, 3 face ellipses and 3 milled rings inside
+16px of height, roughly one shape per pixel, and they collapsed into a
+brown-grey-yellow smudge. A single stack was better but still a column of
+horizontal bands, and sub-pixel bands blur into a plain gold rectangle. A disc
+survives because its silhouette is a circle. Contact sheet of the ten
 candidates: scripts/favicon_options.py.
 
 Colours are baked rather than taken from CSS variables: a favicon is fetched
@@ -34,38 +35,30 @@ METAL = {
     "silver": ("#98a2ac", "#c6ced7", "#e3e9ef"),
     "gold": ("#c69a22", "#ecc457", "#f7e2a4"),
 }
-# A squarer box than the wordmark, and much fatter coins so they survive 16px.
-# The stack is sized to FIT: the top ellipse's crown sits at y=6.4 and the
-# bottom body's skirt at y=94.8, because at the contact sheet's proportions the
-# skirt ran off the bottom of the tile and the flat cut read as a broken render
-# rather than a crop.
-RX, RY, STEP, BASE = 26.0, 9.2, 14.0, 71.6
-STACKS = [("gold", 50.0, 5)]
+# One coin, face on, filling the tile. Not a stack: a stack is a column of
+# horizontal bands, and at 16px the bands are sub-pixel, so the ridges blur into
+# a plain gold rectangle and the mark stops being a coin at all. A disc with a
+# milled inner ring keeps its silhouette at every size, because the silhouette
+# is a circle and a circle survives being one pixel across.
+CR = 33.0
 
 
-def stack(metal: str, cx: float, n: int) -> str:
-    """A pile of n coins seen slightly from above, drawn bottom up.
+def coin(cx: float, cy: float, r: float, metal: str = "gold") -> str:
+    """A coin seen face on: a disc, a rim, and a milled inner ring.
 
-    Each body is STEP + RY tall, not STEP. At STEP alone a coin covers only the
-    flat half of the ellipse below it and the curved half shows through as a
-    ring. That bug shipped in the wordmark, was fixed there, and then shipped
-    again in the GIF renderer, which had its own copy of this function.
+    Stroke widths are fractions of the radius rather than fixed, so the rim and
+    the ring stay in proportion when the tile is rendered at 180 for iOS and at
+    16 for a tab strip.
     """
     body, face, edge = METAL[metal]
-    top = BASE - (n - 1) * STEP
-    coins = "".join(
-        f'<path d="M{cx - RX} {BASE - i * STEP} L{cx - RX} {BASE - i * STEP + STEP + RY} '
-        f'A{RX} {RY} 0 0 0 {cx + RX} {BASE - i * STEP + STEP + RY} '
-        f'L{cx + RX} {BASE - i * STEP} Z" fill="{body}" stroke="{edge}" '
-        f'stroke-width=".6" stroke-opacity=".45"/>'
-        for i in range(n)
-    )
-    return (f"{coins}"
-            f'<ellipse cx="{cx}" cy="{top}" rx="{RX}" ry="{RY}" fill="{face}"/>')
+    return (f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="{face}" '
+            f'stroke="{body}" stroke-width="{r * 0.13:.2f}"/>'
+            f'<circle cx="{cx}" cy="{cy}" r="{r * 0.66:.2f}" fill="none" '
+            f'stroke="{edge}" stroke-width="{r * 0.09:.2f}" stroke-opacity=".75"/>')
 
 
 def svg(size: int = 100) -> str:
-    art = "".join(stack(m, cx, n) for m, cx, n in STACKS)
+    art = coin(size / 2, size / 2, CR)
     return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {size} {size}">'
             f'<rect width="{size}" height="{size}" rx="18" fill="{BG}"/>{art}</svg>')
 

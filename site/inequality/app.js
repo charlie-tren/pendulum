@@ -409,7 +409,7 @@ function drawEras() {
 
   /* More room on the right at phone width: the last tick is centred on the
      panel's right edge, so at r=8 the "2010" ran off the side of the SVG. */
-  const pad = { l: narrow ? 30 : 44, r: narrow ? 20 : 8, t: narrow ? 10 : 22, b: 40 };
+  const pad = { l: narrow ? 30 : 44, r: narrow ? 20 : 8, t: 10, b: 40 };
   const gut = narrow ? 7 : 16;
   const iw = box.w - pad.l - pad.r;
 
@@ -471,20 +471,11 @@ function drawEras() {
       }
     }
 
-    /* The panel is named by the period it covers, and the axis underneath
-       carries real dated ticks rather than one range caption. A single "9200
-       BC to 1283" told a reader nothing about where inside it a dot sat. */
-    /* No header on a phone. Three of them across 375px collided with each
-       other, and they say the same thing as the first and last tick directly
-       underneath, so the duplicate is the one to lose. */
-    if (!narrow) {
-      const name = svgEl("text", {
-        x: lane.x, y: (lane.y - 8).toFixed(1), "font-size": 12,
-        "font-weight": 600, fill: "var(--ink-soft)",
-      });
-      name.textContent = `${yearLabel(x0)} to ${yearLabel(era.labelTo ?? x1)}`;
-      svg.appendChild(name);
-    }
+    /* No panel headers at all. They read "9,200 BC to 1283" over an axis
+       whose first and last ticks are 9,200 BC and 1283, which is the same two
+       years printed twice, eight pixels apart. They came off the phone layout
+       first, for collisions; the redundancy is the better reason and it holds
+       at every width. */
 
     /* The panels share their boundary years, so without this the same year is
        printed twice, once either side of the gutter. The left panel keeps it. */
@@ -999,7 +990,16 @@ function render() {
   renderLegend();
   drawEras();
   drawScale();
-  $("#country-hint").textContent = "";
+  /* The picker's hint, which until now was always blank. WID imputes the
+     wealth distribution of a country with no survey from a regional group, so
+     picking Anguilla drew a line that is really the Caribbean, to within a
+     hundredth of a point of Antigua, Grenada and thirteen others. The chart
+     cannot show that and the reader has no way to know it. */
+  const twin = DATA.countries[state.country]?.twin_of;
+  $("#country-hint").textContent = twin
+    ? `No wealth survey. WID imputes this from a regional group of `
+      + `${twin.length + 1}, so the line is all but identical to ${twin[0]}.`
+    : "";
   writeHash();
 }
 

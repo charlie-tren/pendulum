@@ -13,7 +13,11 @@
   --w-deep: #9c5539;
   --w-early: #d2a05f;
   --w-mid: #7d8f9c;
-  --w-now: #2f6fb2;
+  /* The accounts band is teal, not the blue it used to be. --w-pick is
+     #2f6fb2 and the band was too, so the spread of every country and the one
+     country the reader had chosen were drawn in one colour, and the key
+     printed the same swatch twice. */
+  --w-now: #2c7a72;
   --w-england: #4f7d5e;
   --w-piedmont: #9a5b8f;
   --w-pick: #2f6fb2;
@@ -26,7 +30,7 @@
      The dark value is LIGHTER than the box rather than darker, which is not an
      inconsistency: what the eye is judging is contrast against the ground, and
      on a #1a1d22 panel a darker terracotta is a mark you cannot see. */
-  --w-median: #5d2f1c;
+  --w-median: #8f3f24;
   /* The coin stack. Real metal hex is built for a dark ground: silver #c0c0c0
      and gold #d4af37 both wash out on this near-white page, so the light values
      are the same metals a couple of steps down. */
@@ -231,10 +235,10 @@ a { color: var(--accent); }
     --rule: #2b2f36; --bg: #131519; --panel: #1a1d22; --accent: #6ea8e0;
     /* lifted off the dark ground: the mid-grey and the greens in particular
        disappear into the panel at their light-mode values */
-    --w-deep: #d4795c; --w-early: #f0ca8b; --w-mid: #9aa8b4; --w-now: #6ea8e0;
+    --w-deep: #d4795c; --w-early: #f0ca8b; --w-mid: #9aa8b4; --w-now: #5fb3a8;
     --w-england: #6fa583; --w-piedmont: #c383b6; --w-pick: #6ea8e0;
     --w-region: #8a5313;
-    --w-median: #f4a98e;
+    --w-median: #e58f6f;
     --coin-bronze: #b06a28; --coin-bronze-face: #d98f45; --coin-bronze-edge: #f0b982;
     --coin-silver: #98a2ac; --coin-silver-face: #c6ced7; --coin-silver-edge: #e3e9ef;
     --coin-gold:   #c69a22; --coin-gold-face:   #ecc457; --coin-gold-edge:   #f7e2a4;
@@ -527,7 +531,7 @@ footer .terms { display: block; color: var(--ink-faint); font-size: 12.5px; marg
    on the phone header a fortnight ago. The pendulum wordmark has no span and
    no class here, so none of this touches it. */
 h1.coin-title { gap: 0.12em; }
-.title-word { display: inline-block; transform: translateY(0.2em); }
+.title-word { display: inline-block; transform: translateY(0.26em); }
 
 /* The standfirst follows the title down. Only on the coin page: the cradle
    sits on the text baseline and needs no correction, while the coin stack hangs

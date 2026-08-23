@@ -241,6 +241,67 @@ def deep() -> list[dict]:
     return out
 
 
+def mark_imputed_twins(countries: dict) -> int:
+    """Flag countries whose modern series is a regional curve, not their own.
+
+    WID has no wealth survey for most microstates, so it imputes them from a
+    regional group. The result is that Anguilla, Antigua, Barbados, Grenada,
+    Montserrat and ten other Caribbean entries carry the SAME curve to within a
+    hundredth of a percentage point, and the page happily offered each of them
+    in the country picker as though it were that country's own measurement.
+
+    Detected rather than hand-listed, because a hand-list goes stale the next
+    time WID extends its coverage. Two countries are twinned when their annual
+    top-decile series never differ by more than half a point over at least
+    twenty shared years. That threshold is where the data actually separates:
+    the tightest genuine coincidence in the file is Australia against
+    Montenegro at 0.78 points, and every pair below 0.5 falls into one of six
+    obvious geographic blocks. Groups are transitive, so a block is found whole.
+
+    Nothing is dropped. The quartile band keeps them, because taking them out
+    moves the median by at most 1.1 points and usually under 0.6, and dropping
+    real published figures to tidy a chart is worse than carrying them. The
+    flag exists so the page can say what a reader is looking at when they pick
+    one.
+    """
+    ser = {i: dict(c["modern"].get("top10") or []) for i, c in countries.items()}
+    ser = {i: v for i, v in ser.items() if len(v) > 20}
+    isos = sorted(ser)
+
+    parent = {i: i for i in isos}
+
+    def find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    for ai, a in enumerate(isos):
+        for b in isos[ai + 1:]:
+            shared = set(ser[a]) & set(ser[b])
+            if len(shared) < 20:
+                continue
+            if max(abs(ser[a][y] - ser[b][y]) for y in shared) <= 0.5:
+                ra, rb = find(a), find(b)
+                if ra != rb:
+                    parent[ra] = rb
+
+    groups: dict[str, list[str]] = {}
+    for i in isos:
+        groups.setdefault(find(i), []).append(i)
+
+    flagged = 0
+    for members in groups.values():
+        if len(members) < 2:
+            continue
+        names = sorted(countries[i]["label"] for i in members)
+        for i in members:
+            others = [n for n in names if n != countries[i]["label"]]
+            countries[i]["twin_of"] = others
+            flagged += 1
+    return flagged
+
+
 def industrial_provenance() -> dict:
     """How the decadal estimates were actually arrived at.
 
@@ -343,8 +404,11 @@ def main() -> int:
              + [y for c in ctry.values() for l in ("industrial", "modern")
                 for m in c[l] for y, _ in c[l][m]])
 
+    twinned = mark_imputed_twins(ctry)
+
     payload = {
         "meta": {
+            "twinned": twinned,
             "layers": layers(),
             "industrial_provenance": industrial_provenance(),
             "sources": SOURCES,
@@ -369,6 +433,7 @@ def main() -> int:
         if key == "modern":
             n = sum(1 for c in ctry.values() if c["modern"]["top10"])
         print(f"  layer {key:14s} {n}")
+    print(f"  {twinned} countries share an imputed regional series")
     return 0
 
 
