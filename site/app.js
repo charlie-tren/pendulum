@@ -61,6 +61,12 @@ const svgEl = (name, attrs = {}) => {
   return node;
 };
 const pct = (v) => (v == null ? "n/a" : `${(v * 100).toFixed(v * 100 < 10 ? 1 : 0)}%`);
+/* An axis tick is not a readout. `pct` keeps a decimal below 10% because 0.4% of the
+   world's people is a real quantity worth showing, but on an axis that rule printed
+   "0.0%" beside "50%" and "100%" - one decimal place on the zero and none on anything
+   else, in the same column of labels. The unary + drops a trailing .0 and leaves a
+   genuine fraction alone, so a 12.5% tick still reads 12.5%. */
+const pctTick = (v) => (v == null ? "n/a" : `${+(v * 100).toFixed(1)}%`);
 const sum = (obj) => Object.values(obj || {}).reduce((a, b) => a + b, 0);
 
 /* Some palette entries carry a colour_dark. The pale greys in particular were
@@ -161,7 +167,7 @@ function scales(series, box, pad) {
   };
 }
 
-function axes(svg, s, { ticks = [0, 0.5, 1], fmt = pct, step = 10 } = {}) {
+function axes(svg, s, { ticks = [0, 0.5, 1], fmt = pctTick, step = 10 } = {}) {
   for (const v of ticks) {
     // ticks may be on a data scale rather than 0..1, so normalise to plot space
     const at = v / (ticks[ticks.length - 1] || 1);
