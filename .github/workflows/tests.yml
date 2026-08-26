@@ -1,0 +1,28 @@
+name: Tests
+
+# Pendulum had 40 tests and no workflow at all, so they only ran when somebody
+# remembered to type the command. The suite guards the things a data change can
+# break silently: bands that stop summing to one, a moving average that starts
+# peeking at the future, the DPI/Wikidata handover inventing a swing.
+#
+# Five of the 40 read data/raw/, which is gitignored - 10.7MB of redownloadable
+# third-party files that do not belong in the tree. Those skip here rather than
+# fail, and -rs prints which ones, so a green run says "35 passed, 5 skipped"
+# instead of quietly claiming the full suite.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+      - run: pip install pytest
+      - run: python -m pytest tests -q -rs

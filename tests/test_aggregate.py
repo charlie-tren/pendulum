@@ -28,6 +28,18 @@ SPECTRUM = [f"f{i}" for i in range(7)] + ["uncovered"]
 TOL = 2e-3          # shares are rounded to 4dp before they are written out
 
 
+# data/raw/ holds the third-party downloads and is gitignored: 10.7MB of DPI, V-Party
+# and UN population files that are redownloadable and do not belong in the tree. The
+# five tests below read them directly, so on a clean checkout - CI included - they
+# skip rather than fail, and the run reports 35 passed and 5 skipped rather than
+# claiming coverage it did not have. Rebuild the raw set with scripts/fetch_raw.py
+# to run them locally.
+def needs_raw(*names):
+    missing = [n for n in names if not (ROOT / "data" / "raw" / n).exists()]
+    return pytest.mark.skipif(
+        bool(missing), reason=f"data/raw/ not present: {', '.join(missing)}")
+
+
 def groups():
     return DATA["groups"].items()
 
@@ -128,6 +140,7 @@ def test_population_weight_is_per_year_not_fixed():
     assert totals[2025] / totals[1975] > 1.9, "world population barely moved: weights look fixed"
 
 
+@needs_raw("pop_proj.csv")
 def test_world_weight_is_close_to_actual_world_population():
     """A large shortfall means countries are missing from the aggregate
     entirely, which is worse than them showing as unresolved."""
@@ -157,6 +170,7 @@ def test_map_series_covers_the_same_years_as_the_charts():
         assert len(codes) == span, f"{iso} has {len(codes)} codes for {span} years"
 
 
+@needs_raw("dpi2023.csv")
 def test_hand_coded_rows_do_not_contradict_dpi():
     """The seam guard: a hand-coded row must not disagree with DPI about a party
     DPI itself codes and that never left office."""
@@ -164,6 +178,7 @@ def test_hand_coded_rows_do_not_contradict_dpi():
     assert audit_hand_coded.main() == 0
 
 
+@needs_raw("dpi2023.csv")
 def test_no_duplicate_country_years():
     """Seeding a country that already exists for some years would double-count
     it in every weighted total."""
@@ -181,6 +196,7 @@ def test_no_duplicate_country_years():
         seen.add(key)
 
 
+@needs_raw("dpi2023.csv")
 def test_no_phantom_swing_at_the_dpi_handover():
     """A government that did not change must not change position at the seam.
 
@@ -228,6 +244,7 @@ def test_no_phantom_swing_at_the_dpi_handover():
     assert not offenders, f"Wikidata overrode DPI on a term DPI already judged: {offenders[:5]}"
 
 
+@needs_raw("vparty.RData")
 def test_vparty_ratings_start_the_year_after_the_election():
     """V-Party is keyed on the election; the winner does not govern on 1 January
     of the election year.
