@@ -460,6 +460,12 @@ footer .terms { display: block; color: var(--ink-faint); font-size: 12.5px; marg
   padding: 6px 10px; border-radius: 7px;
 }
 .topnav > a:hover { background: var(--panel); color: var(--ink); }
+/* A miniature of the OTHER project's mark beside its link, so the pair is
+   recognisable from either side. Not a scaled wordmark: at nav size the
+   cradle's rods are a third of a pixel and the coin stack's thirteen bodies
+   are sub-pixel bands, which is the same reason the favicon is one coin. Both
+   marks are redrawn with nothing thinner than about a pixel. */
+.topnav .navmark { height: 1.05em; width: auto; flex: none; margin-right: 5px; }
 .topnav > a + a { margin-right: -8px; }
 /* A real element, not ::after on the first link. As a pseudo-element it was
    part of that anchor's box, so hovering the divider highlighted the link next
@@ -608,6 +614,7 @@ h1:hover .coins .s-gold, h1:focus-within .coins .s-gold { animation-delay: .24s;
    the tightest of the four combinations. */
 @media (max-width: 380px) {
   .topnav > a { font-size: 11px; padding: 4px 3px; }
+  .topnav .navmark { margin-right: 3px; }
   .topnav .sep { margin: 0 2px; }
   .mark.coins { height: 1.1em; }
   h1 { gap: 5px; }
