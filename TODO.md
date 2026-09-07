@@ -254,6 +254,13 @@ That is development and party-system age, not politics.
 Scripts are in the session scratchpad, not the repo.
 
 
+- **One `estimi` survives, in the SOURCES list.** "Town-level wealth Ginis and
+  deciles from the estimi", `data/out/wealth.json` -> `meta.sources`. The
+  05/09/2026 pass removed "estimo" from all 87 Piedmont data points because he
+  said the word seemed off, but left this one: it is the proper name of the
+  registers, inside a citation, and the layer beside it is already labelled "Tax
+  registers". Flagged to him and he did not rule either way. Defensible as it
+  stands; "from the town tax registers" if he wants it gone.
 - Regime type (democracy/autocracy) as a *second* axis crossed with ideology -
   "how many people live under right-wing autocracies" is a better question than
   either axis alone. Parked only because it doubles the build.
