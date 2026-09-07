@@ -668,9 +668,9 @@ function drawEras() {
           if (dp && Math.abs(dp.year - yr) <= 8) {
             bits.push(`<div class="row grp"><span>${dp.n} countries</span>` +
                       `<span></span></div>`,
-              `<div class="row"><span>median</span>` +
+              `<div class="row"><span><i class="sw dash"></i>median</span>` +
               `<span>${fmt(dp.p50)}</span></div>`,
-              `<div class="row"><span>range</span>` +
+              `<div class="row"><span><i class="sw band"></i>interquartile range</span>` +
               `<span>${fmt(dp.p25)} to ${fmt(dp.p75)}</span></div>`);
           }
         }

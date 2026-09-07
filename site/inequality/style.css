@@ -203,6 +203,13 @@ svg { display: block; width: 100%; height: auto; }
 /* A group header inside a readout: names the population the rows below
    summarise, so "median" and "range" have something to be of. */
 .readout .row.grp { color: var(--ink-faint); margin-top: 5px; }
+/* Each swatch is drawn the way its mark is drawn on the chart: the country line
+   solid in its own colour, the median as the dashed rule it is, the quartile
+   band as the pale fill it is. Three rows of numbers with one swatch between
+   them left two of the three pointing at nothing. */
+.readout .row i.dash { width: 11px; height: 0; border-radius: 0; border-top: 2px dashed var(--w-mid);
+  background: none; vertical-align: middle; margin-bottom: 1px; }
+.readout .row i.band { background: var(--w-mid); opacity: 0.32; }
 .readout .prov { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--rule); color: var(--ink-faint); font-size: 12px; }
 
 /* ---- notes ---- */
