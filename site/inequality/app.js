@@ -666,8 +666,8 @@ function drawEras() {
              changes year to year, which is why the band wobbles. Showing n is
              the only place a reader can see that happening. */
           if (dp && Math.abs(dp.year - yr) <= 8) {
-            bits.push(`<div class="row grp"><span>${dp.n} countries</span>` +
-                      `<span></span></div>`,
+            bits.push(`<div class="row grp"><span>all countries</span>` +
+                      `<span>${dp.n}</span></div>`,
               `<div class="row"><span><i class="sw dash"></i>median</span>` +
               `<span>${fmt(dp.p50)}</span></div>`,
               `<div class="row"><span><i class="sw band"></i>interquartile range</span>` +
