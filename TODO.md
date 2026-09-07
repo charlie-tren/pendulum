@@ -2,18 +2,20 @@
 
 ## Needs Charlie
 
-Six open. D5, D6, D10 and S6 are parked on a decision or a free account, not on
-work. D7 is real unbuilt scope. V6 is live copy he has already rejected, so it
-is the one worth doing first.
+Seven open. D5, D6, D10 and S6 are parked on a decision or a free account, not
+on work. D7 and D11 are real unbuilt scope. V6 is live copy he has already
+rejected, so it is the one worth doing first.
 
 - [ ] **D5. Manifesto Project.** Needs a free account for the API key, which is
       not mine to create. Register at https://manifesto-project.wzb.eu and I
       will wire it in. It would give a continuous left-right axis back to 1945
       for the 67 countries it covers, which is a better spine for the older
       decades than anything currently in use.
-- [ ] **D6. CHES.** Data is downloaded and sitting in `data/raw/ches_trend.csv`
-      (1999-2024, seven waves, 28 countries, with `lrgen` and `galtan`), but I
-      stopped short of building it. It covers a tenth of world population and
+- [ ] **D6. CHES.** 1999-2024, seven waves, 28 countries, with `lrgen` and
+      `galtan`. A previous version of this entry said the file was "downloaded
+      and sitting in `data/raw/ches_trend.csv`". It is not: on 07/09/2026
+      `data/raw/` did not exist at all (see D11). Re-download before costing
+      this. I stopped short of building it. It covers a tenth of world population and
       does not say which party governs, so it is a Europe-only second axis
       rather than a data fill. Your call whether that is worth having.
 - [ ] **D7. Subnational: Australia, the United States, Germany** (asked
@@ -70,6 +72,26 @@ is the one worth doing first.
       moment the file exists at `data/raw/wealth/gini_project.csv`.
       **Needs Charlie:** tDAR requires a free account, which is not mine to
       create. https://core.tdar.org/project/496853
+
+- [ ] **D11. `data/raw/` is empty, so nothing in the pipeline can rebuild.**
+      Found 07/09/2026: the directory did not exist. `data/raw/` is gitignored
+      by design, but there is no fetch script for most of what goes in it, so
+      the repo cannot reproduce its own outputs on a fresh machine. This is
+      what actually blocked `python scripts/build_wealth.py` on 05/09
+      (`ValueError: min() iterable argument is empty`) - it was read as a
+      missing tDAR account, but the fetch layer is the real hole.
+      Inventory of what `build_index.py` and `build_wealth.py` expect:
+      `dpi2023.csv`, `population.csv`, `continents.csv`, `vparty.RData`,
+      `ches_trend.csv`, `wealth/*`. Only `fetch_owid.py` and `fetch_wealth.py`
+      exist.
+      **One is already solved:** `vparty.RData` is mirrored in the `vdemdata`
+      R package and needs no form and no CAPTCHA, unlike the v-dem.net download
+      page. It is 3.3MB at
+      `https://raw.githubusercontent.com/vdeminstitute/vdemdata/master/data/vparty.RData`
+      and I pulled it on 07/09/2026, so `data/raw/vparty.RData` is present on
+      this machine but not reproducible. `scripts/fetch_vparty.py` is about an
+      hour and would fix that permanently. Reading it needs `pyreadr`, which is
+      now installed here.
 
 - [ ] **S6. Decide whether `charlie-tren/pendulum` goes public.** The footer on
       both pages said "Built from open data. Code and data." and linked to this
@@ -184,6 +206,53 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
 - [x] S5. Linked from the Sources panel.
 
 ## Parked
+
+### DECLINED 07/09/2026: a populism-vs-inequality chart
+
+Asked for on 05/09 ("plotting inequality against rise of populist parties in a
+few key countries"), scoped on 07/09, and declined the same day: *"nah won't
+build this"*. **This is a decision, not a backlog item. Do not re-pitch it.**
+
+What was measured, so nobody has to measure it twice. V-Party's `v2xpa_popul`
+against WID top-1% wealth share, 1,218 country-elections, 157 countries,
+1975-2019, median 91% of the vote coded:
+
+| framing | rho | n | SE |
+|---|---|---|---|
+| change on change, dtop1 vs d populist vote between consecutive elections | +0.123 | 953 | 0.032 |
+| the same, demeaned within each 5y period (strips the global trend) | +0.119 | 950 | 0.032 |
+| the same, demeaned within country | +0.093 | 910 | 0.033 |
+| top1 8y earlier vs the governing party's populism | +0.160 | 962 | 0.032 |
+| cross-country levels | +0.094 | 135 | 0.087 |
+| CONTROL, top1 at t vs t+5 | +0.944 | 6,475 | 0.012 |
+
+Positive in every framing, which the left/right version never managed, and it
+survives both period demeaning and country fixed effects. But +0.12 is 1.5% of
+variance, so a scatter of it is a round cloud - it fails the same test that cost
+Shortfall four rebuilt charts. Per country it does not hold together either:
+France +0.52, Australia +0.51, Poland +0.42 against the USA -0.18 and Greece
+-0.24, and on ten elections each the SE is about 0.35, so none of those is a
+finding on its own.
+
+Two data faults found, which any future attempt inherits:
+
+- **A populism threshold makes two-party countries a step function.** Counting
+  the vote for parties scoring >= 0.50 gives the USA 0% until 2018, when the
+  Republicans tick 0.40 -> 0.54 and it jumps to 46%. That artefact is the entire
+  US -0.18. Vote-weighted mean populism avoids it.
+- **Coalition rows lose their vote.** Hungary reads 0% populist for the whole
+  series: Fidesz scores 0.83 but its vote sits on a `Fidesz-KDNP` row whose
+  populism is NaN. Every joint-list country is hit.
+
+Also measured and also not chart material: mean top-1% share against how often
+the governing lean changes, rho -0.262 on 161 countries (SE 0.080, so 3.3 SE and
+the only cross-country result in any framing that clears noise). It survives
+dropping the 26 countries that never change lean, but the ranking is South
+Africa, Namibia, Mozambique at one end and Finland, Denmark, Italy at the other.
+That is development and party-system age, not politics.
+
+Scripts are in the session scratchpad, not the repo.
+
 
 - Regime type (democracy/autocracy) as a *second* axis crossed with ideology -
   "how many people live under right-wing autocracies" is a better question than
