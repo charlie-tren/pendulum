@@ -652,14 +652,25 @@ function drawEras() {
         for (const src of series) {
           const sp = near(src.sel, (p) => p[0]);
           const dp = near(src.dist, (d) => d.year);
+          /* The selected country carries a swatch in the line's own colour.
+             Without it the row read as just another number: the readout showed
+             "United States 0.83" above "middle country 0.72" and nothing said
+             which of the two lines on the chart either one was. */
           if (sp && Math.abs(sp[0] - yr) <= 8) {
-            bits.push(`<div class="row"><span>${label}</span>` +
+            bits.push(`<div class="row"><span><i class="sw" style="background:var(--w-pick)"></i>${label}</span>` +
                       `<span>${fmt(sp[1])}</span></div>`);
           }
+          /* Name the POPULATION before summarising it. "middle country" and
+             "middle half" never said what the middle was of - the band is a
+             spread across the countries reporting that year, and that set
+             changes year to year, which is why the band wobbles. Showing n is
+             the only place a reader can see that happening. */
           if (dp && Math.abs(dp.year - yr) <= 8) {
-            bits.push(`<div class="row"><span>middle country</span>` +
-                      `<span>${fmt(dp.p50)}</span></div>`,
-              `<div class="row"><span>middle half</span>` +
+            bits.push(`<div class="row grp"><span>${dp.n} countries</span>` +
+                      `<span></span></div>`,
+              `<div class="row"><span>median</span>` +
+              `<span>${fmt(dp.p50)}</span></div>`,
+              `<div class="row"><span>range</span>` +
               `<span>${fmt(dp.p25)} to ${fmt(dp.p75)}</span></div>`);
           }
         }

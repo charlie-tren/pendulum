@@ -95,7 +95,7 @@ def places() -> list[dict]:
             "year": int(year), "gini": gini,
             "top10": num(r.get("D10")), "top1": num(r.get("Top1%")),
             "n": num(r.get("N.Cases (households)")),
-            "basis": "estimo, the town property-tax register",
+            "basis": "town property-tax register",
         })
     return [p for p in out if p["place"]]
 

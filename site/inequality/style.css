@@ -200,6 +200,9 @@ svg { display: block; width: 100%; height: auto; }
 .readout b { display: block; font-size: 15px; margin-bottom: 4px; }
 .readout .row { display: flex; justify-content: space-between; gap: 14px; }
 .readout .row i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; margin-right: 6px; }
+/* A group header inside a readout: names the population the rows below
+   summarise, so "median" and "range" have something to be of. */
+.readout .row.grp { color: var(--ink-faint); margin-top: 5px; }
 .readout .prov { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--rule); color: var(--ink-faint); font-size: 12px; }
 
 /* ---- notes ---- */
