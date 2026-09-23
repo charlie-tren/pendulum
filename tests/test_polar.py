@@ -174,3 +174,63 @@ def test_society_reaches_past_the_party_data():
                        for rows in axes.values() for r in rows)
     assert last_party <= 2019, last_party
     assert last_society >= 2024, last_society
+
+
+# ---- the copy, checked against the data it describes -----------------------
+# These read the page, not a transcription of it. The recurring failure on these
+# pages is not wrong arithmetic, it is a sentence that was true when it was
+# written and quietly stopped being true, so the claims live here.
+
+PAGE = (ROOT / "site" / "polarisation" / "index.html").read_text(encoding="utf-8")
+
+
+def test_no_country_count_is_typed_into_the_copy():
+    """Every count on the page is read off the payload at render time. A typed
+    one goes stale the next time V-Dem extends coverage, and nothing would say
+    so: the page would simply be wrong by one or two countries for ever."""
+    import re
+    for pat in (r"middle half of (\d+)", r"(\d{3}) countries"):
+        hit = re.search(pat, PAGE)
+        assert hit is None, f"hardcoded count in the page copy: {hit.group(0)!r}"
+
+
+def test_the_share_title_names_a_period_the_data_supports():
+    """og:title claims the world is about as divided as it was in the
+    mid-1970s. It said 1978 first, which was twice as far from today's median as
+    1974 and 1975 are, so the claim was picking a year for sounding precise."""
+    import re
+    med = {r[0]: r[P50] for r in P["bands"]["society"]["camps"]}
+    now = med[max(med)]
+    claimed = re.search(r'og:title" content="([^"]+)"', PAGE).group(1)
+    assert "mid-1970s" in claimed, claimed
+    window = [v for y, v in med.items() if 1974 <= y <= 1976]
+    assert window, "no mid-1970s data"
+    gap = abs(now - sum(window) / len(window))
+    assert gap < 0.25, (
+        f"today's median {now:.2f} is {gap:.2f} from the mid-1970s, too far to "
+        "call them about the same on a 0 to 4 scale")
+
+
+def test_the_method_does_not_overstate_the_vote_coverage():
+    """The floor is 70% of the vote V-PARTY LISTS, and V-Party lists a median of
+    91% of the vote cast, not all of it. Saying '70% of the vote' claims the
+    stricter of the two, so the sentence has to name which one it means."""
+    assert "70% of the vote" in PAGE
+    assert "V-Party lists" in PAGE, (
+        "the method says '70% of the vote' without saying 70% of WHICH vote")
+
+
+def test_every_source_date_range_matches_the_data_behind_it():
+    """Three sources, three spans, all quoted in the sources list."""
+    spans = {
+        "party": (1970, 2019),
+        "europe": (1999, 2024),
+        "society": (1900, 2025),
+    }
+    for layer, (lo, hi) in spans.items():
+        years = [r[0] for c in P[layer].values() for rows in c.values() for r in rows]
+        assert min(years) == lo and max(years) == hi, (
+            f"{layer} runs {min(years)}-{max(years)}, the sources say {lo}-{hi}")
+        for n in (lo, hi):
+            assert str(n) in json.dumps(P["meta"]["sources"]), (
+                f"{n} is not quoted in any source's role text")

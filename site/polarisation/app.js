@@ -349,6 +349,18 @@ function drawFan(svgId, readoutId, legendId, layer, styles, baseFrom, baseTo,
     pts: smooth(axisIndex(layer, k, baseFrom, baseTo), 0.05),
   })).filter((s) => s.pts.length > 1);
   if (!series.length) return;
+  /* ORDERED BY WHERE THE LINE ENDS UP, most divergence first, so the column
+     down the right of the chart reads as the ranking it looks like and the eye
+     can go from the top line straight to the top entry.
+
+     Shown entries first, though. Sorting purely by divergence put political
+     violence and anti-pluralism at the top of the key while neither was drawn:
+     both start from a very small base, so their index against the 1970s is the
+     highest on the page, and the first two things a reader met were greyed out.
+     The hidden ones keep the same ordering, below. */
+  const rank = (x) => x.pts[x.pts.length - 1][1];
+  series.sort((a, b) =>
+    (on.has(b.key) - on.has(a.key)) || (rank(b) - rank(a)));
 
   /* THE KEY IS BUILT BEFORE THE CHART IS MEASURED, and the order matters now
      that the key sits beside the chart rather than above it. boxFor reads the
@@ -395,7 +407,7 @@ function drawFan(svgId, readoutId, legendId, layer, styles, baseFrom, baseTo,
   }
   const { xOf, yOf } = axisFrame(svg, box, pad, x0, x1, lo, hi,
     ticks, narrow ? 20 : 10,
-    "Distance between parties, 1970s = 1", "Election year");
+    "Distance between parties, 1970s = 1", "Year");
 
   // the baseline: 1.0 is "exactly where it was", and it is the whole reference
   svg.appendChild(svgEl("line", {
