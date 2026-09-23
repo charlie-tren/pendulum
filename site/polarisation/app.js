@@ -291,7 +291,7 @@ function drawCamps() {
      V-Dem extends coverage, and a sentence that quotes a number the build
      already knows is a copy waiting to go stale. */
   $("#camps-sub").textContent =
-    `V-Dem asks country experts whether supporters of opposing camps still `
+    `V-Dem asks country experts whether people who back opposing parties still `
     + `interact in a friendly way outside politics: at family functions, in `
     + `civic associations, at work. 0 is friendly, 4 is hostile. The band `
     + `covers the middle half of ${last[8]} countries.`;
@@ -300,8 +300,8 @@ function drawCamps() {
               + "country.");
 
   $("#legend-camps").innerHTML =
-    `<span class="explained" tabindex="0" title="The middle half of countries: a quarter sit above this band and a quarter below."><i style="background:var(--p-band)"></i>Middle half</span>`
-    + `<span class="explained" tabindex="0" title="Half the countries sit above this line and half below it."><i class="dash"></i>Median</span>`
+    `<span><i style="background:var(--p-band)"></i>Middle half</span>`
+    + `<span><i class="dash"></i>Median</span>`
     + (state.country === ALL ? ""
         : `<span><i style="background:var(--p-pick)"></i>${state.country}</span>`);
 }
@@ -534,13 +534,15 @@ function renderLayers() {
     + `country, and nothing at all on changes between elections, against a `
     + `control of 0.93. How people vote and how divided they are turn out to be `
     + `close to unrelated, so nothing here averages one with the other.</dd>`;
-  /* The publisher's own sentence and nothing of ours. `role` stays in the
-     payload because the tests check the dates quoted there against the data
-     behind them, but a sources list is a list of sources: what this page does
-     with each one is the rest of the page. */
+  /* Name, publisher, link. Nothing else. Both the publisher's blurb and our
+     own note about what we take from each were tried and both came off: a
+     sources list is read to find out WHERE something came from, and a
+     paragraph under each entry turns a three-item list into a page. `says` and
+     `role` stay in the payload, the second because the tests check the dates
+     quoted there against the data behind them. */
   $("#sources").innerHTML = DATA.meta.sources.map((s) =>
-    `<li><a href="${s.url}" rel="noopener">${s.name}</a>, ${s.publisher}.`
-    + (s.says ? ` <q>${s.says}</q>` : "") + "</li>").join("");
+    `<li><a href="${s.url}" rel="noopener">${s.name}</a>, ${s.publisher}.</li>`)
+    .join("");
 }
 
 function buildPickers() {
