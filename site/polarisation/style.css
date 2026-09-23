@@ -800,7 +800,8 @@ h1:hover .coins .s-gold, h1:focus-within .coins .s-gold { animation-delay: .24s;
 .ranks { display: flex; gap: 40px; margin: 20px 0 2px; flex-wrap: wrap; }
 .rank { flex: 1 1 250px; min-width: 0; }
 .rank h3 { font-size: 15px; font-weight: 700; margin: 0; color: var(--ink); }
-.rank-note { margin: 2px 0 8px; font-size: 13px; color: var(--ink-faint); }
+/* .rank-note is gone from the markup; the heading carries the year. */
+.rank h3 + ol { margin-top: 8px; }
 .rank ol { margin: 0; padding: 0; list-style: none; counter-reset: rank; }
 .rank li { counter-increment: rank; }
 .rank li button {
@@ -854,4 +855,4 @@ main.wrap > .panel + .panel { margin-top: 34px; }
    literal C, which rendered as a replacement box and the letter C at the start
    of every source. */
 .sources q { quotes: "“" "”"; font-style: italic; color: var(--ink-soft); }
-.sources .use { display: block; margin-top: 4px; color: var(--ink-faint); }
+/* .use is gone: the sources list is the publisher's words only. */

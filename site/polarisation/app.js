@@ -501,17 +501,18 @@ function renderRanks() {
       + `srcset="https://flagcdn.com/w80/${iso[n]}.png 2x" `
       + `width="20" height="15" alt="" loading="lazy" decoding="async">`
     : `<span class="flag flag-none" aria-hidden="true"></span>`);
-  const list = (title, note, items) =>
-    `<div class="rank"><h3>${title}</h3><p class="rank-note">${note}</p><ol>`
+  /* No sub-line. The heading already says least or most divided and the sub
+     restated the same scale a second time in the same eyeful; the only thing it
+     carried that the heading did not was the year, so the year moved up. */
+  const list = (title, items) =>
+    `<div class="rank"><h3>${title}</h3><ol>`
     + items.map(([n, v]) =>
         `<li><button type="button" data-country="${n.replace(/"/g, "&quot;")}">`
         + `${flag(n)}<span>${n}</span><b>${fmt2(v)}</b></button></li>`).join("")
     + "</ol></div>";
   el.innerHTML =
-    list("Least divided", `Opposing supporters still get on, ${year}`,
-         vals.slice(0, 5))
-    + list("Most divided", `They mostly do not, ${year}`,
-           vals.slice(-5).reverse());
+    list(`Least divided, ${year}`, vals.slice(0, 5))
+    + list(`Most divided, ${year}`, vals.slice(-5).reverse());
   for (const btn of el.querySelectorAll("[data-country]")) {
     btn.addEventListener("click", () => {
       state.country = btn.dataset.country;
@@ -534,13 +535,13 @@ function renderLayers() {
     + `country, and nothing at all on changes between elections, against a `
     + `control of 0.93. How people vote and how divided they are turn out to be `
     + `close to unrelated, so nothing here averages one with the other.</dd>`;
-  /* The source's own sentence, then ours. Theirs is quoted so a reader can
-     see what the publisher claims for it before reading what this page claims
-     to take from it. */
+  /* The publisher's own sentence and nothing of ours. `role` stays in the
+     payload because the tests check the dates quoted there against the data
+     behind them, but a sources list is a list of sources: what this page does
+     with each one is the rest of the page. */
   $("#sources").innerHTML = DATA.meta.sources.map((s) =>
     `<li><a href="${s.url}" rel="noopener">${s.name}</a>, ${s.publisher}.`
-    + (s.says ? ` <q>${s.says}</q>` : "")
-    + ` <span class="use">${s.role}</span></li>`).join("");
+    + (s.says ? ` <q>${s.says}</q>` : "") + "</li>").join("");
 }
 
 function buildPickers() {
