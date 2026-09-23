@@ -44,7 +44,7 @@
      page: three greys and no reason to look. Indigo for the population, deeper
      indigo for the median, warm amber for whichever country is picked out, so
      the one line the reader chose is the only thing that is not blue. */
-  --p-band: #9aa6cc;   --p-med: #3f4a7a;   --p-pick: #1d6b53;
+  --p-band: #9aa6cc;   --p-med: #3f4a7a;   --p-pick: #b5560f;
   --p-left: #2f6fb2;   --p-right: #c33c3c;
   /* the three layers, for the swatches in the panel that lists them */
   --p-party: #c0522d;  --p-europe: #5d8a6b;  --p-society: #2f6fb2;
@@ -289,7 +289,7 @@ a { color: var(--accent); }
     --p-immig: #d18a63;  --p-lgbt: #b28cbd;  --p-minor: #c4ab68;
     --p-viol: #cc7873;   --p-plur: #6fa99b;  --p-pop: #8f99bd;
     --p-anti: #a8957f;
-    --p-band: #59639a;   --p-med: #aab4dc;   --p-pick: #5ec6a0;
+    --p-band: #59639a;   --p-med: #aab4dc;   --p-pick: #e9924a;
     --p-left: #6ea8e0;   --p-right: #d95555;
     --p-party: #e08055;  --p-europe: #82bd93;  --p-society: #6ea8e0;
     --coin-bronze: #b06a28; --coin-bronze-face: #d98f45; --coin-bronze-edge: #f0b982;
