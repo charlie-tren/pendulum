@@ -27,6 +27,18 @@
      inconsistency: what the eye is judging is contrast against the ground, and
      on a #1a1d22 panel a darker terracotta is a mark you cannot see. */
   --w-median: #8f3f24;
+  /* ---- the polarisation page ----
+     The hues carry the argument. The two axes that did not move are COOL and
+     everything that roughly doubled is WARM, so a reader who takes nothing else
+     from the fan chart still sees that the cool lines are the flat ones. */
+  --p-econ: #2f6fb2;   --p-relig: #6b7f8c;
+  --p-immig: #c0522d;  --p-lgbt: #a8387e;  --p-minor: #c08a3e;
+  --p-viol: #8a2020;   --p-plur: #5d8a6b;  --p-pop: #6b5b95;
+  --p-anti: #495070;
+  --p-pick: #1a1c1f;   --p-band: #d7dce2;
+  --p-left: #2f6fb2;   --p-right: #c33c3c;
+  /* the three layers, for the swatches in the panel that lists them */
+  --p-party: #c0522d;  --p-europe: #5d8a6b;  --p-society: #2f6fb2;
   /* The coin stack. Real metal hex is built for a dark ground: silver #c0c0c0
      and gold #d4af37 both wash out on this near-white page, so the light values
      are the same metals a couple of steps down. */
@@ -245,6 +257,13 @@ a { color: var(--accent); }
     --w-england: #6fa583; --w-piedmont: #c383b6; --w-pick: #6ea8e0;
     --w-region: #8a5313;
     --w-median: #e58f6f;
+    --p-econ: #6ea8e0;   --p-relig: #94a6b3;
+    --p-immig: #e08055;  --p-lgbt: #e07ab5;  --p-minor: #e8c07a;
+    --p-viol: #d95555;   --p-plur: #82bd93;  --p-pop: #a294cf;
+    --p-anti: #8d95bb;
+    --p-pick: #f2f4f7;   --p-band: #343b45;
+    --p-left: #6ea8e0;   --p-right: #d95555;
+    --p-party: #e08055;  --p-europe: #82bd93;  --p-society: #6ea8e0;
     --coin-bronze: #b06a28; --coin-bronze-face: #d98f45; --coin-bronze-edge: #f0b982;
     --coin-silver: #98a2ac; --coin-silver-face: #c6ced7; --coin-silver-edge: #e3e9ef;
     --coin-gold:   #c69a22; --coin-gold-face:   #ecc457; --coin-gold-edge:   #f7e2a4;
@@ -319,12 +338,23 @@ h1 { display: flex; align-items: center; gap: 26px; width: fit-content; }
   header.wrap { padding-top: 14px; }
   h1 { gap: 8px; }
   .mark.coins { height: 1.5em; }
-  /* Level with the title rather than stacked above it. Two links now share the
-     row with the title, so both sides give ground: the nav loses its arrow and
-     some padding, and the title takes the smaller end of its clamp. Without
-     that the nav lands on top of the title at 375px. */
+  /* THE NAV GETS ITS OWN ROW AGAIN, reversing a deliberate earlier choice.
+     With two links it sat level with the title and that was the better layout;
+     a third page makes it impossible rather than tight. Three labelled links
+     plus "Projects" measure 319px at a 390px viewport, so the nav alone is
+     wider than the screen minus its gutters, and the title overlapped it by
+     130px on all three pages. There is no font size that fixes a 319px nav in
+     a 358px content box next to any title at all.
+
+     The alternative, kept here because it is the one that would preserve the
+     old layout: drop the two sibling links to their marks alone and keep only
+     "Projects" as words. That is about 130px and would fit. It is not done
+     because a mark with no label is a guess for anyone who has not already
+     learnt the three marks, and the cost of being wrong is a reader who cannot
+     find the other two pages. */
+  header > .topnav { grid-column: 1 / -1; grid-row: 1; justify-self: start; }
   header > h1 {
-    grid-column: 1; grid-row: 1;
+    grid-column: 1; grid-row: 2;
     /* Measured, not guessed. Two nav links plus the wordmark have to share
        375px, and at the desktop clamp the nav landed on top of the title. This
        is the largest title that still leaves a real gap at 320px. */
@@ -334,12 +364,12 @@ h1 { display: flex; align-items: center; gap: 26px; width: fit-content; }
     font-size: clamp(16px, 5.2vw, 30px);
     padding-right: 10px;
   }
-  .topnav { grid-row: 1; gap: 0; }
+  .topnav { grid-row: 1; gap: 0; margin-bottom: 4px; }
   .topnav > a { font-size: 12.5px; padding: 5px 6px; }
   .topnav .sep { margin: 0 4px; }
   .topnav .back { display: none; }
   .topnav > a { white-space: nowrap; }
-  header > .standfirst { grid-row: 2; }
+  header > .standfirst { grid-row: 3; }
 }
 
 /* ---- regime tabs ----
@@ -569,6 +599,25 @@ h1.coin-title {
    because it is what turned a fifth guess into one adjustment from a known
    position. */
 .title-word { display: inline-block; transform: translateY(0.38em); }
+
+/* ---- the split curve ----
+   The polarisation page's mark, and it is the thing being measured rather than
+   a metaphor for it: a distribution with two humps instead of one. Wider than
+   the other two marks because a bimodal curve needs width to read as bimodal,
+   and it sits ON the text baseline rather than below it, so `.split-title`
+   needs none of the nudging the coin stack does. */
+.mark.humps { height: 0.92em; }
+.humps .hump-l, .humps .hump-r { transform-box: view-box; transform-origin: 32px 40px; }
+h1:hover .humps .hump-l, h1:focus-within .humps .hump-l { animation: split-l 1.7s ease-in-out infinite; }
+h1:hover .humps .hump-r, h1:focus-within .humps .hump-r { animation: split-r 1.7s ease-in-out infinite; }
+@keyframes split-l { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-3px); } }
+@keyframes split-r { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(3px); } }
+@media (prefers-reduced-motion: reduce) {
+  h1:hover .humps .hump-l, h1:hover .humps .hump-r,
+  h1:focus-within .humps .hump-l, h1:focus-within .humps .hump-r { animation: none; }
+}
+h1.split-title { gap: 0.2em; }
+h1.split-title .title-word { transform: none; }
 
 /* More air under the title on a phone, where the standfirst wraps to two lines
    and ran straight into the coins. This has to come AFTER the base rule above:

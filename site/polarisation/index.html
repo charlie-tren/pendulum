@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pendulum: Polarisation</title>
+<meta name="description" content="Whether societies are split into antagonistic camps, 1900 to 2025, and what their parties actually disagree about.">
+<link rel="canonical" href="https://charlietrenorden.com/polarisation/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Charlie Trenorden">
+<meta property="og:title" content="The world is about as divided as it was in 1978.">
+<meta property="og:description" content="Expert ratings of whether society is split into camps, 180 countries, 1900 to 2025. A few countries are the exception, and one of them is the United States.">
+<meta property="og:url" content="https://charlietrenorden.com/polarisation/">
+<meta property="og:image" content="https://charlietrenorden.com/polarisation/og-card.png">
+<meta property="og:image:width" content="2400">
+<meta property="og:image:height" content="1260">
+<meta property="og:image:alt" content="Societal polarisation across 180 countries, 1900 to 2025, showing a fall after the Cold War and a rise since 2010.">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="split.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="split-180.png">
+</head>
+<body class="loading">
+<header class="wrap">
+  <nav class="topnav">
+    <a href="../pendulum/"><svg class="navmark" viewBox="0 0 22 18" aria-hidden="true" focusable="false"><line x1="2.6" y1="3" x2="19.4" y2="3" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><line x1="5.5" y1="3" x2="5.5" y2="11.2" stroke="currentColor" stroke-width="1.2" stroke-opacity=".5"/><line x1="11" y1="3" x2="11" y2="11.2" stroke="currentColor" stroke-width="1.2" stroke-opacity=".5"/><line x1="16.5" y1="3" x2="16.5" y2="11.2" stroke="currentColor" stroke-width="1.2" stroke-opacity=".5"/><circle cx="5.5" cy="14" r="3.1" fill="#2f6fb2"/><circle cx="11" cy="14" r="3.1" fill="#9042d4"/><circle cx="16.5" cy="14" r="3.1" fill="#c33c3c"/></svg>Pendulum</a>
+    <span class="sep" aria-hidden="true"></span>
+    <a href="../inequality/"><svg class="navmark" viewBox="0 0 22 18" aria-hidden="true" focusable="false"><rect x="1.6" y="10.4" width="5.4" height="6.2" rx="1.5" fill="var(--coin-bronze-face)"/><rect x="8.3" y="6.6" width="5.4" height="10" rx="1.5" fill="var(--coin-silver-face)"/><rect x="15" y="1.6" width="5.4" height="15" rx="1.5" fill="var(--coin-gold-face)"/></svg>Inequality</a>
+    <span class="sep" aria-hidden="true"></span>
+    <a class="home" href="https://charlietrenorden.com/"><span class="back" aria-hidden="true">&larr;</span>&nbsp;<span class="lbl-full">Other projects</span><span class="lbl-short">Projects</span></a>
+  </nav>
+  <h1 class="split-title">
+    <svg class="mark humps" viewBox="0 0 64 44" aria-hidden="true" focusable="false">
+      <path class="hump-l" d="M2 40 C 8 40 9 10 17 10 C 25 10 26 40 32 40 Z" fill="var(--p-left)" fill-opacity=".85"/>
+      <path class="hump-r" d="M32 40 C 38 40 39 10 47 10 C 55 10 56 40 62 40 Z" fill="var(--p-right)" fill-opacity=".85"/>
+      <line x1="2" y1="40.6" x2="62" y2="40.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".45"/>
+    </svg><span class="title-word">Polarisation</span></h1>
+  <p class="standfirst">
+    How divided societies are, and what their parties actually disagree about.
+  </p>
+</header>
+
+<main class="wrap">
+  <section class="panel">
+    <h2>Society in Antagonistic Camps</h2>
+    <p class="sub" id="camps-sub"></p>
+    <section class="controls" aria-label="Chart controls">
+      <div class="control">
+        <label for="country-sel">Country</label>
+        <select id="country-sel"></select>
+      </div>
+    </section>
+    <div class="legend" id="legend-camps"></div>
+    <figure class="chart">
+      <svg id="camps" role="img"></svg>
+      <div class="readout" id="camps-readout" hidden></div>
+    </figure>
+    <p class="caption" id="camps-caption"></p>
+  </section>
+
+  <section class="panel">
+    <h2>What the Parties Disagree About</h2>
+    <p class="sub">
+      How far apart the parties stood at each election, weighted by the votes
+      they got, against where that same measure sat in the 1970s.
+    </p>
+    <div class="legend" id="legend-axes"></div>
+    <figure class="chart">
+      <svg id="axes" role="img"></svg>
+      <div class="readout" id="axes-readout" hidden></div>
+    </figure>
+    <p class="caption" id="axes-caption"></p>
+  </section>
+
+  <section class="panel">
+    <h2>The Same Question, a Different Panel</h2>
+    <p class="sub" id="ches-sub"></p>
+    <div class="legend" id="legend-ches"></div>
+    <figure class="chart">
+      <svg id="ches" role="img"></svg>
+      <div class="readout" id="ches-readout" hidden></div>
+    </figure>
+    <p class="caption" id="ches-caption"></p>
+  </section>
+
+  <section class="panel">
+    <h2>Where the Numbers Come From</h2>
+    <dl id="layers" class="layer-list"></dl>
+  </section>
+
+  <section class="panel">
+    <h2>Sources</h2>
+    <ul id="sources" class="sources"></ul>
+  </section>
+  <p class="loading-note">Loading the data.</p>
+</main>
+
+<footer class="wrap">
+  <p class="fine">
+    Built from open data.
+  </p>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
