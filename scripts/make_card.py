@@ -45,9 +45,19 @@ PAGES = {
 }
 
 W, H = 1200, 630
-PAD = 70
+# THE CARD IS 1.91:1 AND NOBODY SHOWS IT AT 1.91:1. Chat clients crop it to
+# whatever their own preview box is: the one Charlie sent back was about 1.5:1
+# and had taken roughly a tenth off each side, clipping the mark at the left
+# edge and the chart at the right. So the content lives in a SAFE COLUMN,
+# centred, and the background fills the rest.
+#
+# 880 of 1200. A centre crop to ratio r keeps H*r pixels of width, so 880
+# survives anything down to 1.40:1 - every common preview box, with room. A
+# full 1:1 crop would still bite, and that is the trade against a card whose
+# chart is too small to read at any size.
+SAFE = 880
 # how tall the lifted chart is allowed to be once it is scaled into the card
-CHART_H = 348
+CHART_H = 372
 BG = "#131519"
 
 
@@ -103,30 +113,36 @@ def lift(site: Path, page: dict) -> dict:
 
 def card_html(bits: dict, page: dict) -> str:
     # scale to the tallest the card can take, but never wider than the column
-    width = min(W - PAD * 2, CHART_H / bits["ratio"])
+    width = min(SAFE, CHART_H / bits["ratio"])
     title, legend = page["title"], page["legend"]
     return f"""<!doctype html><meta charset="utf-8">
 <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400&display=block" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <style>
   body {{ width:{W}px; height:{H}px; background:{BG}; overflow:hidden;
-          margin:0; padding:44px {PAD}px 0; }}
+          margin:0; padding:0; }}
+  .safe {{ width:{SAFE}px; margin:0 auto; padding-top:52px; }}
   /* the header is the page's own, at the card's scale rather than the page's
      clamp, which is tuned for a browser window and not for a 1200px still */
-  {title} {{ font-size:60px; }}
-  .standfirst {{ font-size:29px; max-width:none; }}
+  {title} {{ font-size:54px; }}
+  .standfirst {{ font-size:25px; max-width:none; line-height:1.4; }}
   {legend} {{ margin-top:26px; font-size:16px; }}
   /* the key keeps its colours and loses its affordances: a picture cannot be
      pressed, so the button chrome and the hover underline are noise on it */
   {legend} .key {{ background:none; border:none; padding:0; }}
   {legend} .explained {{ text-decoration:none; border:0; }}
-  .chart {{ width:{width:.0f}px; margin-top:22px; }}
+  /* CENTRED in the safe column, not left-aligned in it. A chart whose ratio
+     makes it narrower than the column leaves the gap on one side, and on a
+     card that gap reads as a crop rather than as margin. */
+  .chart {{ width:{width:.0f}px; margin:20px auto 0; }}
   .chart svg {{ width:100%; height:auto; display:block; }}
 </style>
+<div class="safe">
 {bits["head"]}
 {bits["sf"]}
 {bits["legend"]}
 <div class="chart">{bits["svg"]}</div>
+</div>
 """
 
 
