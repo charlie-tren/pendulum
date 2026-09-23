@@ -44,7 +44,7 @@
     <p class="sub" id="camps-sub"></p>
     <section class="controls" aria-label="Chart controls">
       <div class="control">
-        <label for="country-sel">Country</label>
+        <label for="country-sel">Pick out a country</label>
         <select id="country-sel"></select>
       </div>
     </section>
@@ -81,11 +81,13 @@
       the chart is about change rather than level: the axes are on different
       scales and their raw spreads were never comparable.</p>
     </div>
-    <div class="legend" id="legend-axes"></div>
-    <figure class="chart">
-      <svg id="axes" role="img"></svg>
-      <div class="readout" id="axes-readout" hidden></div>
-    </figure>
+    <div class="chart-row">
+      <figure class="chart">
+        <svg id="axes" role="img"></svg>
+        <div class="readout" id="axes-readout" hidden></div>
+      </figure>
+      <div class="legend legend-side" id="legend-axes"></div>
+    </div>
   </section>
 
 

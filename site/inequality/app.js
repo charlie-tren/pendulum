@@ -1070,8 +1070,15 @@ fetch("data.json")
   .then((r) => { if (!r.ok) throw new Error(`data.json ${r.status}`); return r.json(); })
   .then((d) => {
     DATA = d;
-    readHash(); buildPickers(); renderLayers(); wire(); render();
+    /* THE PANELS ARE UNHIDDEN BEFORE ANYTHING IS DRAWN. `body.loading` sets
+       `display: none` on every panel, so a chart that measures its container
+       while the class is still on measures ZERO and silently falls back to a
+       clamp on the viewport width. Every chart on this page was being drawn at
+       a guessed width rather than its real one, which at 1400px meant a 920
+       viewBox inside an 874 box: the whole drawing scaled down by five per cent
+       and every label with it. */
     document.body.classList.remove("loading");
+    readHash(); buildPickers(); renderLayers(); wire(); render();
   })
   .catch((err) => {
     /* Name which half failed. "Could not load the data" reported for a render

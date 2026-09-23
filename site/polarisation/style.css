@@ -747,3 +747,37 @@ h1:hover .coins .s-gold, h1:focus-within .coins .s-gold { animation-delay: .24s;
   .info { display: inline-flex; align-items: center; margin: 8px 0 0; }
   .method { font-size: 14px; padding-left: 14px; }
 }
+
+/* ---- a key beside the chart rather than above it ----
+   Nine entries across the top wrapped to two rows and pushed the chart down
+   the page, and a wrapped key is read as two groups when it is one list. Down
+   the right it is one column, each entry on its own line, and the chart keeps
+   the height it had.
+
+   The figure carries `min-width: 0` because a flex child defaults to
+   `min-width: auto`, which means it refuses to shrink below its content: the
+   SVG measures its parent, the parent sizes to the SVG, and the pair ratchet
+   each other wider until the row overflows. */
+.chart-row { display: flex; align-items: flex-start; gap: 24px; }
+/* `flex: 1 1 0`, not `1 1 auto`. With an auto basis the figure sizes from its
+   content, the SVG sizes from the figure, and the two define each other: the
+   drawing came out with a 920 viewBox inside a 682 box, so every label was
+   rendered at three quarters of its intended size. A zero basis cuts the
+   circle - the figure takes what the row has left, and the SVG measures that. */
+.chart-row > .chart { flex: 1 1 0; min-width: 0; }
+.legend-side {
+  flex: 0 0 auto; width: 168px;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 11px;
+  margin: 0; padding-top: 6px;
+}
+.legend-side .key { text-align: left; }
+
+/* Under 820 there is not enough width for a chart AND a column of labels, so
+   the key goes back above the chart and wraps as it did before. */
+@media (max-width: 820px) {
+  .chart-row { display: block; }
+  .legend-side {
+    width: auto; flex-direction: row; flex-wrap: wrap;
+    gap: 6px 16px; padding: 0 0 10px;
+  }
+}

@@ -267,7 +267,7 @@ function drawCamps() {
       (!b2 || Math.abs(r[0] - yr) < Math.abs(b2[0] - yr)) ? r : b2, null);
     readout.innerHTML = `<b>${yr}</b>`
       + `<div class="row"><span><i style="background:var(--ink-soft)"></i>`
-      + `middle country</span><span>${fmt2(m[1])}</span></div>`
+      + `median</span><span>${fmt2(m[1])}</span></div>`
       + `<div class="row"><span><i style="background:var(--p-band)"></i>`
       + `middle half</span><span>${fmt2(row[3])} to ${fmt2(row[5])}</span></div>`
       + `<div class="row"><span><i class="faint" style="background:var(--p-band)"></i>`
@@ -297,7 +297,7 @@ function drawCamps() {
     + `civic associations, at work. 0 is friendly, 4 is hostile. The pale band `
     + `is all ${last[8]} countries; the darker one is the middle half.`;
   $("#camps-caption").textContent =
-    `The middle country sits at ${fmt2(z)} today against ${fmt2(a)} in 1978. `
+    `The median sits at ${fmt2(z)} today against ${fmt2(a)} in 1978. `
     + `The rise since 2010 is real, and it is a return to where the Cold War `
     + `left things rather than a new peak.`;
   describe(svg, "Societal polarisation, 1900 to 2025: the full range of "
@@ -307,7 +307,7 @@ function drawCamps() {
   $("#legend-camps").innerHTML =
     `<span class="explained" tabindex="0" title="Every country rated that year, from the least divided to the most."><i class="faint" style="background:var(--p-band)"></i>All ${last[8]} countries</span>`
     + `<span class="explained" tabindex="0" title="The middle half of countries, with the median country dashed through it."><i style="background:var(--p-band)"></i>Middle half</span>`
-    + `<span class="explained" tabindex="0" title="The median country: half are more divided, half are less."><i class="dash"></i>Middle country</span>`
+    + `<span class="explained" tabindex="0" title="Half the countries sit above this line and half below it."><i class="dash"></i>Median</span>`
     + (state.country === ALL ? ""
         : `<span><i style="background:var(--p-pick)"></i>${state.country}</span>`);
 }
@@ -354,6 +354,25 @@ function drawFan(svgId, readoutId, legendId, layer, styles, baseFrom, baseTo,
     pts: smooth(axisIndex(layer, k, baseFrom, baseTo), 0.05),
   })).filter((s) => s.pts.length > 1);
   if (!series.length) return;
+
+  /* THE KEY IS BUILT BEFORE THE CHART IS MEASURED, and the order matters now
+     that the key sits beside the chart rather than above it. boxFor reads the
+     figure's width, the figure is a flex child, and an empty key takes no
+     width: on first paint the figure was the full 920 and the SVG took a 920
+     viewBox, then the key filled, the figure shrank to 682, and the whole
+     drawing was displayed at three quarters of the size its geometry was
+     computed for. Fill the column first and the measurement is the real one. */
+  $(legendId).innerHTML = series.map((s) =>
+    `<button type="button" class="key rule" data-axis="${s.key}" `
+    + `aria-pressed="${on.has(s.key)}">`
+    + `<i style="background:${s.colour}"></i>${s.label}</button>`).join("");
+  for (const btn of $(legendId).querySelectorAll("[data-axis]")) {
+    btn.addEventListener("click", () => {
+      const k = btn.dataset.axis;
+      if (on.has(k)) { if (on.size > 1) on.delete(k); } else on.add(k);
+      render();
+    });
+  }
 
   const shown = series.filter((s) => on.has(s.key));
   const narrow = window.matchMedia("(max-width: 700px)").matches;
@@ -425,17 +444,6 @@ function drawFan(svgId, readoutId, legendId, layer, styles, baseFrom, baseTo,
      block swatch made them read as a row of checkboxes with an off state that
      looked broken rather than unselected. A short rule in the line's own colour
      says what it is, and an entry that is switched off simply fades. */
-  $(legendId).innerHTML = series.map((s) =>
-    `<button type="button" class="key rule" data-axis="${s.key}" `
-    + `aria-pressed="${on.has(s.key)}">`
-    + `<i style="background:${s.colour}"></i>${s.label}</button>`).join("");
-  for (const btn of $(legendId).querySelectorAll("[data-axis]")) {
-    btn.addEventListener("click", () => {
-      const k = btn.dataset.axis;
-      if (on.has(k)) { if (on.size > 1) on.delete(k); } else on.add(k);
-      render();
-    });
-  }
   return series;
 }
 
@@ -475,15 +483,39 @@ function buildPickers() {
     .sort((a, b) => a.localeCompare(b));
   /* "All countries" is not a country: it drops the highlighted line and leaves
      the spread and the median, which is every country at once. */
-  sel.innerHTML = `<option value="${ALL}">All countries</option>`
+  /* "None", not "All countries". Every country is on the chart whatever this
+     is set to - the bands are the whole population and nothing removes them -
+     so an option called "All countries" described the chart rather than the
+     choice, and reading it as "show me all of them" left a reader wondering
+     what the other 175 options did. The control draws ONE line on top of what
+     is already there, and its empty state is no line. */
+  sel.innerHTML = `<option value="${ALL}">None</option>`
     + names.map((c) => `<option value="${c}">${c}</option>`).join("");
   if (state.country !== ALL && !names.includes(state.country)) state.country = ALL;
   sel.value = state.country;
 }
 
+/* One re-render if the drawing disagrees with the box it ended up in.
+
+   Every chart here measures its container and then fills it, which is fine
+   until the act of filling it changes the layout. It does on the party chart:
+   its key is a flex sibling, so the figure's width depends on content that does
+   not exist until the draw runs. The CSS fixes the specific case; this catches
+   the general one, and it runs AT MOST ONCE per render so it cannot oscillate
+   between two widths that each imply the other. */
+let settling = false;
+
 function render() {
   drawCamps();
   drawAxes();
+  if (settling) { settling = false; return; }
+  const off = ["#camps", "#axes"].some((id) => {
+    const svg = $(id);
+    const vb = +(svg.getAttribute("viewBox") || "0 0 0 0").split(" ")[2];
+    const w = svg.parentElement.getBoundingClientRect().width;
+    return vb > 0 && w > 40 && Math.abs(vb - w) > 4;
+  });
+  if (off) { settling = true; render(); }
 }
 
 /* "How is this measured?" as a control rather than a wall of text nobody asked
@@ -515,8 +547,15 @@ fetch("data.json")
   .then((r) => { if (!r.ok) throw new Error(`data.json ${r.status}`); return r.json(); })
   .then((d) => {
     DATA = d;
-    buildPickers(); renderLayers(); wire(); render();
+    /* THE PANELS ARE UNHIDDEN BEFORE ANYTHING IS DRAWN. `body.loading` sets
+       `display: none` on every panel, so a chart that measures its container
+       while the class is still on measures ZERO and silently falls back to a
+       clamp on the viewport width. Every chart on this page was being drawn at
+       a guessed width rather than its real one, which at 1400px meant a 920
+       viewBox inside an 874 box: the whole drawing scaled down by five per cent
+       and every label with it. */
     document.body.classList.remove("loading");
+    buildPickers(); renderLayers(); wire(); render();
   })
   .catch((err) => {
     const stage = DATA ? "draw the charts" : "load the data";
