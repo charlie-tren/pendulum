@@ -129,7 +129,13 @@ function smooth(pairs, band = 0.035) {
   return out;
 }
 
-function axisFrame(svg, box, pad, x0, x1, y0, y1, yticks, xstep) {
+/* `ytitle` and `xtitle` are not optional decoration. Both charts here carry a
+   quantity a reader cannot guess: one is an expert rating on a 0 to 4 scale
+   that exists nowhere else, the other is an index against the 1970s where 1.0
+   means unchanged. Unlabelled, the first looks like a percentage and the second
+   looks like a raw score. */
+function axisFrame(svg, box, pad, x0, x1, y0, y1, yticks, xstep,
+                   ytitle = "", xtitle = "") {
   const xOf = (x) => pad.l + ((x - x0) / (x1 - x0)) * (box.w - pad.l - pad.r);
   const yOf = (y) => pad.t + (1 - (y - y0) / (y1 - y0)) * (box.h - pad.t - pad.b);
   for (const t of yticks) {
@@ -140,7 +146,7 @@ function axisFrame(svg, box, pad, x0, x1, y0, y1, yticks, xstep) {
     }));
     const lab = svgEl("text", {
       x: pad.l - 9, y: (y + 5).toFixed(1), "text-anchor": "end",
-      "font-size": 14, fill: "var(--ink-soft)",
+      "font-size": 16, fill: "var(--ink-soft)",
     });
     /* two decimals only where one would collide: 1.05 and 1.1 both matter on
        the fan chart, and "1.1" against "1.1" twice is worse than a long label */
@@ -156,6 +162,24 @@ function axisFrame(svg, box, pad, x0, x1, y0, y1, yticks, xstep) {
     });
     lab.textContent = `${t}`;
     svg.appendChild(lab);
+  }
+  if (ytitle) {
+    const t = svgEl("text", {
+      x: 0, y: 0, "font-size": 12.5, "font-weight": 600,
+      fill: "var(--ink-soft)", "text-anchor": "middle",
+      transform: `translate(13 ${(pad.t + (box.h - pad.b)) / 2}) rotate(-90)`,
+    });
+    t.textContent = ytitle;
+    svg.appendChild(t);
+  }
+  if (xtitle) {
+    const t = svgEl("text", {
+      x: (pad.l + box.w - pad.r) / 2, y: box.h - 2,
+      "font-size": 12.5, "font-weight": 600,
+      fill: "var(--ink-soft)", "text-anchor": "middle",
+    });
+    t.textContent = xtitle;
+    svg.appendChild(t);
   }
   return { xOf, yOf };
 }
@@ -175,11 +199,12 @@ function drawCamps() {
   const narrow = window.matchMedia("(max-width: 700px)").matches;
   const box = boxFor("#camps", narrow ? 0.72 : 0.42, 260, 420);
   svg.setAttribute("viewBox", `0 0 ${box.w} ${box.h}`);
-  const pad = { l: 42, r: narrow ? 12 : 16, t: 12, b: 38 };
+  const pad = { l: 62, r: narrow ? 12 : 16, t: 12, b: 56 };
 
   const x0 = band[0][0], x1 = band[band.length - 1][0];
   const { xOf, yOf } = axisFrame(svg, box, pad, x0, x1, 0, 4,
-    [0, 1, 2, 3, 4], narrow ? 40 : 20);
+    [0, 1, 2, 3, 4], narrow ? 40 : 20,
+    "How split, 0 to 4", "Year");
 
   /* THREE NESTED BANDS, widest first, so the whole population is on the chart
      and not just its middle. The outer pair is the full range, and in every
@@ -311,7 +336,15 @@ function drawFan(svgId, readoutId, legendId, layer, styles, baseFrom, baseTo,
     key: k, label: labels[k],
     colour: styles[k].colour || styles[k],
     flat: !!styles[k].flat,
-    pts: smooth(axisIndex(layer, k, baseFrom, baseTo), 0.16),
+    /* 0.05, not 0.16. At a sixth of the span the kernel reached eight years
+       either side and turned four decades of elections into four smooth arcs:
+       a reader could see that the cultural lines rise and nothing else. At a
+       twentieth it is about two and a half years, which keeps the decade shape
+       and puts the texture back - the stall in the 1980s, the step around
+       German reunification, the flattening after 2015. The floor at two and a
+       half times the median spacing still stops it drawing noise between
+       sparse observations. */
+    pts: smooth(axisIndex(layer, k, baseFrom, baseTo), 0.05),
   })).filter((s) => s.pts.length > 1);
   if (!series.length) return;
 
@@ -319,7 +352,7 @@ function drawFan(svgId, readoutId, legendId, layer, styles, baseFrom, baseTo,
   const narrow = window.matchMedia("(max-width: 700px)").matches;
   const box = boxFor(svgId, narrow ? 0.72 : 0.4, 250, 400);
   svg.setAttribute("viewBox", `0 0 ${box.w} ${box.h}`);
-  const pad = { l: 46, r: narrow ? 12 : 16, t: 12, b: 38 };
+  const pad = { l: 62, r: narrow ? 12 : 16, t: 12, b: 56 };
 
   const xs = shown.flatMap((s) => s.pts.map((p) => p[0]));
   const ys = shown.flatMap((s) => s.pts.map((p) => p[1]));
@@ -340,7 +373,8 @@ function drawFan(svgId, readoutId, legendId, layer, styles, baseFrom, baseTo,
     ticks.push(Math.round(t * 100) / 100);
   }
   const { xOf, yOf } = axisFrame(svg, box, pad, x0, x1, lo, hi,
-    ticks, narrow ? 20 : 10);
+    ticks, narrow ? 20 : 10,
+    "Distance between parties, 1970s = 1", "Election year");
 
   // the baseline: 1.0 is "exactly where it was", and it is the whole reference
   svg.appendChild(svgEl("line", {

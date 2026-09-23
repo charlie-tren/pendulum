@@ -1,13 +1,13 @@
-"""Build the polarisation page's favicon: two humps, square.
+"""Build the polarisation page's favicon: two arrows leaving, square.
 
 Same lesson as the other two marks. The wordmark is 64x44 and cropped tight, so
 a browser squashes it into a sliver; this redraws it into a square box with its
 own padding and a solid ground.
 
-The humps are FATTER and FURTHER APART than the wordmark's, because at 16 CSS
-pixels the thing that has to survive is the gap between them. A bimodal curve
-whose two peaks merge is just a curve, and a curve is not the idea. The
-coin-stack favicon lost its ridges the same way and ended up a single coin.
+The mark replaces a two-humped curve, which was a picture of the distribution
+being measured and therefore only legible to someone who had already read the
+chart. An arrow needs no such introduction. The two are stacked rather than
+level because a mirror-symmetrical pair reads as one double-headed arrow.
 
     python scripts/make_split_icons.py
 """
@@ -23,36 +23,37 @@ OUT = ROOT / "site" / "polarisation"
 BG = "#131519"
 # the dark-mode blues and reds, which hold up on a dark tile at any size
 LEFT, RIGHT = "#6ea8e0", "#d95555"
-BASE = "#4c545f"
 
 
-def humps(size: int = 100) -> str:
-    """Two peaks and the floor they stand on.
+def arrows(size: int = 100) -> str:
+    """Two arrows leaving each other, one above the other.
 
-    Drawn as cubic curves from the floor up to a peak and back down, so the
-    silhouette is a filled mound rather than an outline: a 1px outline is
-    invisible at favicon size, a filled mass is not.
+    Stacked rather than level, which is what was picked over a level pair: an
+    offset reads as two things departing, where a mirror-symmetrical pair reads
+    as one double-headed arrow. Stroked rather than solid, because a shaft with
+    a chevron head keeps its shape when a favicon is resampled to 16 pixels and
+    a filled triangle turns into a lump.
     """
-    y0, top = 78.0, 24.0
-    gap = 6.0                       # the dead space at the centre, in units
-    mid = size / 2
-    left = (f'<path d="M10 {y0} C 20 {y0} 20 {top} 30 {top} '
-            f'C 40 {top} 40 {y0} {mid - gap / 2} {y0} Z" fill="{LEFT}"/>')
-    right = (f'<path d="M{mid + gap / 2} {y0} C 60 {y0} 60 {top} 70 {top} '
-             f'C 80 {top} 80 {y0} 90 {y0} Z" fill="{RIGHT}"/>')
-    floor = (f'<rect x="10" y="{y0}" width="80" height="6" rx="3" fill="{BASE}"/>')
+    def arrow(x_tail, x_head, y, colour, w=9.0, head=12.0):
+        d = -1 if x_head < x_tail else 1
+        return (f'<g stroke="{colour}" stroke-width="{w}" stroke-linecap="round" '
+                f'stroke-linejoin="round" fill="none">'
+                f'<path d="M{x_tail} {y} H{x_head}"/>'
+                f'<path d="M{x_head - d * head} {y - head} L{x_head} {y} '
+                f'L{x_head - d * head} {y + head}"/></g>')
+
+    art = arrow(58, 16, 34, LEFT) + arrow(42, 84, 66, RIGHT)
     return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {size} {size}">'
-            f'<rect width="{size}" height="{size}" rx="18" fill="{BG}"/>'
-            f"{floor}{left}{right}</svg>")
+            f'<rect width="{size}" height="{size}" rx="18" fill="{BG}"/>{art}</svg>')
 
 
 def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
-    (OUT / "split.svg").write_text(humps(), encoding="utf-8")
+    (OUT / "split.svg").write_text(arrows(), encoding="utf-8")
 
     # iOS masks the icon itself and paints any transparency black, so the touch
     # icon is square-cornered and fully opaque
-    flat = humps().replace(' rx="18"', "", 1)
+    flat = arrows().replace(' rx="18"', "", 1)
     tmp = OUT / "_icon.html"
     tmp.write_text(
         f'<!doctype html><meta charset="utf-8">'
