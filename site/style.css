@@ -671,6 +671,20 @@ h1:hover .coins .s-gold, h1:focus-within .coins .s-gold { animation-delay: .24s;
 .legend .key[aria-pressed="false"] i { background: none !important;
   box-shadow: inset 0 0 0 1.5px var(--ink-faint); }
 
+/* A key entry that stands for a LINE shows a line. The block swatch turned a
+   row of nine into a row of checkboxes, and its off state looked like a broken
+   control rather than an unselected one. Here the rule keeps its colour when
+   the entry is off and the whole entry fades instead, which is what "not shown"
+   should look like. */
+.legend .key.rule { border-bottom: 0; gap: 8px; }
+.legend .key.rule i {
+  width: 18px; height: 3px; border-radius: 2px;
+  box-shadow: none !important;
+}
+.legend .key.rule[aria-pressed="false"] { opacity: .42; }
+.legend .key.rule[aria-pressed="false"] i { background: var(--ink-faint) !important; }
+.legend .key.rule:hover { opacity: 1; color: var(--ink); }
+
 /* Under 380 the wordmark, the sibling link and the projects link no longer fit
    on one row at any size still worth reading, so the nav gives up its last few
    pixels and the mark shrinks. Top level, not nested inside the 640 block: a
@@ -687,32 +701,22 @@ h1:hover .coins .s-gold, h1:focus-within .coins .s-gold { animation-delay: .24s;
 }
 
 /* ---- "how is this measured" ----
-   A question, not an icon. A bare i-in-a-circle is a guess about what is behind
-   it, and the point of this control is that a reader knows whether it answers
-   the doubt they arrived with before spending a click on it. */
+   Third go, and this one is by subtraction. A pill with a circled glyph inside
+   a heading is two pieces of chrome for what is a link, and it competed with
+   the heading it sat beside. It now uses the same dotted underline the key's
+   explained entries already use, so the page has ONE way of saying "there is
+   more behind this" rather than a new one per panel. */
 .info {
-  font: inherit; font-size: 13.5px; font-weight: 400; line-height: 1;
-  margin-left: 12px; padding: 6px 13px 6px 11px;
-  color: var(--ink-soft); background: none;
-  border: 1px solid var(--rule); border-radius: 999px;
-  cursor: pointer; vertical-align: middle; white-space: nowrap;
-  transition: background .12s, border-color .12s, color .12s;
+  font: inherit; font-size: 14px; font-weight: 400;
+  margin-left: 14px; padding: 0; vertical-align: middle;
+  color: var(--ink-faint); background: none; border: 0;
+  border-bottom: 1px dashed var(--rule);
+  cursor: pointer; white-space: nowrap;
 }
-.info::before {
-  content: "?"; display: inline-grid; place-items: center;
-  width: 15px; height: 15px; margin-right: 7px;
-  border-radius: 50%; background: var(--rule); color: var(--ink-soft);
-  font-size: 10.5px; font-weight: 700; vertical-align: -2px;
-}
-.info:hover { background: var(--panel); color: var(--ink); border-color: var(--ink-faint); }
-.info:hover::before { background: var(--ink-faint); color: var(--panel); }
-.info[aria-expanded="true"] { border-color: var(--ink-faint); color: var(--ink); }
-.info[aria-expanded="true"]::before { content: "3"; background: var(--ink-faint); color: var(--panel); }
-.info:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.info:hover { color: var(--ink-soft); border-bottom-color: var(--ink-faint); }
+.info[aria-expanded="true"] { color: var(--ink-soft); border-bottom-color: var(--ink-faint); }
+.info:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
-/* Not a boxed warning: a quiet aside, set in the body serif at a smaller size
-   with a rule down its left edge, the way a footnote reads in print. A panel
-   inside a panel was two borders deep and looked like an error message. */
 .method {
   margin: 12px 0 4px; padding: 2px 0 2px 18px;
   border-left: 3px solid var(--rule);

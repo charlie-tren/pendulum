@@ -197,7 +197,11 @@ function drawCamps() {
 
   const band = DATA.bands.society.camps.filter((r) => r[0] >= 1900);
   const narrow = window.matchMedia("(max-width: 700px)").matches;
-  const box = boxFor("#camps", narrow ? 0.72 : 0.42, 260, 420);
+  /* Taller than the fan below it. This axis is a 0 to 4 rating where a tenth
+     of a point is a real difference between countries, and at 0.42 the whole
+     scale was 170 pixels: the gap between 2 and 3, which is the gap between a
+     country that mostly gets along and one that mostly does not, was 42px. */
+  const box = boxFor("#camps", narrow ? 0.95 : 0.58, 320, 540);
   svg.setAttribute("viewBox", `0 0 ${box.w} ${box.h}`);
   const pad = { l: 62, r: narrow ? 12 : 16, t: 12, b: 56 };
 
@@ -414,10 +418,14 @@ function drawFan(svgId, readoutId, legendId, layer, styles, baseFrom, baseTo,
   svg.appendChild(grab);
   clearOnLeave(svg, readout);
 
+  /* A RULE, not a block. These entries stand for lines on the chart and the
+     block swatch made them read as a row of checkboxes with an off state that
+     looked broken rather than unselected. A short rule in the line's own colour
+     says what it is, and an entry that is switched off simply fades. */
   $(legendId).innerHTML = series.map((s) =>
-    `<button type="button" class="key" data-axis="${s.key}" `
-    + `aria-pressed="${on.has(s.key)}"><i style="background:${s.colour}"></i>`
-    + `${s.label}</button>`).join("");
+    `<button type="button" class="key rule" data-axis="${s.key}" `
+    + `aria-pressed="${on.has(s.key)}">`
+    + `<i style="background:${s.colour}"></i>${s.label}</button>`).join("");
   for (const btn of $(legendId).querySelectorAll("[data-axis]")) {
     btn.addEventListener("click", () => {
       const k = btn.dataset.axis;
@@ -486,6 +494,8 @@ function wireInfo() {
     const open = btn.getAttribute("aria-expanded") === "true";
     btn.setAttribute("aria-expanded", String(!open));
     box.hidden = open;
+    // the label carries the state now that there is no icon to do it
+    btn.textContent = open ? "How is this measured?" : "Hide";
   });
 }
 
