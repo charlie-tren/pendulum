@@ -645,14 +645,45 @@ function renderRanks() {
      start year, which meant the number in the heading and the number in the
      arithmetic were written twice and could part company. `(20y)` is derived
      from the same place the slice is. */
-  const WINDOW = 20;
+  const WINDOW = 20, SMOOTH = 5;
   const to = rows[rows.length - 1][0], from = to - WINDOW;
+
+  /* THE CHANGE IS BETWEEN TWO FIVE-YEAR MEANS, NOT TWO SINGLE YEARS, and that
+     is not tidying: it changed four of the five countries in one of these
+     lists. A single year at each end lets one bad year at either end decide
+     the ranking, and 2005 was an acutely bad year in several places - the
+     Tulip Revolution, the Iraqi insurgency, Nepal's royal coup, the Congolese
+     transition - so every one of them looked like a country that had calmed
+     down when what had really happened was that it had been in crisis on the
+     day the measurement started.
+
+     Kyrgyzstan is the case that showed it. Single years said -1.56, the
+     largest fall on earth. Its 2005 reading of 2.52 is a spike between 2.05
+     and 1.43, and its 2025 reading of 0.96 is a one-year drop from three flat
+     years at 1.96. On trailing five-year means the same country reads +0.18:
+     slightly MORE divided, not the world's great reconciliation.
+
+     Both windows are TRAILING and their midpoints are exactly WINDOW apart, so
+     the heading's "20y" is still the truth. A country needs all ten years or
+     it is not in the list, which costs nothing here: 173 countries have them. */
+  const trail = (d, end) => {
+    let sum = 0;
+    for (let y = end - SMOOTH + 1; y <= end; y += 1) {
+      if (!d.has(y)) return null;
+      sum += d.get(y);
+    }
+    return sum / SMOOTH;
+  };
+
   const level = [], move = [];
   for (const [name, axes] of Object.entries(DATA.society)) {
     const d = new Map(axes.camps || []);
+    /* The LEVEL lists stay on the single latest year, deliberately. A level is
+       a statement about a moment and the heading names that moment; checked
+       against five-year means, four of five hold in each list either way. */
     if (d.has(to)) level.push([name, d.get(to)]);
-    // both ends, or the country is not comparable with itself
-    if (d.has(from) && d.has(to)) move.push([name, d.get(to) - d.get(from)]);
+    const a = trail(d, from), b = trail(d, to);
+    if (a !== null && b !== null) move.push([name, b - a]);
   }
   level.sort((p, q) => p[1] - q[1]);
   move.sort((p, q) => p[1] - q[1]);

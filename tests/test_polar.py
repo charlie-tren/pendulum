@@ -278,6 +278,57 @@ def test_the_twenty_year_window_is_real_for_almost_every_country():
         f"{to - 20} to {to} window")
 
 
+def test_every_change_the_page_prints_survives_moving_the_window():
+    """A number the page states has to be a measurement, not a reading of two
+    particular years.
+
+    It was not. Computed from single years, 2005 to 2025, the biggest fall on
+    earth was Kyrgyzstan at -1.56 - and shifting the window one year turns that
+    into +0.61. Its 2005 was the Tulip Revolution, a spike between 2.05 and
+    1.43, and its 2025 is one year lower than the three flat years before it.
+    On trailing five-year means the same country reads +0.18.
+
+    What is checked is the VALUE, not the membership. A top five cut through a
+    continuum always churns at the boundary and testing that would be fitting a
+    test to today's data. What must not happen is a printed number changing
+    sign, or moving by as much as it claims.
+
+    Measured: on five-year means the worst listed country moves 0.87 across a
+    two-year shift and most move under 0.45. On single years the worst moves
+    2.17, so this fails loudly if anyone puts them back."""
+    soc = {n: dict(a["camps"]) for n, a in P["society"].items() if a.get("camps")}
+    band = P["bands"]["society"]["camps"]
+    to0, window, smooth = band[-1][0], 20, 5
+
+    def change(name, to):
+        d = soc[name]
+
+        def trail(end):
+            v = [d[y] for y in range(end - smooth + 1, end + 1) if y in d]
+            return sum(v) / smooth if len(v) == smooth else None
+
+        a, b = trail(to - window), trail(to)
+        return None if a is None or b is None else b - a
+
+    rows = sorted((c, n) for n in soc if (c := change(n, to0)) is not None)
+    assert len(rows) > 150, f"only {len(rows)} countries have the full window"
+
+    for listed in (rows[:5], rows[-5:]):
+        for base, name in listed:
+            # the window can only slide backwards: there is no data after the
+            # last year, and sliding forward would empty it
+            for shift in (-1, -2):
+                moved = change(name, to0 + shift)
+                assert moved is not None, f"{name} has no {to0 + shift} window"
+                assert (base > 0) == (moved > 0), (
+                    f"{name} is printed as {base:+.2f} and reads {moved:+.2f} "
+                    f"with the window {shift:+d} year: the sign is an artefact "
+                    "of which years the ends landed on")
+                assert abs(base - moved) < 1.0, (
+                    f"{name} is printed as {base:+.2f} and moves "
+                    f"{abs(base - moved):.2f} over {shift:+d} year")
+
+
 def test_the_ranked_lists_rank_something_that_actually_differs():
     """The lists were moved off levels because the hostile end was saturated:
     the five most divided countries sat inside 0.02 of each other on a 0 to 4
