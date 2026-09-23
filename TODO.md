@@ -11,13 +11,19 @@ rejected, so it is the one worth doing first.
       will wire it in. It would give a continuous left-right axis back to 1945
       for the 67 countries it covers, which is a better spine for the older
       decades than anything currently in use.
-- [ ] **D6. CHES.** 1999-2024, seven waves, 28 countries, with `lrgen` and
+- [x] **D6. CHES.** DONE 23/09/2026 - built as the `europe` layer of the
+      polarisation page: 28 countries, all seven waves 1999 to 2024, carrying
+      `lrgen` and `galtan` plus immigration and EU position. It is the
+      independent check on the party layer rather than a data fill, which is
+      what the reservation below was about, and that turned out to be the right
+      job for it.
+      ~~ 1999-2024, seven waves, 28 countries, with `lrgen` and
       `galtan`. A previous version of this entry said the file was "downloaded
       and sitting in `data/raw/ches_trend.csv`". It is not: on 07/09/2026
       `data/raw/` did not exist at all (see D11). Re-download before costing
       this. I stopped short of building it. It covers a tenth of world population and
       does not say which party governs, so it is a Europe-only second axis
-      rather than a data fill. Your call whether that is worth having.
+      rather than a data fill. Your call whether that is worth having.~~
 - [ ] **D7. Subnational: Australia, the United States, Germany** (asked
       2026-08-19). Add a level below the country, so the map and the charts can
       resolve states rather than only national governments. The three named are
@@ -73,7 +79,16 @@ rejected, so it is the one worth doing first.
       **Needs Charlie:** tDAR requires a free account, which is not mine to
       create. https://core.tdar.org/project/496853
 
-- [ ] **D11. `data/raw/` is empty, so nothing in the pipeline can rebuild.**
+- [ ] **D11. `data/raw/` has no fetch script for four of its inputs.**
+      CORRECTED 23/09/2026: the directory is no longer empty - all 15 files
+      are present and `build_polar.py`, `build_index.py` and
+      `build_wealth.py` all run. Three fetch scripts now exist
+      (`fetch_owid.py`, `fetch_polar.py`, `fetch_wealth.py`). What is still
+      true is the reproducibility hole, and it is four files rather than
+      "most": `dpi2023.csv`, `continents.csv`, `ne_110m_countries.geojson`
+      and `wikidata_hog.json` have no fetcher, so a clean machine cannot
+      rebuild the Pendulum page. The original text follows.
+      ~~**D11 as first written.**
       Found 07/09/2026: the directory did not exist. `data/raw/` is gitignored
       by design, but there is no fetch script for most of what goes in it, so
       the repo cannot reproduce its own outputs on a fresh machine. This is
@@ -99,7 +114,10 @@ rejected, so it is the one worth doing first.
       visitor. The link is removed rather than left broken. If the repo goes
       public the link goes straight back; if not, it stays off. Charlie's call.
 
-- [ ] **V6. Pick a standfirst for the inequality page.** Twenty options were
+- [x] **V6. Pick a standfirst for the inequality page.** DONE 23/09/2026 -
+      he chose from a fresh round of twenty and the page now carries "Wealth
+      concentration, from the first villages to the present." The rejected
+      line described below is gone. ~~ Twenty options were
       given on 23/08/2026, grouped by angle. The page currently carries "How
       unevenly wealth has been held, as far back as anything survives to measure
       it.", which he has said he does not like, so this is live copy he has
