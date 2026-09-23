@@ -57,12 +57,23 @@ const AXIS_STYLE = {
   antiplural: { colour: "var(--p-anti)" },
 };
 
-/* Five on, four off. Economics is the one that did not move and has to be
-   there or the chart has no baseline; the other four are the ones that did.
-   Religious principles comes off the default set: it is flat like economics and
-   two flat lines make the same point once. The rest stay in the key for anyone
-   checking that these five were not chosen to flatter the argument. */
-const AXES_ON = new Set(["economy", "immigration", "lgbt", "minorities"]);
+/* THE WORLD VIEW'S DEFAULT IS CHOSEN; A COUNTRY'S IS COMPUTED.
+
+   Across all countries: economics is the one that did not move and has to be
+   there or the chart has no baseline, and the other three are the ones that
+   did. Religious principles comes off: it is flat like economics and two flat
+   lines make the same point once. The rest stay in the key for anyone checking
+   that these were not picked to flatter the argument.
+
+   For ONE country that set is the wrong question. Which issues a country's
+   parties actually pulled apart on is the thing a reader came to find out, and
+   it differs: Australia's top four are immigration and LGBT rights, Poland's
+   are not. So picking a country shows its own top four, taken off the same
+   ranking the key is already sorted by, and the reader's toggles hold until
+   they pick a different country. */
+const WORLD_AXES = ["economy", "immigration", "lgbt", "minorities"];
+const SHOW_PER_COUNTRY = 4;
+let AXES_ON = new Set(WORLD_AXES);
 
 const fmt2 = (v) => v.toFixed(2);
 const pct = (v) => `${v > 0 ? "+" : ""}${Math.round(v * 100)}%`;
@@ -143,9 +154,11 @@ function smooth(pairs, band = 0.035) {
    means unchanged. Unlabelled, the first looks like a percentage and the second
    looks like a raw score. */
 function axisFrame(svg, box, pad, x0, x1, y0, y1, yticks, xstep,
-                   ytitle = "", xtitle = "", ysize = 16) {
+                   ytitle = "", xtitle = "", ysize = 16, logY = false) {
   const xOf = (x) => pad.l + ((x - x0) / (x1 - x0)) * (box.w - pad.l - pad.r);
-  const yOf = (y) => pad.t + (1 - (y - y0) / (y1 - y0)) * (box.h - pad.t - pad.b);
+  const ly = (v) => (logY ? Math.log10(Math.max(v, 1e-6)) : v);
+  const yOf = (y) => pad.t
+    + (1 - (ly(y) - ly(y0)) / (ly(y1) - ly(y0))) * (box.h - pad.t - pad.b);
   for (const t of yticks) {
     const y = yOf(t);
     svg.appendChild(svgEl("line", {
@@ -358,14 +371,75 @@ function baseDecade(layer, country) {
   return yrs.length ? Math.floor(Math.min(...yrs) / 10) * 10 : null;
 }
 
-function indexTo(rows, from, to) {
-  const base = rows.filter((r) => r[0] >= from && r[0] <= to)
+/* ONE SERIES, AND TWO NUMBERS FOR IT. `pts` is what gets drawn, indexed so
+   nine issues on nine scales can share a chart. `move` is how much further
+   apart the parties actually got, in the spread's own units, and it is what
+   the key is ordered on and what the per-country default is chosen by.
+
+   THE RATIO CANNOT DO THAT JOB. A country whose parties agreed almost exactly
+   on something in its baseline decade has a divisor near zero, so any later
+   disagreement at all is an enormous ratio: Sweden's anti-pluralism runs 62x
+   off a base of 0.008 and Germany's political pluralism 45x off 0.011. Ranked
+   on the ratio, 48 of the 145 countries lead with an axis that has barely
+   moved, and the four lines a reader is shown first would be the four
+   measured least reliably. Ranked on the move, the US leads with political
+   violence and Sweden with immigration, which is what each of them is
+   actually about.
+
+   The cost, stated because it is visible: within the four lines drawn, the
+   key's order is not always their order on the chart, since the chart shows
+   ratios and the key ranks moves. */
+/* The bandwidth is 0.05, not 0.16. At a sixth of the span the kernel reached
+   eight years either side and turned four decades of elections into four
+   smooth arcs: a reader could see that the cultural lines rise and nothing
+   else. At a twentieth it is about two and a half years, which keeps the
+   decade shape and puts the texture back - the stall in the 1980s, the step
+   around German reunification, the flattening after 2015. The floor inside
+   `smooth`, at two and a half times the median spacing, still stops it drawing
+   noise between sparse observations. */
+function axisSeries(layer, axis, country, dec, band = 0.05) {
+  const rows = axisRows(layer, axis, country);
+  const base = rows.filter((r) => r[0] >= dec && r[0] <= dec + 9)
     .map((r) => r[1]).sort((a, b) => a - b);
-  if (!base.length) return [];
+  if (!base.length) return null;
   const b = base[Math.floor(base.length / 2)];
   // a spread of zero is a country whose coded parties all sat on one point:
   // there is no ratio to take, and dividing gives a column of Infinity
-  return b > 0 ? rows.map((r) => [r[0], r[1] / b]) : [];
+  if (!(b > 0)) return null;
+  const pts = smooth(rows.map((r) => [r[0], r[1] / b]), band);
+  if (pts.length < 2) return null;
+  return { pts, move: b * (pts[pts.length - 1][1] - 1) };
+}
+
+/* Ticks for a ratio axis: round multiples of a power of ten. The ladder is
+   chosen by trying the densest first and taking the first that does not put
+   more than eight labels down the gutter, so a chart running 1 to 2 gets
+   1, 1.1, 1.2 ... and one running 1 to 1,200 gets 1, 10, 100, 1,000. */
+const LOG_LADDERS = [
+  [1, 1.1, 1.2, 1.3, 1.5, 1.7, 2, 2.5, 3, 4, 5, 7],
+  [1, 1.5, 2, 3, 5, 7],
+  [1, 2, 5],
+  [1, 3],
+  [1],
+];
+
+function logTicks(lo, hi) {
+  const e0 = Math.floor(Math.log10(lo)), e1 = Math.ceil(Math.log10(hi));
+  let best = [];
+  for (const ladder of LOG_LADDERS) {
+    const out = [];
+    for (let e = e0; e <= e1; e += 1) {
+      for (const m of ladder) {
+        const v = m * Math.pow(10, e);
+        if (v >= lo - 1e-9 && v <= hi + 1e-9) {
+          out.push(Math.round(v * 1000) / 1000);
+        }
+      }
+    }
+    best = out;
+    if (out.length <= 8) break;
+  }
+  return best.length >= 2 ? best : [lo, hi].map((v) => Math.round(v * 100) / 100);
 }
 
 function drawFan(svgId, readoutId, legendId, layer, styles, country, dec,
@@ -373,34 +447,24 @@ function drawFan(svgId, readoutId, legendId, layer, styles, country, dec,
   const svg = $(svgId), readout = $(readoutId);
   svg.innerHTML = ""; readout.hidden = true;
 
-  const series = Object.keys(styles).map((k) => ({
-    key: k, label: labels[k],
-    colour: styles[k].colour || styles[k],
-    flat: !!styles[k].flat,
-    /* 0.05, not 0.16. At a sixth of the span the kernel reached eight years
-       either side and turned four decades of elections into four smooth arcs:
-       a reader could see that the cultural lines rise and nothing else. At a
-       twentieth it is about two and a half years, which keeps the decade shape
-       and puts the texture back - the stall in the 1980s, the step around
-       German reunification, the flattening after 2015. The floor at two and a
-       half times the median spacing still stops it drawing noise between
-       sparse observations. */
-    pts: smooth(indexTo(axisRows(layer, k, country), dec, dec + 9), 0.05),
-  })).filter((s) => s.pts.length > 1);
+  const series = Object.keys(styles).map((k) => {
+    const s = axisSeries(layer, k, country, dec, 0.05);
+    return s && {
+      key: k, label: labels[k],
+      colour: styles[k].colour || styles[k],
+      flat: !!styles[k].flat,
+      pts: s.pts, move: s.move,
+    };
+  }).filter(Boolean);
   if (!series.length) return;
-  /* ORDERED BY WHERE THE LINE ENDS UP, most divergence first, so the column
-     down the right of the chart reads as the ranking it looks like and the eye
-     can go from the top line straight to the top entry.
+  /* ORDERED BY HOW FAR THE PARTIES ACTUALLY MOVED APART, most first. See
+     axisSeries for why that is the move rather than the ratio the chart draws.
 
      ONE ORDER, whatever is switched on. Grouping the shown entries first was
      tried and is worse: every toggle reshuffled the column, so the act of
-     turning a line off moved four other labels and the reader lost their place.
-     A key that rearranges itself when you use it is not a key. The cost is that
-     political violence and anti-pluralism sit near the top while off by
-     default, because both start from a very small base and so carry the highest
-     index on the page; that is a true ranking, just not of what is drawn. */
-  series.sort((a, b) =>
-    b.pts[b.pts.length - 1][1] - a.pts[a.pts.length - 1][1]);
+     turning a line off moved four other labels and the reader lost their
+     place. A key that rearranges itself when you use it is not a key. */
+  series.sort((a, b) => b.move - a.move);
 
   /* THE KEY IS BUILT BEFORE THE CHART IS MEASURED, and the order matters now
      that the key sits beside the chart rather than above it. boxFor reads the
@@ -430,41 +494,33 @@ function drawFan(svgId, readoutId, legendId, layer, styles, country, dec,
   const xs = shown.flatMap((s) => s.pts.map((p) => p[0]));
   const ys = shown.flatMap((s) => s.pts.map((p) => p[1]));
   const x0 = Math.min(...xs), x1 = Math.max(...xs);
-  /* THE Y RANGE FITS THE LINES SHOWN, rather than sitting at a fixed 0.5 to
-     2.2. Everything on this chart starts at 1.0 by construction and the flat
-     axes never leave 0.9 to 1.1, so a fixed range spent two thirds of its
-     height on empty space and squashed the whole argument into the middle
-     third: the flat lines and the doubling ones looked much more alike than
-     they are. Padded by a tenth of the span so nothing touches an edge, and
-     the ticks follow the range rather than a fixed list. */
-  const lo0 = Math.min(...ys), hi0 = Math.max(...ys);
-  const padY = Math.max(0.04, (hi0 - lo0) * 0.1);
-  const lo = Math.max(0, lo0 - padY), hi = hi0 + padY;
-  /* A TICK LADDER, not three hardcoded steps. The fixed 0.25 was written when
-     this chart only ever drew the world median, whose range never leaves about
-     0.8 to 2.0. One country can run far past that - Fiji's minority-rights
-     spread reaches 5.5 against its own 1970s - and 0.25 put twenty-three
-     labels down the gutter, which is a grey bar rather than an axis. The
-     ladder takes the coarsest step from 1, 2, 2.5 and 5 in the right decade
-     that still gives about six intervals, which is what the world case had
-     been getting by coincidence. */
-  const raw = Math.max((hi - lo) / 6, 1e-6);
-  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
-  const step = [1, 2, 2.5, 5, 10].map((m) => m * mag)
-    .find((s) => s >= raw - 1e-12) || 10 * mag;
-  const ticks = [];
-  // stepped by INDEX, not by adding step to itself, which accumulates enough
-  // float error over twenty ticks to print 1.7500000000000002
-  for (let k = Math.ceil(lo / step - 1e-9); k * step <= hi + 1e-9; k += 1) {
-    ticks.push(Math.round(k * step * 1000) / 1000);
-  }
+  /* A RATIO AXIS IS A LOG AXIS, and on this chart it has to be. Everything is
+     drawn against its own 1970s level, and 21% of the country-axis baselines
+     in V-Party sit under 0.10 - a country whose parties agreed almost exactly
+     on something fifty years ago - so any disagreement since is an enormous
+     multiple. On a linear axis, 30 of the 145 countries had one line more than
+     three times the height of the next and the rest lay flat along the floor;
+     Mauritania reached 1,238. Those numbers are true, and a linear axis makes
+     them the only thing on the chart.
+
+     On a log axis twice as far apart and half as far apart are the same
+     distance either side of the dotted 1, which is what a ratio means, and
+     nothing is crushed. It barely touches the all-countries view, whose lines
+     live between 0.88 and 2.05: over that range the two scales are almost the
+     same picture.
+
+     THE RANGE STILL FITS THE LINES SHOWN, padded by 6% either way so nothing
+     touches an edge. A fixed range spent most of its height on emptiness. */
+  const lo0 = Math.max(Math.min(...ys), 1e-3), hi0 = Math.max(...ys);
+  const lo = lo0 / 1.06, hi = hi0 * 1.06;
+  const ticks = logTicks(lo, hi);
   const { xOf, yOf } = axisFrame(svg, box, pad, x0, x1, lo, hi,
     ticks, narrow ? 20 : 10,
     /* 13, against the society chart's 16. That one carries five whole numbers
        on a 0 to 4 scale and they are the thing being read; this one carries
        1.25 and 1.75 as well, so the same size crowds the gutter and competes
        with the lines. */
-    `Distance between parties, ${dec}s = 1`, "Year", 13);
+    `Distance between parties, ${dec}s = 1`, "Year", 13, true);
 
   // the baseline: 1.0 is "exactly where it was", and it is the whole reference
   svg.appendChild(svgEl("line", {
@@ -692,7 +748,29 @@ function menuHtml(names, first) {
 }
 
 function setCountry(c) { state.country = c; render(); }
-function setParty(c) { state.party = c; render(); }
+
+/* The lines shown are re-chosen on every change of country, not on every
+   render, so a reader who switches one off keeps it off while they look at
+   that country and gets a fresh four when they move on. */
+function setParty(c) {
+  state.party = c;
+  AXES_ON = c === ALL ? new Set(WORLD_AXES) : topAxes(c, SHOW_PER_COUNTRY);
+  render();
+}
+
+/* The n issues this country's parties moved furthest apart on, by the same
+   measure the key is ordered on, so the default set IS the top of the key
+   rather than a second opinion about it. */
+function topAxes(country, n) {
+  const dec = baseDecade("party", country);
+  if (dec === null) return new Set(WORLD_AXES);
+  const ranked = Object.keys(AXIS_STYLE)
+    .map((k) => [k, axisSeries("party", k, country, dec)])
+    .filter(([, s]) => s)
+    .sort((a, b) => b[1].move - a[1].move);
+  return ranked.length ? new Set(ranked.slice(0, n).map(([k]) => k))
+                       : new Set(WORLD_AXES);
+}
 
 function buildPickers() {
   const names = Object.keys(DATA.society)
