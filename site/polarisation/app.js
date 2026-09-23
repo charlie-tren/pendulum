@@ -229,7 +229,7 @@ function drawCamps() {
   const x0 = band[0][0], x1 = band[band.length - 1][0];
   const { xOf, yOf } = axisFrame(svg, box, pad, x0, x1, 0, 4,
     [0, 1, 2, 3, 4], narrow ? 40 : 20,
-    "Hostility rating", "Year");
+    "Hostility Rating", "Year");
 
   /* THREE NESTED BANDS, widest first, so the whole population is on the chart
      and not just its middle. The outer pair is the full range, and in every
@@ -520,7 +520,7 @@ function drawFan(svgId, readoutId, legendId, layer, styles, country, dec,
        on a 0 to 4 scale and they are the thing being read; this one carries
        1.25 and 1.75 as well, so the same size crowds the gutter and competes
        with the lines. */
-    `Distance between parties, ${dec}s = 1`, "Year", 13, true);
+    `Distance Between Parties, ${dec}s = 1`, "Year", 13, true);
 
   // the baseline: 1.0 is "exactly where it was", and it is the whole reference
   svg.appendChild(svgEl("line", {
@@ -617,9 +617,7 @@ function drawAxes() {
       + `how far apart experts placed those parties at each election, `
     : `Each line is one thing the parties in ${named(c)} argue about. It `
       + `shows how far apart experts placed them at each election, `)
-    + `against how far apart they were in the ${dec}s, which is the dotted `
-    + `line. Anything above it means they have drifted further apart since `
-    + `then.`;
+    + `against how far apart they were in the ${dec}s (dotted line).`;
   describe($("#axes"), `Nine measures of how far apart parties stand`
     + `${c === ALL ? "" : ` in ${named(c)}`}, each against its own level in `
     + `the ${dec}s.`);
