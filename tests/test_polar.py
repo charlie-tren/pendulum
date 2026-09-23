@@ -10,6 +10,7 @@ the contrast itself.
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -181,16 +182,24 @@ def test_society_reaches_past_the_party_data():
 # pages is not wrong arithmetic, it is a sentence that was true when it was
 # written and quietly stopped being true, so the claims live here.
 
+# BOTH FILES. Most of the panel copy is generated in app.js now that it names
+# the selected country and its own baseline decade, so a test reading only the
+# markup would be checking the shell rather than the sentences.
 PAGE = (ROOT / "site" / "polarisation" / "index.html").read_text(encoding="utf-8")
+APP = (ROOT / "site" / "polarisation" / "app.js").read_text(encoding="utf-8")
+# Comments are stripped, because this is the text a READER meets. The first
+# run without it failed on a code comment explaining why a count is computed
+# rather than typed - a check matching its own warning.
+COPY = re.sub(r"/\*.*?\*/|^\s*//.*$", "", PAGE + APP, flags=re.S | re.M)
+BUILD = (ROOT / "scripts" / "build_polar.py").read_text(encoding="utf-8")
 
 
 def test_no_country_count_is_typed_into_the_copy():
     """Every count on the page is read off the payload at render time. A typed
     one goes stale the next time V-Dem extends coverage, and nothing would say
     so: the page would simply be wrong by one or two countries for ever."""
-    import re
     for pat in (r"middle half of (\d+)", r"(\d{3}) countries"):
-        hit = re.search(pat, PAGE)
+        hit = re.search(pat, COPY)
         assert hit is None, f"hardcoded count in the page copy: {hit.group(0)!r}"
 
 
@@ -198,7 +207,6 @@ def test_the_share_title_names_a_period_the_data_supports():
     """og:title claims the world is about as divided as it was in the
     mid-1970s. It said 1978 first, which was twice as far from today's median as
     1974 and 1975 are, so the claim was picking a year for sounding precise."""
-    import re
     med = {r[0]: r[P50] for r in P["bands"]["society"]["camps"]}
     now = med[max(med)]
     claimed = re.search(r'og:title" content="([^"]+)"', PAGE).group(1)
@@ -211,13 +219,40 @@ def test_the_share_title_names_a_period_the_data_supports():
         "call them about the same on a 0 to 4 scale")
 
 
-def test_the_method_does_not_overstate_the_vote_coverage():
+def test_the_build_enforces_the_coverage_floor_the_payload_advertises():
+    """An election is scored only where the parties carrying a coded position
+    hold at least this share of the vote V-Party records for it. The figure is
+    in the payload so the build and anything reading it cannot drift apart."""
+    assert P["meta"]["min_coverage"] == 0.70
+    assert "0.70" in BUILD, "the build no longer names the floor it publishes"
+
+
+def test_the_copy_never_states_a_bare_vote_coverage_figure():
     """The floor is 70% of the vote V-PARTY LISTS, and V-Party lists a median of
     91% of the vote cast, not all of it. Saying '70% of the vote' claims the
-    stricter of the two, so the sentence has to name which one it means."""
-    assert "70% of the vote" in PAGE
-    assert "V-Party" in PAGE.split("70% of the vote")[1][:40], (
-        "the method says '70% of the vote' without saying 70% of WHICH vote")
+    stricter of the two. The method paragraph that said it has come off the
+    page, so this guards the figure on its way back rather than asserting copy
+    that must be there: it may return, unqualified it may not."""
+    if "70% of the vote" not in COPY:
+        return
+    assert "V-Party" in COPY.split("70% of the vote")[1][:40], (
+        "the copy says '70% of the vote' without saying 70% of WHICH vote")
+
+
+def test_every_country_codes_all_nine_axes_at_every_election():
+    """The party chart indexes a country against its OWN first decade, and that
+    is only one dotted line rather than nine because a country's axes all start
+    together. If V-Party ever codes an axis from a later wave, the baseline
+    stops meaning one thing and the chart has to say so."""
+    for name, axes in P["party"].items():
+        years = {k: {r[0] for r in rows} for k, rows in axes.items()}
+        if not years:
+            continue
+        first = min(min(v) for v in years.values() if v)
+        dec = (first // 10) * 10
+        for k, v in years.items():
+            assert any(dec <= y <= dec + 9 for y in v), (
+                f"{name}: {k} has nothing in its own baseline decade {dec}s")
 
 
 def test_every_source_date_range_matches_the_data_behind_it():

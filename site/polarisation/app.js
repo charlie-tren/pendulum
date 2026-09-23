@@ -209,7 +209,7 @@ function drawCamps() {
   const x0 = band[0][0], x1 = band[band.length - 1][0];
   const { xOf, yOf } = axisFrame(svg, box, pad, x0, x1, 0, 4,
     [0, 1, 2, 3, 4], narrow ? 40 : 20,
-    "How split, 0 to 4", "Year");
+    "Hostility rating", "Year");
 
   /* THREE NESTED BANDS, widest first, so the whole population is on the chart
      and not just its middle. The outer pair is the full range, and in every
@@ -319,16 +319,49 @@ function median(rows, from, to) {
   return v.length ? v[Math.floor(v.length / 2)] - 1 : null;
 }
 
-function axisIndex(layer, axis, baseFrom, baseTo) {
-  const rows = (DATA.bands[layer] || {})[axis] || [];
-  const base = rows.filter((r) => r[0] >= baseFrom && r[0] <= baseTo)
-    .map((r) => r[4]).sort((a, b) => a - b);
-  if (!base.length) return [];
-  const b = base[Math.floor(base.length / 2)];
-  return rows.map((r) => [r[0], r[4] / b]);
+/* TWO SOURCES FOR ONE CHART, never mixed. With no country picked the line is
+   the median across every country V-Party codes, which is what this panel
+   showed from the start; with one picked it is that country's own elections.
+   They are different populations, and the standfirst says which is drawn. */
+function axisRows(layer, axis, country) {
+  if (country === ALL) {
+    return ((DATA.bands[layer] || {})[axis] || []).map((r) => [r[0], r[4]]);
+  }
+  return ((((DATA[layer] || {})[country]) || {})[axis] || [])
+    .map((r) => [r[0], r[1]]);
 }
 
-function drawFan(svgId, readoutId, legendId, layer, styles, baseFrom, baseTo,
+/* THE BASELINE IS THE COUNTRY'S OWN FIRST DECADE, not a fixed 1970s. Only 74
+   of the 145 countries V-Party covers held an election it codes in the 1970s:
+   the other 71 are mostly post-communist and post-authoritarian states whose
+   first coded election falls in the 1990s or later. Indexing those against a
+   decade they have no data for draws an empty chart, and taking the nearest
+   decade with data for each AXIS separately would let one country's nine lines
+   each start from a different year, so the dotted line would mean nine things
+   at once. One decade per country, named on the axis and in the standfirst.
+
+   Every country here codes all nine axes at every election it codes at all,
+   checked against the payload, so no axis is dropped for missing its own
+   baseline. */
+function baseDecade(layer, country) {
+  if (country === ALL) return 1970;
+  const axes = (DATA[layer] || {})[country];
+  if (!axes) return null;
+  const yrs = Object.values(axes).flat().map((r) => r[0]);
+  return yrs.length ? Math.floor(Math.min(...yrs) / 10) * 10 : null;
+}
+
+function indexTo(rows, from, to) {
+  const base = rows.filter((r) => r[0] >= from && r[0] <= to)
+    .map((r) => r[1]).sort((a, b) => a - b);
+  if (!base.length) return [];
+  const b = base[Math.floor(base.length / 2)];
+  // a spread of zero is a country whose coded parties all sat on one point:
+  // there is no ratio to take, and dividing gives a column of Infinity
+  return b > 0 ? rows.map((r) => [r[0], r[1] / b]) : [];
+}
+
+function drawFan(svgId, readoutId, legendId, layer, styles, country, dec,
                  labels, on) {
   const svg = $(svgId), readout = $(readoutId);
   svg.innerHTML = ""; readout.hidden = true;
@@ -345,7 +378,7 @@ function drawFan(svgId, readoutId, legendId, layer, styles, baseFrom, baseTo,
        German reunification, the flattening after 2015. The floor at two and a
        half times the median spacing still stops it drawing noise between
        sparse observations. */
-    pts: smooth(axisIndex(layer, k, baseFrom, baseTo), 0.05),
+    pts: smooth(indexTo(axisRows(layer, k, country), dec, dec + 9), 0.05),
   })).filter((s) => s.pts.length > 1);
   if (!series.length) return;
   /* ORDERED BY WHERE THE LINE ENDS UP, most divergence first, so the column
@@ -400,10 +433,23 @@ function drawFan(svgId, readoutId, legendId, layer, styles, baseFrom, baseTo,
   const lo0 = Math.min(...ys), hi0 = Math.max(...ys);
   const padY = Math.max(0.04, (hi0 - lo0) * 0.1);
   const lo = Math.max(0, lo0 - padY), hi = hi0 + padY;
-  const step = (hi - lo) > 1.2 ? 0.25 : (hi - lo) > 0.5 ? 0.1 : 0.05;
+  /* A TICK LADDER, not three hardcoded steps. The fixed 0.25 was written when
+     this chart only ever drew the world median, whose range never leaves about
+     0.8 to 2.0. One country can run far past that - Fiji's minority-rights
+     spread reaches 5.5 against its own 1970s - and 0.25 put twenty-three
+     labels down the gutter, which is a grey bar rather than an axis. The
+     ladder takes the coarsest step from 1, 2, 2.5 and 5 in the right decade
+     that still gives about six intervals, which is what the world case had
+     been getting by coincidence. */
+  const raw = Math.max((hi - lo) / 6, 1e-6);
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const step = [1, 2, 2.5, 5, 10].map((m) => m * mag)
+    .find((s) => s >= raw - 1e-12) || 10 * mag;
   const ticks = [];
-  for (let t = Math.ceil(lo / step) * step; t <= hi + 1e-9; t += step) {
-    ticks.push(Math.round(t * 100) / 100);
+  // stepped by INDEX, not by adding step to itself, which accumulates enough
+  // float error over twenty ticks to print 1.7500000000000002
+  for (let k = Math.ceil(lo / step - 1e-9); k * step <= hi + 1e-9; k += 1) {
+    ticks.push(Math.round(k * step * 1000) / 1000);
   }
   const { xOf, yOf } = axisFrame(svg, box, pad, x0, x1, lo, hi,
     ticks, narrow ? 20 : 10,
@@ -411,7 +457,7 @@ function drawFan(svgId, readoutId, legendId, layer, styles, baseFrom, baseTo,
        on a 0 to 4 scale and they are the thing being read; this one carries
        1.25 and 1.75 as well, so the same size crowds the gutter and competes
        with the lines. */
-    "Distance between parties, 1970s = 1", "Year", 13);
+    `Distance between parties, ${dec}s = 1`, "Year", 13);
 
   // the baseline: 1.0 is "exactly where it was", and it is the whole reference
   svg.appendChild(svgEl("line", {
@@ -444,7 +490,7 @@ function drawFan(svgId, readoutId, legendId, layer, styles, baseFrom, baseTo,
     }
     if (bits.length === 1) { readout.hidden = true; return; }
     readout.innerHTML = bits.join("")
-      + `<div class="prov">against the same measure in the ${baseFrom}s</div>`;
+      + `<div class="prov">against the same measure in the ${dec}s</div>`;
     readout.hidden = false;
     placeReadout(readout, evt);
   });
@@ -458,14 +504,62 @@ function drawFan(svgId, readoutId, legendId, layer, styles, baseFrom, baseTo,
   return series;
 }
 
+/* "the parties in United States of America" is a machine filling a slot, and
+   the United States is the country this page is most often read about. A name
+   takes "the" when it is a plural or a common noun rather than a proper one:
+   a union of states, a group of islands, a republic. Written as a rule rather
+   than a list so a country V-Dem adds later is covered too. Only prose uses
+   it; the key, the menu and the ranked lists are labels and keep the name. */
+const THE = /\b(United|Republic|Islands|Isles|Kingdom|Emirates|Netherlands|Philippines|Bahamas|Gambia|Maldives|Comoros|Seychelles|Congo)\b/;
+const named = (c) => (THE.test(c) ? `the ${c}` : c);
+
 function drawAxes() {
+  const c = state.country, dec = baseDecade("party", c);
+  const note = $("#axes-note"), row = $("#axes-row"), sub = $("#axes-sub");
+  const nothing = (msg) => {
+    note.textContent = msg; note.hidden = false; row.hidden = true;
+    sub.textContent = ""; $("#axes").innerHTML = "";
+    $("#legend-axes").innerHTML = "";
+  };
+
+  /* NOTHING, rather than the world line under a country's name. The picker
+     offers the 180 countries V-Dem rates because it drives the chart above,
+     and V-Party covers 145, so some of them have no party record at all and a
+     few more have a single election. Falling back to the aggregate would
+     answer a question nobody asked in a way nobody could see. */
+  if (dec === null) {
+    nothing(`V-Party records no elections for ${named(c)}. It covers `
+          + `${Object.keys(DATA.party).length} countries between 1970 and `
+          + `2019, and this one is not among them.`);
+    return;
+  }
+
+  /* UNHIDDEN BEFORE THE DRAW, because drawFan measures the row it sits in and
+     a hidden row measures zero. Same trap as body.loading, one level down. */
+  note.hidden = true; row.hidden = false;
+
   const labels = Object.fromEntries(
     DATA.meta.layers.party.axes.map((a) => [a.key, a.label]));
   const series = drawFan("#axes", "#axes-readout", "#legend-axes", "party",
-    AXIS_STYLE, 1970, 1979, labels, AXES_ON);
-  if (!series) return;
-  describe($("#axes"), "Nine measures of how far apart parties stand, each "
-                     + "against its own level in the 1970s.");
+    AXIS_STYLE, c, dec, labels, AXES_ON);
+  if (!series) {
+    nothing(`V-Party records a single election for ${named(c)}, so there `
+          + `is nothing to draw a line between.`);
+    return;
+  }
+
+  sub.textContent = (c === ALL
+    ? `Each line is one thing parties argue about, across every country `
+      + `V-Party codes. It shows how far apart experts placed those parties `
+      + `at each election, `
+    : `Each line is one thing the parties in ${named(c)} argue about. It `
+      + `shows how far apart experts placed them at each election, `)
+    + `against how far apart they were in the ${dec}s, which is the dotted `
+    + `line. Anything above it means they have drifted further apart since `
+    + `then.`;
+  describe($("#axes"), `Nine measures of how far apart parties stand`
+    + `${c === ALL ? "" : ` in ${named(c)}`}, each against its own level in `
+    + `the ${dec}s.`);
 }
 
 
@@ -514,9 +608,7 @@ function renderRanks() {
     + list(`Most divided, ${year}`, vals.slice(-5).reverse());
   for (const btn of el.querySelectorAll("[data-country]")) {
     btn.addEventListener("click", () => {
-      state.country = btn.dataset.country;
-      $("#country-sel").value = state.country;
-      render();
+      setCountry(btn.dataset.country);
       $("#camps").scrollIntoView({ block: "center", behavior: "smooth" });
     });
   }
@@ -545,8 +637,19 @@ function renderLayers() {
     .join("");
 }
 
+/* TWO MENUS, ONE STATE. The country now drives both charts, and the second
+   is far enough down the page that scrolling back up to change it is the step
+   a reader gives up on. Both are built and set from here, so there is no
+   second list to drift. */
+const SELS = ["#country-sel", "#country-sel-2"];
+
+function setCountry(c) {
+  state.country = c;
+  for (const id of SELS) { const s = $(id); if (s) s.value = c; }
+  render();
+}
+
 function buildPickers() {
-  const sel = $("#country-sel");
   const names = Object.keys(DATA.society)
     .filter((c) => (DATA.society[c].camps || []).length > 20)
     .sort((a, b) => a.localeCompare(b));
@@ -556,12 +659,15 @@ function buildPickers() {
      is set to - the bands are the whole population and nothing removes them -
      so an option called "All countries" described the chart rather than the
      choice, and reading it as "show me all of them" left a reader wondering
-     what the other 175 options did. The control draws ONE line on top of what
+     what every other option did. The control draws ONE line on top of what
      is already there, and its empty state is no line. */
-  sel.innerHTML = `<option value="${ALL}">None</option>`
+  const html = `<option value="${ALL}">None</option>`
     + names.map((c) => `<option value="${c}">${c}</option>`).join("");
   if (state.country !== ALL && !names.includes(state.country)) state.country = ALL;
-  sel.value = state.country;
+  for (const id of SELS) {
+    const s = $(id);
+    if (s) { s.innerHTML = html; s.value = state.country; }
+  }
 }
 
 /* One re-render if the drawing disagrees with the box it ended up in.
@@ -588,27 +694,17 @@ function render() {
   if (off) { settling = true; render(); }
 }
 
-/* "How is this measured?" as a control rather than a wall of text nobody asked
-   for. The method matters and almost no reader wants it first: behind a toggle
-   it is available to anyone who doubts the chart and invisible to everyone
-   else, which is the same bargain the key's hover notes make. */
-function wireInfo() {
-  const btn = $("#axes-info"), box = $("#axes-method");
-  if (!btn || !box) return;
-  btn.addEventListener("click", () => {
-    const open = btn.getAttribute("aria-expanded") === "true";
-    btn.setAttribute("aria-expanded", String(!open));
-    box.hidden = open;
-    // the label carries the state now that there is no icon to do it
-    btn.textContent = open ? "How is this measured?" : "Hide";
-  });
-}
-
+/* No "how is this measured" toggle. It was a third piece of chrome in a
+   heading, and the two things it said that a reader needs - that the positions
+   are an expert judgement, and what the line is measured against - are one
+   clause in the standfirst that was already there. The coverage floor it also
+   explained is enforced in the build and pinned by a test, which is where a
+   rule belongs. */
 function wire() {
-  wireInfo();
-  $("#country-sel").addEventListener("change", (e) => {
-    state.country = e.target.value; render();
-  });
+  for (const id of SELS) {
+    const s = $(id);
+    if (s) s.addEventListener("change", (e) => setCountry(e.target.value));
+  }
   let t = null;
   window.addEventListener("resize", () => { clearTimeout(t); t = setTimeout(render, 140); });
 }

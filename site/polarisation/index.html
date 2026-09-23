@@ -57,23 +57,16 @@
   </section>
 
   <section class="panel">
-    <h2>What the Parties Disagree About
-      <button type="button" class="info" id="axes-info" aria-expanded="false"
-              aria-controls="axes-method">How is this measured?</button>
-    </h2>
-    <p class="sub">
-      Each line is one thing parties argue about. It shows how far apart they
-      are on that issue now, against how far apart they were in the 1970s.
-      The dotted line marks the 1970s. Anything above it means the parties
-      have drifted further apart since then.
-    </p>
-    <div class="method" id="axes-method" hidden>
-      <p>At each election, experts place every party on the issue. The line is
-      how far apart those positions are, counting each party by the votes it
-      won, divided by the same measure in the 1970s. Elections are skipped where
-      the parties with a position took under 70% of the vote V-Party records.</p>
-    </div>
-    <div class="chart-row">
+    <h2>What the Parties Disagree About</h2>
+    <p class="sub" id="axes-sub"></p>
+    <section class="controls" aria-label="Chart controls">
+      <div class="control">
+        <label for="country-sel-2">Select country</label>
+        <select id="country-sel-2"></select>
+      </div>
+    </section>
+    <p class="sub" id="axes-note" hidden></p>
+    <div class="chart-row" id="axes-row">
       <figure class="chart">
         <svg id="axes" role="img"></svg>
         <div class="readout" id="axes-readout" hidden></div>

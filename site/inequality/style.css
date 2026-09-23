@@ -734,35 +734,6 @@ h1:hover .coins .s-gold, h1:focus-within .coins .s-gold { animation-delay: .24s;
   header > h1 { font-size: 15px; padding-right: 6px; }
 }
 
-/* ---- "how is this measured" ----
-   Third go, and this one is by subtraction. A pill with a circled glyph inside
-   a heading is two pieces of chrome for what is a link, and it competed with
-   the heading it sat beside. It now uses the same dotted underline the key's
-   explained entries already use, so the page has ONE way of saying "there is
-   more behind this" rather than a new one per panel. */
-.info {
-  font: inherit; font-size: 14px; font-weight: 400;
-  margin-left: 14px; padding: 0; vertical-align: middle;
-  color: var(--ink-faint); background: none; border: 0;
-  border-bottom: 1px dashed var(--rule);
-  cursor: pointer; white-space: nowrap;
-}
-.info:hover { color: var(--ink-soft); border-bottom-color: var(--ink-faint); }
-.info[aria-expanded="true"] { color: var(--ink-soft); border-bottom-color: var(--ink-faint); }
-.info:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-
-.method {
-  margin: 12px 0 4px; padding: 2px 0 2px 18px;
-  border-left: 3px solid var(--rule);
-  color: var(--ink-soft); font-size: 14.5px; line-height: 1.62;
-  max-width: 62em;
-}
-.method p + p { margin-top: 10px; }
-@media (max-width: 640px) {
-  .info { display: inline-flex; align-items: center; margin: 8px 0 0; }
-  .method { font-size: 14px; padding-left: 14px; }
-}
-
 /* ---- a key beside the chart rather than above it ----
    Nine entries across the top wrapped to two rows and pushed the chart down
    the page, and a wrapped key is read as two groups when it is one list. Down
@@ -774,6 +745,10 @@ h1:hover .coins .s-gold, h1:focus-within .coins .s-gold { animation-delay: .24s;
    SVG measures its parent, the parent sizes to the SVG, and the pair ratchet
    each other wider until the row overflows. */
 .chart-row { display: flex; align-items: flex-start; gap: 24px; }
+/* `display: flex` beats the browser's own `[hidden] { display: none }`, so a
+   row hidden by the attribute would keep laying out. Any element the page
+   hides by attribute and also gives a display to needs this line. */
+.chart-row[hidden] { display: none; }
 /* `flex: 1 1 0`, not `1 1 auto`. With an auto basis the figure sizes from its
    content, the SVG sizes from the figure, and the two define each other: the
    drawing came out with a 920 viewBox inside a 682 box, so every label was
