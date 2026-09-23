@@ -491,9 +491,9 @@ function renderRanks() {
         + `${flag(n)}<span>${n}</span><b>${fmt2(v)}</b></button></li>`).join("")
     + "</ol></div>";
   el.innerHTML =
-    list("Most friendly", `Opposing supporters still get on, ${year}`,
+    list("Least divided", `Opposing supporters still get on, ${year}`,
          vals.slice(0, 5))
-    + list("Least friendly", `They mostly do not, ${year}`,
+    + list("Most divided", `They mostly do not, ${year}`,
            vals.slice(-5).reverse());
   for (const btn of el.querySelectorAll("[data-country]")) {
     btn.addEventListener("click", () => {

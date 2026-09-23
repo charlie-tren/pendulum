@@ -31,6 +31,20 @@ other sessions push to that repo constantly.
 The JSON under `site/` is a COPY of `data/out/`. Rebuild, then copy, or the
 page serves yesterday's numbers while the tests pass against today's.
 
+## Skills that apply here
+
+Invoke these rather than waiting to be asked. The site rules in particular are
+long-settled and re-deriving them from scratch wastes a round:
+
+- **`personal-site-style`** before building, restyling, writing copy for, or
+  deploying any page in `site/`, and again when Charlie gives feedback on one,
+  so the rule is written down rather than re-learned. Everything under `site/`
+  ships to `charlie-tren.github.io` and is in that skill's scope.
+- **`design-decisions`** before showing him any round of marks, palettes,
+  layouts or names, and the moment he picks or rejects one.
+- **`charlie-voice`** for any round of copy options: it sets both the writing
+  and how to put the options in front of him.
+
 ## The non-negotiables
 
 1. **Never fabricate a data point.** If a source stops in 2019, the chart stops
