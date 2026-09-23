@@ -269,7 +269,15 @@ function drawCamps() {
 
   const own = state.country === ALL
     ? [] : ((DATA.society[state.country] || {}).camps || []);
-  const sel = smooth(own.filter((r) => r[0] >= 1900));
+  /* RAW, not smoothed. The band behind it is a cross-section - which
+     countries V-Dem rates changes year to year, so its jitter is sampling
+     noise and smoothing it is right. One country's own annual series is the
+     data, and smoothing that is a different claim: it drew Kyrgyzstan as a
+     clean arc when the record is 1.36, 2.05, 2.52, 1.43, 1.88, a panel of
+     experts revising hard around a revolution. Those steps are the most
+     informative thing on the line, and hiding them is how a ranked list came
+     to state a fall that was two spikes. */
+  const sel = own.filter((r) => r[0] >= 1900);
   if (sel.length > 1) {
     svg.appendChild(line(
       sel.map(([x, y]) => `${xOf(x).toFixed(1)},${yOf(y).toFixed(1)}`).join(" "),
@@ -286,7 +294,15 @@ function drawCamps() {
     const yr = Math.round(x0 + ((px - pad.l) / (box.w - pad.l - pad.r)) * (x1 - x0));
     const near = (arr) => arr.reduce((b, p) =>
       (!b || Math.abs(p[0] - yr) < Math.abs(b[0] - yr)) ? p : b, null);
-    const m = near(p50), s = sel.length ? near(sel) : null;
+    /* THE COUNTRY ROW ONLY WHERE THE COUNTRY HAS A READING. `near` returns
+       the closest point at any distance, and 21 of these series start after
+       1950 - Kyrgyzstan's begins in 1990 - so hovering at 1969 reported that
+       country's 1990 value under the heading 1969. Charlie's screenshot of
+       this chart has exactly that in it. The band and the median are computed
+       for every year from 1900 and need no such guard. */
+    const m = near(p50);
+    const s0 = sel.length ? near(sel) : null;
+    const s = s0 && Math.abs(s0[0] - yr) <= 2 ? s0 : null;
     if (!m) { readout.hidden = true; return; }
     const row = band.reduce((b2, r) =>
       (!b2 || Math.abs(r[0] - yr) < Math.abs(b2[0] - yr)) ? r : b2, null);
@@ -705,6 +721,16 @@ function renderRanks() {
     "Somaliland": "somaliland",
     "German Democratic Republic": "east-germany",
   };
+  /* NOT EVERY UNIT V-DEM RATES IS A COUNTRY, and two of them reach these
+     lists. Zanzibar is not Tanzania renamed: V-Dem codes both, and they went
+     opposite ways over the same twenty years - Tanzania 1.00 to 2.22, Zanzibar
+     2.31 to 1.15 - so merging them would delete a real reading and duplicate a
+     country already in the list. The honest fix is to say what the unit is.
+
+     Only where the parent is uncontested and V-Dem codes it too. Somaliland is
+     left alone: its status is disputed and printing a parent takes a side. */
+  const PART_OF = { "Zanzibar": "Tanzania", "Hong Kong": "China" };
+
   const flag = (n) => {
     const src = OWN[n] ? `flags/${OWN[n]}.svg`
       : iso[n] ? `https://flagcdn.com/w40/${iso[n]}.png` : null;
@@ -725,7 +751,9 @@ function renderRanks() {
     `<div class="rank"><h3>${title}</h3><ol>`
     + items.map(([n, v]) =>
         `<li><button type="button" data-country="${n.replace(/"/g, "&quot;")}">`
-        + `${flag(n)}<span class="nm">${n}</span><b>${fmt(v)}</b></button></li>`).join("")
+        + `${flag(n)}<span class="nm">${n}`
+        + `${PART_OF[n] ? ` <i class="of">${PART_OF[n]}</i>` : ""}</span>`
+        + `<b>${fmt(v)}</b></button></li>`).join("")
     + "</ol></div>";
   /* FOUR LISTS, IN TWO PAIRS: where countries stand, then how far they have
      come. The level pair alone was saturated at the hostile end - the five
