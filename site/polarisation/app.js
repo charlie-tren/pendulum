@@ -713,18 +713,12 @@ function renderRanks() {
   }
 }
 
-function renderLayers() {
-  const L = DATA.meta.layers;
-  // the layers panel was removed from the page; the sources list stays
-  if ($("#layers")) $("#layers").innerHTML = Object.entries(L).map(([key, v]) =>
-    `<dt><i style="background:var(--p-${key})"></i>${v.label}</dt>`
-    + `<dd>${v.note}</dd>`).join("")
-    + `<dt><i style="background:var(--ink-faint)"></i>They do not check each other</dt>`
-    + `<dd>Building a polarisation index out of vote shares and testing it `
-    + `against the experts' camps rating gives a correlation of 0.16 within a `
-    + `country, and nothing at all on changes between elections, against a `
-    + `control of 0.93. How people vote and how divided they are turn out to be `
-    + `close to unrelated, so nothing here averages one with the other.</dd>`;
+/* The layers panel came off this page and the code that filled it stayed,
+   guarded by a null check, which is how a script ends up writing to elements
+   nobody can name. A guard is not documentation: the test that every id these
+   scripts query exists in their page cannot tell a deliberate absence from the
+   one that took Pendulum down, so there are no deliberate absences. */
+function renderSources() {
   /* Name, publisher, link, then the release and the slice taken. Two earlier
      versions of the second line came off the page - the publishers' own blurbs
      and our notes on what each is used for - because both were sentences ABOUT
@@ -853,7 +847,7 @@ fetch("data.json")
        viewBox inside an 874 box: the whole drawing scaled down by five per cent
        and every label with it. */
     document.body.classList.remove("loading");
-    buildPickers(); renderLayers(); wire(); render();
+    buildPickers(); renderSources(); wire(); render();
   })
   .catch((err) => {
     const stage = DATA ? "draw the charts" : "load the data";

@@ -808,6 +808,13 @@ Promise.all([
   .then(([data, mapData]) => {
     DATA = data;
     MAP = mapData;
+    /* UNHIDDEN FIRST, BEFORE ANY OTHER LINE OF THIS BLOCK. `body.loading` puts
+       `display: none` on every panel, so until this runs the page is the word
+       "Loading". Everything below reaches for elements by id, and on 23/09/2026
+       one of them went missing: the write threw, this line never ran, and the
+       page said Loading for eight hours with the data sitting in memory behind
+       it. The charts are the page. Nothing gets to fail in front of them. */
+    document.body.classList.remove("loading");
     readHash();
 
     const select = $("#group");
@@ -870,6 +877,14 @@ Promise.all([
       syncYear(key);
     }
 
+    /* UNHIDDEN AND DRAWN BEFORE THE FURNITURE, not after. These last two
+       blocks write text into elements the charts do not need, and they used to
+       run first: when one of those elements went missing the write threw, the
+       two lines below never ran, and every chart on the page stayed hidden
+       behind `body.loading` while the console carried one message nobody was
+       reading. The charts are the page. Whatever else fails, they draw. */
+    render();
+
     const ag = DATA.meta.agreement;
     if (ag) {
       $("#agreement").textContent =
@@ -884,8 +899,6 @@ Promise.all([
       `<li><a href="${s.url}" rel="noopener">${s.name}</a>, ${s.publisher}. ` +
       `${s.role.trim()}<span class="terms">${s.coverage}. ${s.licence}. ` +
       `Retrieved ${s.retrieved}.</span></li>`).join("");
-    document.body.classList.remove("loading");
-    render();
 
     /* Charts are sized from the container, so they have to be redrawn when it
        changes. Width only: mobile browsers fire resize on every address-bar

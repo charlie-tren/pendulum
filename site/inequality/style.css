@@ -518,7 +518,10 @@ h1:hover .mark .bob-r, h1:focus-within .mark .bob-r { animation: cradle-right 1.
 
 
 /* Licence and retrieval date sit under each source, quieter than the role. */
-footer .terms { display: block; color: var(--ink-faint); font-size: 12.5px; margin-top: 2px; }
+/* Not `footer .terms`. The sources list moved out of the footer and into a
+   panel, and a selector scoped to where an element used to live is a rule that
+   silently stops applying when it moves. */
+.terms { display: block; color: var(--ink-faint); font-size: 12.5px; margin-top: 2px; }
 
 /* ---- the wealth page ---- */
 /* Both pages carry the same pair of links, so they sit in one nav in the
