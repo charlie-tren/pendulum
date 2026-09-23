@@ -255,6 +255,45 @@ def test_every_country_codes_all_nine_axes_at_every_election():
                 f"{name}: {k} has nothing in its own baseline decade {dec}s")
 
 
+def test_the_site_serves_the_payload_the_tests_read():
+    """Two copies of one file, and only one of them is checked here. The build
+    writes both from a single dump so they cannot part company; this fails if
+    somebody goes back to copying it by hand and forgets."""
+    served = (ROOT / "site" / "polarisation" / "data.json").read_bytes()
+    built = (ROOT / "data" / "out" / "polarisation.json").read_bytes()
+    assert served == built, (
+        "the page is serving a different payload from the one under test")
+
+
+def test_the_twenty_year_window_is_real_for_almost_every_country():
+    """The ranked lists compare a country with itself twenty years earlier, so
+    a country rated in only one of the two years drops out silently. If that
+    ever became common the lists would rank a rump rather than the world."""
+    band = P["bands"]["society"]["camps"]
+    to = band[-1][0]
+    have = sum(1 for axes in P["society"].values()
+               if {to, to - 20} <= {r[0] for r in axes.get("camps", [])})
+    assert have >= len(P["society"]) - 15, (
+        f"only {have} of {len(P['society'])} countries have both ends of the "
+        f"{to - 20} to {to} window")
+
+
+def test_the_ranked_lists_rank_something_that_actually_differs():
+    """The lists were moved off levels because the hostile end was saturated:
+    the five most divided countries sat inside 0.02 of each other on a 0 to 4
+    scale, which is not an ordering. Whatever they rank has to separate."""
+    band = P["bands"]["society"]["camps"]
+    to = band[-1][0]
+    moves = sorted(
+        dict(axes["camps"])[to] - dict(axes["camps"])[to - 20]
+        for axes in P["society"].values()
+        if {to, to - 20} <= {r[0] for r in axes.get("camps", [])})
+    for end in (moves[:5], moves[-5:]):
+        assert max(end) - min(end) > 0.2, (
+            f"the top five span {max(end) - min(end):.2f}, too close to call "
+            "an order")
+
+
 def test_every_source_date_range_matches_the_data_behind_it():
     """Three sources, three spans, all quoted in the sources list."""
     spans = {

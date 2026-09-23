@@ -571,7 +571,14 @@ footer .terms { display: block; color: var(--ink-faint); font-size: 12.5px; marg
   border: 1px solid var(--rule); border-radius: 999px; padding: 1px 8px;
 }
 .sources { margin: 0; padding-left: 18px; font-size: 14px; color: var(--ink-soft); }
-.sources li { margin-bottom: 9px; }
+.sources li { margin-bottom: 11px; }
+/* The release and the slice, under the name rather than beside it: the names
+   are the column a reader scans, and a fact running on from one pushes the
+   next name off the left edge of the eye. */
+.sources .detail {
+  display: block; margin-top: 2px;
+  font-size: 13.5px; color: var(--ink-faint); max-width: 56em;
+}
 .dot { cursor: pointer; }
 .dot:hover { fill-opacity: 1; }
 
@@ -795,7 +802,12 @@ h1:hover .coins .s-gold, h1:focus-within .coins .s-gold { animation-delay: .24s;
   content: counter(rank) "."; flex: none; width: 16px;
   font-size: 12.5px; color: var(--ink-faint); font-variant-numeric: tabular-nums;
 }
-.rank li button > span { flex: 1 1 auto; min-width: 0; }
+/* THE NAME, by its own class. This was `button > span`, which also matched the
+   placeholder span a country with no flag gets, and beat `.flag` on
+   specificity: the empty flag box grew to fill the row and read in dark mode
+   as a white slab in front of the name. Zanzibar is the country that shows it,
+   and it only reached one of these lists when they were re-ranked. */
+.rank li button > .nm { flex: 1 1 auto; min-width: 0; }
 /* The flag keeps a fixed box whether or not an image arrives, so the three
    countries without one line up with the rest instead of shuffling left. */
 .flag {
@@ -840,5 +852,4 @@ main.wrap > .panel + .panel { margin-top: 34px; }
    six hex digits and `C` followed by a closing quote parses as  then a
    literal C, which rendered as a replacement box and the letter C at the start
    of every source. */
-.sources q { quotes: "“" "”"; font-style: italic; color: var(--ink-soft); }
 /* .use is gone: the sources list is the publisher's words only. */

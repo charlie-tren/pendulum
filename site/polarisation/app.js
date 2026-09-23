@@ -565,20 +565,28 @@ function drawAxes() {
 
 /* ----------------------------------------------------------------- furniture */
 
-/* The five friendliest and the five most hostile, most recent year with a full
-   set of ratings. This replaces the outer band, which showed that something sat
-   at 3.99 without ever saying what: the edge of a grey shape is not a finding,
-   a country's name is. Clicking one picks it out on the chart above, so the
-   list is also the fastest way into the control. */
+/* THE TWENTY-YEAR MOVE, not today's level. These lists used to rank countries
+   by where they sit now, and the hostile end of that ranking was saturated:
+   the five most divided countries in 2025 sat between 3.97 and 3.99, so the
+   order among them was noise on a 0 to 4 scale and five rows carried one fact.
+   The move spreads from -1.56 to +2.64 over the same countries, which is a
+   ranking rather than a tie, and it is also the page's actual argument - the
+   world median barely shifts while individual countries travel a long way.
+
+   They replaced the outer band before that, which showed that something sat at
+   3.99 without ever saying what: the edge of a grey shape is not a finding, a
+   country's name is. Clicking one picks it out on the chart above, so the list
+   is also the fastest way into the control. */
 function renderRanks() {
   const el = $("#camps-ranks");
   if (!el) return;
   const rows = DATA.bands.society.camps;
-  const year = rows[rows.length - 1][0];
+  const to = rows[rows.length - 1][0], from = to - 20;
   const vals = [];
   for (const [name, axes] of Object.entries(DATA.society)) {
-    const hit = (axes.camps || []).find((r) => r[0] === year);
-    if (hit) vals.push([name, hit[1]]);
+    const d = new Map(axes.camps || []);
+    // both ends, or the country is not comparable with itself
+    if (d.has(from) && d.has(to)) vals.push([name, d.get(to) - d.get(from)]);
   }
   vals.sort((p, q) => p[1] - q[1]);
   /* The flag is decoration with a job: at a glance it says which part of the
@@ -594,18 +602,22 @@ function renderRanks() {
       + `srcset="https://flagcdn.com/w80/${iso[n]}.png 2x" `
       + `width="20" height="15" alt="" loading="lazy" decoding="async">`
     : `<span class="flag flag-none" aria-hidden="true"></span>`);
-  /* No sub-line. The heading already says least or most divided and the sub
-     restated the same scale a second time in the same eyeful; the only thing it
-     carried that the heading did not was the year, so the year moved up. */
+  /* No sub-line. The heading already says which direction and over what
+     window, and a sub restating the scale a second time in the same eyeful was
+     the only other thing it carried. The figure is SIGNED, because a list of
+     movements where every number reads as a level is unreadable: a plus is
+     printed as well as a minus even though it is redundant arithmetic, since
+     the two lists sit side by side and the sign is what tells them apart. */
+  const moved = (v) => `${v > 0 ? "+" : "\u2212"}${fmt2(Math.abs(v))}`;
   const list = (title, items) =>
     `<div class="rank"><h3>${title}</h3><ol>`
     + items.map(([n, v]) =>
         `<li><button type="button" data-country="${n.replace(/"/g, "&quot;")}">`
-        + `${flag(n)}<span>${n}</span><b>${fmt2(v)}</b></button></li>`).join("")
+        + `${flag(n)}<span class="nm">${n}</span><b>${moved(v)}</b></button></li>`).join("")
     + "</ol></div>";
   el.innerHTML =
-    list(`Least divided, ${year}`, vals.slice(0, 5))
-    + list(`Most divided, ${year}`, vals.slice(-5).reverse());
+    list(`Less Hostile, ${from} to ${to}`, vals.slice(0, 5))
+    + list(`More Hostile, ${from} to ${to}`, vals.slice(-5).reverse());
   for (const btn of el.querySelectorAll("[data-country]")) {
     btn.addEventListener("click", () => {
       setCountry(btn.dataset.country);
@@ -626,15 +638,15 @@ function renderLayers() {
     + `country, and nothing at all on changes between elections, against a `
     + `control of 0.93. How people vote and how divided they are turn out to be `
     + `close to unrelated, so nothing here averages one with the other.</dd>`;
-  /* Name, publisher, link. Nothing else. Both the publisher's blurb and our
-     own note about what we take from each were tried and both came off: a
-     sources list is read to find out WHERE something came from, and a
-     paragraph under each entry turns a three-item list into a page. `says` and
-     `role` stay in the payload, the second because the tests check the dates
-     quoted there against the data behind them. */
+  /* Name, publisher, link, then the release and the slice taken. Two earlier
+     versions of the second line came off the page - the publishers' own blurbs
+     and our notes on what each is used for - because both were sentences ABOUT
+     a source rather than facts a reader could check it against. What is there
+     now is a version, a publication date and a count, which is what somebody
+     matching this page against the data would need. */
   $("#sources").innerHTML = DATA.meta.sources.map((s) =>
-    `<li><a href="${s.url}" rel="noopener">${s.name}</a>, ${s.publisher}.</li>`)
-    .join("");
+    `<li><a href="${s.url}" rel="noopener">${s.name}</a>, ${s.publisher}.`
+    + `<span class="detail">${s.detail}</span></li>`).join("");
 }
 
 /* TWO MENUS, ONE STATE. The country now drives both charts, and the second

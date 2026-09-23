@@ -93,33 +93,53 @@ SOCIETY_AXES = [
 # link goes to, then what this page actually takes from it. A paraphrase is a
 # summary of a summary and it is where a source quietly acquires a scope its
 # publisher never claimed.
-SOURCES = [
-    {"name": "V-Party v2", "publisher": "V-Dem Institute",
-     "url": "https://www.v-dem.net/data/v-party-dataset/",
-     "says": "Varieties of Party Identity and Organization (V-Party) is a "
-             "dataset examining the policy positions and organizational "
-             "structures of political parties across the world.",
-     "role": "Used here for party positions and vote shares, 1970 to 2019. The "
-             "spread across the parties at each election is computed here, not "
-             "published there."},
-    {"name": "Chapel Hill Expert Survey, Europe trend file",
-     "publisher": "Bakker, Hooghe, Jolly, Marks, Polk and others",
-     "url": "https://www.chesdata.eu/",
-     "says": "The Chapel Hill expert surveys estimate party positioning on "
-             "ideology and policy issues for national parties in countries "
-             "across the world.",
-     "role": "Used here as a check on the first layer rather than as more of "
-             "it: a different panel, different questions and a different scale. "
-             "28 European countries clear this page's coverage rule across the "
-             "seven waves from 1999 to 2024."},
-    {"name": "V-Dem v16", "publisher": "V-Dem Institute",
-     "url": "https://www.v-dem.net/data/the-v-dem-dataset/",
-     "says": "Includes the world's most comprehensive and detailed democracy "
-             "ratings.",
-     "role": "Used here for one of its 531 indicators, v2cacamps, on whether "
-             "society is split into antagonistic camps, 1900 to 2025. The only "
-             "layer that reaches past 2019."},
-]
+# A SOURCE DESCRIBES ITSELF IN FACTS, not in a sentence about itself. Two
+# earlier versions of this list came off the page: the publishers' own blurbs,
+# quoted, and our notes about what each one is used for. What survives is the
+# release a reader would have to match to reproduce this, and the size of the
+# slice actually taken.
+#
+# The version numbers, publication dates and wave counts below were read off
+# the publishers' own download pages on 23/09/2026 and are facts about fixed
+# releases rather than moving figures. Everything countable is COUNTED from the
+# frames instead, so it cannot drift from the payload it describes.
+
+
+def _reach(frame):
+    """Countries, country-years and span actually carried for a layer."""
+    obs = {(c, r[0]) for c, axes in frame.items()
+           for rows in axes.values() for r in rows}
+    years = [y for _, y in obs]
+    return len(frame), len(obs), min(years), max(years)
+
+
+def sources(party, europe, society):
+    pc, pe, plo, phi = _reach(party)
+    ec, _, elo, ehi = _reach(europe)
+    sc, _, slo, shi = _reach(society)
+    return [
+        {"name": "V-Party v2", "publisher": "V-Dem Institute",
+         "url": "https://www.v-dem.net/data/v-party-dataset/",
+         "detail": "Version 2, published February 2022. Expert ratings of "
+                   "party positions and organisation, one row per party per "
+                   f"election. {pc} countries and {pe:,} elections are used "
+                   f"here, {plo} to {phi}."},
+        {"name": "Chapel Hill Expert Survey, Europe trend file",
+         "publisher": "Bakker, Hooghe, Jolly, Marks, Polk and others",
+         "url": "https://www.chesdata.eu/",
+         "detail": "Seven waves merged into one file: 1999, 2002, 2006, 2010, "
+                   "2014, 2019 and 2024. The survey grew from 14 countries and "
+                   "143 parties in the first wave to 31 and 279 in the last. "
+                   f"{ec} countries clear this page's coverage rule, {elo} to "
+                   f"{ehi}."},
+        {"name": "V-Dem v16", "publisher": "V-Dem Institute",
+         "url": "https://www.v-dem.net/data/the-v-dem-dataset/",
+         "detail": "Version 16, published March 2026. The full release carries "
+                   "531 indicators and 251 indices, one row per country per "
+                   "year; this page takes one of them, v2cacamps, on whether "
+                   f"society is split into camps. {sc} countries, {slo} to "
+                   f"{shi}."},
+    ]
 
 
 def spread(pairs):
@@ -349,7 +369,7 @@ def main() -> int:
             # rows, so a bare string in there is a trap.
             "iso2": flags,
             "min_coverage": MIN_COVERAGE,
-            "sources": SOURCES,
+            "sources": sources(party, europe, society),
         },
         "party": party,
         "europe": europe,
@@ -361,8 +381,14 @@ def main() -> int:
         },
     }
 
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps(payload, separators=(",", ":")), encoding="utf-8")
+    # BOTH COPIES, from one write. The page reads site/polarisation/data.json
+    # and the tests read data/out/polarisation.json, and copying by hand meant
+    # a rebuild could leave the page serving the previous payload with nothing
+    # to say so - the tests would pass against a file the site does not use.
+    text = json.dumps(payload, separators=(",", ":"))
+    for dst in (OUT, ROOT / "site" / "polarisation" / "data.json"):
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.write_text(text, encoding="utf-8")
     print(f"wrote {OUT.relative_to(ROOT)}  {OUT.stat().st_size:,} bytes")
     print(f"  party   {len(party):4d} countries, "
           f"{cov['kept']} elections kept, {cov['dropped_low_coverage']} "
