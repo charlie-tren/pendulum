@@ -278,6 +278,34 @@ def test_the_twenty_year_window_is_real_for_almost_every_country():
         f"{to - 20} to {to} window")
 
 
+def test_no_layer_carries_a_unit_that_is_part_of_another_unit_in_it():
+    """V-Dem's coding units are POLITIES, which is the right unit for measuring
+    how a society governs itself and the wrong one for a page that ranks
+    countries. Zanzibar reached the top of a ranked list and Charlie asked what
+    it was doing there.
+
+    Merging is not the alternative: V-Dem codes Tanzania and Zanzibar
+    separately because they are separately governed, and over twenty years they
+    moved in opposite directions, so an average of the two is a number nobody
+    measured. They are dropped in the build; this is the guard that they stay
+    dropped, and that anything of the same shape added later is caught."""
+    parts = {
+        "Zanzibar": "Tanzania",
+        "Hong Kong": "China",
+        "Somaliland": "Somalia",
+        "German Democratic Republic": "Germany",
+    }
+    for layer in LAYERS:
+        for unit in parts:
+            assert unit not in P[layer], f"{layer} still carries {unit}"
+    # the parents are the point: dropping a part is only right if the whole is
+    # there to stand for it
+    for parent in set(parts.values()):
+        assert parent in P["society"], f"{parent} is missing from the society layer"
+    assert not set(parts) & set(P["meta"]["iso2"]), (
+        "a dropped unit still has a flag, so something can still render it")
+
+
 def test_every_change_the_page_prints_survives_moving_the_window():
     """A number the page states has to be a measurement, not a reading of two
     particular years.

@@ -89,10 +89,6 @@ SOCIETY_AXES = [
      "Whether ordinary citizens use violence to pursue political goals."),
 ]
 
-# Each source is described in ITS OWN WORDS first, quoted from the page the
-# link goes to, then what this page actually takes from it. A paraphrase is a
-# summary of a summary and it is where a source quietly acquires a scope its
-# publisher never claimed.
 # EACH SOURCE DESCRIBED AS THE SOURCE DESCRIBES ITSELF. Three versions of this
 # list have now come off the page. The publishers' marketing sentences, quoted,
 # went first. Our own notes on what each dataset is used for went second. The
@@ -347,10 +343,55 @@ def _swing(series_by_country, axis, base=(1999, 2006), late=(2019, 2024)):
     return z[len(z) // 2] / a[len(a) // 2] - 1
 
 
+# UNITS V-DEM CODES THAT ARE NOT COUNTRIES. The institute's coding units are
+# polities - places with their own government whose politics can be observed -
+# which is the right unit for measuring how a society governs itself and the
+# wrong unit for a page that ranks COUNTRIES. Charlie, on finding Zanzibar at
+# the top of a list: "it doesnt exist as a country anymore."
+#
+# Merging one into its parent is not the alternative it looks like. V-Dem codes
+# Tanzania and Zanzibar separately because they ARE separately governed, and
+# over the last twenty years they moved in opposite directions - Tanzania 1.00
+# to 2.22, Zanzibar 2.31 to 1.15. An average of the two is a number nobody
+# measured, about a polity nobody governs. So these come out.
+#
+# The rule is "administered as part of another polity", not "small" or "not a
+# UN member". Taiwan and Kosovo stay: they are partially recognised and they
+# govern themselves, which is what this indicator is about. Palestine/Gaza and
+# Palestine/West Bank stay for the same reason and because no coded unit
+# administers them. The parent is named so the claim is checkable, and asserted
+# against the frame so a rename upstream fails here rather than silently
+# keeping a unit this page means to drop.
+NOT_A_COUNTRY = {
+    "Zanzibar": "Tanzania",
+    "Hong Kong": "China",
+    "Somaliland": "Somalia",
+    "German Democratic Republic": "Germany",
+}
+
+
+def drop_non_countries(frame, reference):
+    """Take the parts out, and check each one's parent is really in the data.
+
+    Checked against the SOCIETY frame rather than each layer's own, because
+    whether Hong Kong is part of China is a fact about the world and not about
+    which countries V-Party happens to code.
+    """
+    for unit, parent in NOT_A_COUNTRY.items():
+        assert parent in reference, (
+            f"{unit} is dropped as part of {parent}, and {parent} is not in "
+            "the data: either the name changed upstream or the claim is wrong")
+    return {n: v for n, v in frame.items() if n not in NOT_A_COUNTRY}
+
+
 def main() -> int:
     party, cov = build_party()
     europe = build_europe()
     society, flags = build_society()
+
+    society = drop_non_countries(society, society)
+    party = drop_non_countries(party, society)
+    flags = {n: c for n, c in flags.items() if n not in NOT_A_COUNTRY}
 
     payload = {
         "meta": {

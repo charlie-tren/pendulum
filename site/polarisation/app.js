@@ -721,16 +721,11 @@ function renderRanks() {
     "Somaliland": "somaliland",
     "German Democratic Republic": "east-germany",
   };
-  /* NOT EVERY UNIT V-DEM RATES IS A COUNTRY, and two of them reach these
-     lists. Zanzibar is not Tanzania renamed: V-Dem codes both, and they went
-     opposite ways over the same twenty years - Tanzania 1.00 to 2.22, Zanzibar
-     2.31 to 1.15 - so merging them would delete a real reading and duplicate a
-     country already in the list. The honest fix is to say what the unit is.
-
-     Only where the parent is uncontested and V-Dem codes it too. Somaliland is
-     left alone: its status is disputed and printing a parent takes a side. */
-  const PART_OF = { "Zanzibar": "Tanzania", "Hong Kong": "China" };
-
+  /* No parent to print any more. Naming the parent beside the unit - Zanzibar
+     (Tanzania), Hong Kong (China) - was the first answer to these appearing in
+     a list of countries, and it was the wrong one: a label cannot make a
+     region a country. The build drops them instead, so nothing here has to
+     explain a name. See NOT_A_COUNTRY in scripts/build_polar.py. */
   const flag = (n) => {
     const src = OWN[n] ? `flags/${OWN[n]}.svg`
       : iso[n] ? `https://flagcdn.com/w40/${iso[n]}.png` : null;
@@ -751,9 +746,8 @@ function renderRanks() {
     `<div class="rank"><h3>${title}</h3><ol>`
     + items.map(([n, v]) =>
         `<li><button type="button" data-country="${n.replace(/"/g, "&quot;")}">`
-        + `${flag(n)}<span class="nm">${n}`
-        + `${PART_OF[n] ? ` <i class="of">${PART_OF[n]}</i>` : ""}</span>`
-        + `<b>${fmt(v)}</b></button></li>`).join("")
+        + `${flag(n)}<span class="nm">${n}</span><b>${fmt(v)}</b></button></li>`)
+        .join("")
     + "</ol></div>";
   /* FOUR LISTS, IN TWO PAIRS: where countries stand, then how far they have
      come. The level pair alone was saturated at the hostile end - the five
@@ -769,9 +763,12 @@ function renderRanks() {
            move.slice(-5).reverse(), moved);
   for (const btn of el.querySelectorAll("[data-country]")) {
     btn.addEventListener("click", () => {
+      /* NO SCROLL. Picking a country from a list that sits DIRECTLY UNDER the
+         chart used to centre the chart, which moved the page a little under
+         the reader's hand every time they clicked. They can already see both.
+         A scroll is for a jump the reader cannot make themselves. */
       setCountry(btn.dataset.country);
       $("#country-sel").value = state.country;
-      $("#camps").scrollIntoView({ block: "center", behavior: "smooth" });
     });
   }
 }

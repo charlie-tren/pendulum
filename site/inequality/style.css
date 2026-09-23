@@ -828,9 +828,6 @@ h1:hover .coins .s-gold, h1:focus-within .coins .s-gold { animation-delay: .24s;
   object-fit: cover;
 }
 .flag-none { box-shadow: inset 0 0 0 1px var(--rule); }
-/* "Zanzibar Tanzania": the parent, quieter than the unit, so the row still
-   reads as one name rather than two. */
-.rank .of { font-style: normal; color: var(--ink-faint); font-size: 13px; }
 .rank li button > b {
   flex: none; font-weight: 400; color: var(--ink-faint);
   font-variant-numeric: tabular-nums;
