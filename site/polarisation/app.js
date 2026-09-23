@@ -19,7 +19,11 @@
    spread with a society rating, and the page says so in words. */
 
 const ALL = "__all";
-const DEFAULTS = { country: "United States of America" };
+/* Opens on ALL countries. The page's first claim is about the world, not about
+   America: the median country is back where it was in 1978 and only a handful
+   broke away from it. Opening on the United States put the exception in front
+   of the rule and made the page look like it was arguing the opposite. */
+const DEFAULTS = { country: "__all" };
 const state = { ...DEFAULTS };
 let DATA = null;
 
@@ -135,17 +139,20 @@ function axisFrame(svg, box, pad, x0, x1, y0, y1, yticks, xstep) {
       stroke: "var(--rule)", "stroke-width": 1,
     }));
     const lab = svgEl("text", {
-      x: pad.l - 8, y: (y + 4).toFixed(1), "text-anchor": "end",
-      "font-size": 11, fill: "var(--ink-faint)",
+      x: pad.l - 9, y: (y + 5).toFixed(1), "text-anchor": "end",
+      "font-size": 14, fill: "var(--ink-soft)",
     });
-    lab.textContent = typeof t === "number" && t % 1 ? t.toFixed(1) : `${t}`;
+    /* two decimals only where one would collide: 1.05 and 1.1 both matter on
+       the fan chart, and "1.1" against "1.1" twice is worse than a long label */
+    lab.textContent = !(t % 1) ? `${t}`
+      : Math.abs(t * 10 - Math.round(t * 10)) < 1e-9 ? t.toFixed(1) : t.toFixed(2);
     svg.appendChild(lab);
   }
   for (let t = Math.ceil(x0 / xstep) * xstep; t <= x1; t += xstep) {
     const x = xOf(t);
     const lab = svgEl("text", {
-      x: x.toFixed(1), y: (box.h - pad.b + 18).toFixed(1),
-      "text-anchor": "middle", "font-size": 10.5, fill: "var(--ink-faint)",
+      x: x.toFixed(1), y: (box.h - pad.b + 20).toFixed(1),
+      "text-anchor": "middle", "font-size": 12.5, fill: "var(--ink-faint)",
     });
     lab.textContent = `${t}`;
     svg.appendChild(lab);
@@ -168,7 +175,7 @@ function drawCamps() {
   const narrow = window.matchMedia("(max-width: 700px)").matches;
   const box = boxFor("#camps", narrow ? 0.72 : 0.42, 260, 420);
   svg.setAttribute("viewBox", `0 0 ${box.w} ${box.h}`);
-  const pad = { l: 34, r: narrow ? 12 : 16, t: 12, b: 34 };
+  const pad = { l: 42, r: narrow ? 12 : 16, t: 12, b: 38 };
 
   const x0 = band[0][0], x1 = band[band.length - 1][0];
   const { xOf, yOf } = axisFrame(svg, box, pad, x0, x1, 0, 4,
@@ -194,9 +201,13 @@ function drawCamps() {
       fill: "var(--p-band)", "fill-opacity": opacity,
     }));
   };
-  envelope(col(1), col(7), 0.3);     // every country, lowest to highest
-  envelope(col(2), col(6), 0.4);     // the middle eight in ten
-  envelope(col(3), col(5), 0.7);     // the middle half
+  /* TWO envelopes, not three. Three nested fills of one colour is three
+     greys, and the eye reads three greys as a legend it has to decode rather
+     than as a range: the middle eighty was doing almost no work between the
+     other two, and dropping it leaves the two boundaries anyone actually
+     wants, the whole population and its middle. */
+  envelope(col(1), col(7), 0.22);    // every country, lowest to highest
+  envelope(col(3), col(5), 0.55);    // the middle half
   const p50 = col(4);
   svg.appendChild(line(
     p50.map(([x, y]) => `${xOf(x).toFixed(1)},${yOf(y).toFixed(1)}`).join(" "),
@@ -247,10 +258,12 @@ function drawCamps() {
     return r ? r[4] : null;
   };
   const a = at(1978), z = at(2025);
+  const last = band[band.length - 1];
   $("#camps-sub").textContent =
     `V-Dem asks its country experts, every year since 1900, whether supporters `
-    + `of opposing camps avoid one another. The band is the middle half of `
-    + `${band[band.length - 1][8]} countries.`;
+    + `of opposing camps avoid one another. The pale band is all `
+    + `${last[8]} countries, from ${fmt2(last[1])} to ${fmt2(last[7])} last `
+    + `year; the darker one inside it is the middle half.`;
   $("#camps-caption").textContent =
     `The middle country sits at ${fmt2(z)} today against ${fmt2(a)} in 1978. `
     + `The rise since 2010 is real, and it is a return to where the Cold War `
@@ -260,8 +273,9 @@ function drawCamps() {
               + "country.");
 
   $("#legend-camps").innerHTML =
-    `<span class="explained" tabindex="0" title="Every country rated that year, from the least divided to the most, and the middle eight in ten inside it."><i class="faint" style="background:var(--p-band)"></i>All ${band[band.length - 1][8]} countries</span>`
+    `<span class="explained" tabindex="0" title="Every country rated that year, from the least divided to the most."><i class="faint" style="background:var(--p-band)"></i>All ${last[8]} countries</span>`
     + `<span class="explained" tabindex="0" title="The middle half of countries, with the median country dashed through it."><i style="background:var(--p-band)"></i>Middle half</span>`
+    + `<span class="explained" tabindex="0" title="The median country: half are more divided, half are less."><i class="dash"></i>Middle country</span>`
     + (state.country === ALL ? ""
         : `<span><i style="background:var(--p-pick)"></i>${state.country}</span>`);
 }
@@ -305,14 +319,28 @@ function drawFan(svgId, readoutId, legendId, layer, styles, baseFrom, baseTo,
   const narrow = window.matchMedia("(max-width: 700px)").matches;
   const box = boxFor(svgId, narrow ? 0.72 : 0.4, 250, 400);
   svg.setAttribute("viewBox", `0 0 ${box.w} ${box.h}`);
-  const pad = { l: 36, r: narrow ? 12 : 16, t: 12, b: 34 };
+  const pad = { l: 46, r: narrow ? 12 : 16, t: 12, b: 38 };
 
   const xs = shown.flatMap((s) => s.pts.map((p) => p[0]));
   const ys = shown.flatMap((s) => s.pts.map((p) => p[1]));
   const x0 = Math.min(...xs), x1 = Math.max(...xs);
-  const hi = Math.max(2.2, Math.ceil(Math.max(...ys) * 4) / 4);
-  const { xOf, yOf } = axisFrame(svg, box, pad, x0, x1, 0.5, hi,
-    [0.5, 1, 1.5, 2].filter((t) => t <= hi), narrow ? 20 : 10);
+  /* THE Y RANGE FITS THE LINES SHOWN, rather than sitting at a fixed 0.5 to
+     2.2. Everything on this chart starts at 1.0 by construction and the flat
+     axes never leave 0.9 to 1.1, so a fixed range spent two thirds of its
+     height on empty space and squashed the whole argument into the middle
+     third: the flat lines and the doubling ones looked much more alike than
+     they are. Padded by a tenth of the span so nothing touches an edge, and
+     the ticks follow the range rather than a fixed list. */
+  const lo0 = Math.min(...ys), hi0 = Math.max(...ys);
+  const padY = Math.max(0.04, (hi0 - lo0) * 0.1);
+  const lo = Math.max(0, lo0 - padY), hi = hi0 + padY;
+  const step = (hi - lo) > 1.2 ? 0.25 : (hi - lo) > 0.5 ? 0.1 : 0.05;
+  const ticks = [];
+  for (let t = Math.ceil(lo / step) * step; t <= hi + 1e-9; t += step) {
+    ticks.push(Math.round(t * 100) / 100);
+  }
+  const { xOf, yOf } = axisFrame(svg, box, pad, x0, x1, lo, hi,
+    ticks, narrow ? 20 : 10);
 
   // the baseline: 1.0 is "exactly where it was", and it is the whole reference
   svg.appendChild(svgEl("line", {
@@ -413,7 +441,22 @@ function render() {
   drawAxes();
 }
 
+/* "How is this measured?" as a control rather than a wall of text nobody asked
+   for. The method matters and almost no reader wants it first: behind a toggle
+   it is available to anyone who doubts the chart and invisible to everyone
+   else, which is the same bargain the key's hover notes make. */
+function wireInfo() {
+  const btn = $("#axes-info"), box = $("#axes-method");
+  if (!btn || !box) return;
+  btn.addEventListener("click", () => {
+    const open = btn.getAttribute("aria-expanded") === "true";
+    btn.setAttribute("aria-expanded", String(!open));
+    box.hidden = open;
+  });
+}
+
 function wire() {
+  wireInfo();
   $("#country-sel").addEventListener("change", (e) => {
     state.country = e.target.value; render();
   });

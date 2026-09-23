@@ -682,3 +682,27 @@ h1:hover .coins .s-gold, h1:focus-within .coins .s-gold { animation-delay: .24s;
   h1 { gap: 5px; }
   header > h1 { font-size: 15px; padding-right: 6px; }
 }
+
+/* ---- "how is this measured" ----
+   A question, not an icon. A bare i-in-a-circle is a guess about what is behind
+   it, and the whole point of this control is that the reader knows whether it
+   answers the doubt they arrived with before they spend a click on it. */
+.info {
+  font: inherit; font-size: 13px; font-weight: 400;
+  margin-left: 10px; padding: 3px 10px;
+  color: var(--ink-soft); background: none;
+  border: 1px solid var(--rule); border-radius: 999px;
+  cursor: pointer; vertical-align: middle; white-space: nowrap;
+}
+.info::before { content: "i"; font-style: italic; margin-right: 6px; opacity: .75; }
+.info:hover { background: var(--panel); color: var(--ink); border-color: var(--ink-faint); }
+.info[aria-expanded="true"] { background: var(--panel); color: var(--ink); }
+.method {
+  margin: 10px 0 2px; padding: 14px 16px;
+  background: var(--panel); border: 1px solid var(--rule); border-radius: 10px;
+  color: var(--ink-soft); font-size: 14.5px; line-height: 1.5;
+}
+.method p + p { margin-top: 9px; }
+@media (max-width: 640px) {
+  .info { display: block; margin: 8px 0 0; }
+}

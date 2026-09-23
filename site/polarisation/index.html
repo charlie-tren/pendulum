@@ -61,11 +61,29 @@
   </section>
 
   <section class="panel">
-    <h2>What the Parties Disagree About</h2>
+    <h2>What the Parties Disagree About
+      <button type="button" class="info" id="axes-info" aria-expanded="false"
+              aria-controls="axes-method">How is this measured?</button>
+    </h2>
     <p class="sub">
       How far apart the parties stood at each election, weighted by the votes
       they got, against where that same measure sat in the 1970s.
     </p>
+    <div class="method" id="axes-method" hidden>
+      <p>Every party standing at an election carries a position on each axis,
+      coded by V-Dem's country experts. The spread is the standard deviation of
+      those positions across the parties, weighted by the share of the vote each
+      one actually received, so a party nobody votes for barely moves it.</p>
+      <p>An election counts only where the parties carrying a coding hold at
+      least 70% of the vote cast. That floor exists because joint lists, such as
+      Hungary's Fidesz-KDNP, put the vote on a row with no position of its own,
+      and scoring the election on whoever was left would quietly measure a
+      different country.</p>
+      <p>The line is the median across countries, divided by that same median in
+      the 1970s. So 1.0 is exactly where that axis stood fifty years ago, and
+      the chart is about change rather than level: the axes are on different
+      scales and their raw spreads were never comparable.</p>
+    </div>
     <div class="legend" id="legend-axes"></div>
     <figure class="chart">
       <svg id="axes" role="img"></svg>
@@ -86,11 +104,7 @@
   <p class="loading-note">Loading the data.</p>
 </main>
 
-<footer class="wrap">
-  <p class="fine">
-    Built from open data.
-  </p>
-</footer>
+
 
 <script src="app.js"></script>
 </body>
