@@ -785,8 +785,17 @@ h1:hover .coins .s-gold, h1:focus-within .coins .s-gold { animation-delay: .24s;
    the only interesting part of that fact. Each entry is a button: pressing it
    picks that country out on the chart above, so the list is the quickest route
    into the control as well as a finding on its own. */
-.ranks { display: flex; gap: 40px; margin: 20px 0 2px; flex-wrap: wrap; }
-.rank { flex: 1 1 250px; min-width: 0; }
+/* A GRID, not a wrapping flex row. With two lists a flex row was fine; with
+   four, the basis decides how many land on a row and it changes with the
+   longest country name in them, so the page could show 2 and 2 one day and 3
+   and 1 the next. Two columns, explicitly, and the row gap is larger than the
+   column gap so the two PAIRS read as pairs. */
+.ranks {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 30px 40px; margin: 20px 0 2px;
+}
+.rank { min-width: 0; }
+@media (max-width: 560px) { .ranks { grid-template-columns: 1fr; gap: 22px; } }
 .rank h3 { font-size: 15px; font-weight: 700; margin: 0; color: var(--ink); }
 /* .rank-note is gone from the markup; the heading carries the year. */
 .rank h3 + ol { margin-top: 8px; }

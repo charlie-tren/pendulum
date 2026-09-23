@@ -294,8 +294,11 @@ def test_the_ranked_lists_rank_something_that_actually_differs():
             "an order")
 
 
-def test_every_source_date_range_matches_the_data_behind_it():
-    """Three sources, three spans, all quoted in the sources list."""
+def test_the_layers_span_the_years_the_page_is_built_on():
+    """The window each layer actually carries. Not the same as the publishers'
+    coverage, which the sources list quotes: V-Party codes elections back to
+    1900 and this page starts at 1970, because the earlier ones are too sparse
+    to index a country against."""
     spans = {
         "party": (1970, 2019),
         "europe": (1999, 2024),
@@ -304,7 +307,40 @@ def test_every_source_date_range_matches_the_data_behind_it():
     for layer, (lo, hi) in spans.items():
         years = [r[0] for c in P[layer].values() for rows in c.values() for r in rows]
         assert min(years) == lo and max(years) == hi, (
-            f"{layer} runs {min(years)}-{max(years)}, the sources say {lo}-{hi}")
-        for n in (lo, hi):
-            assert str(n) in json.dumps(P["meta"]["sources"]), (
-                f"{n} is not quoted in any source's role text")
+            f"{layer} runs {min(years)}-{max(years)}, expected {lo}-{hi}")
+
+
+def test_the_sources_quote_the_publishers_coverage_not_our_slice():
+    """A sources list says what the publisher ships, so a reader can download
+    it and find the same thing. Reporting our own window there was the fault
+    that got the previous version taken off the page. Every figure is counted
+    from the publishers' own frames at build time, and this checks the rendered
+    sentences against those counts."""
+    reach = P["meta"]["source_reach"]
+    detail = {s["name"]: s["detail"] for s in P["meta"]["sources"]}
+
+    vp, vd = reach["party"], reach["society"]
+    for n in (f"{vp['parties']:,}", str(vp["countries"]), f"{vp['elections']:,}",
+              str(vp["lo"]), str(vp["hi"])):
+        assert n in detail["V-Party v2"], f"V-Party detail omits {n}"
+    for n in (str(vd["countries"]), f"{vd['rows']:,}",
+              str(vd["lo"]), str(vd["hi"])):
+        assert n in detail["V-Dem v16"], f"V-Dem detail omits {n}"
+
+    # and our slice must sit INSIDE what the publisher is said to cover
+    for layer, key in (("party", "party"), ("society", "society")):
+        years = [r[0] for c in P[layer].values() for rows in c.values() for r in rows]
+        assert reach[key]["lo"] <= min(years) and max(years) <= reach[key]["hi"], (
+            f"{layer} runs outside the coverage the sources list claims")
+
+
+def test_the_ches_waves_named_in_the_sources_are_the_waves_in_the_data():
+    """CHES has no raw frame to count, so its line lists the seven waves. Every
+    wave named has to be a year the trend file actually carries, or the list is
+    advertising a survey the page does not hold."""
+    import re
+    line = next(s["detail"] for s in P["meta"]["sources"] if "Chapel Hill" in s["name"])
+    named = {int(y) for y in re.findall(r"\b(?:19|20)\d{2}\b", line)}
+    have = {r[0] for c in P["europe"].values() for rows in c.values() for r in rows}
+    assert named, "the CHES line names no waves"
+    assert named <= have, f"named but absent from the data: {sorted(named - have)}"

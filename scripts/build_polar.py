@@ -93,52 +93,56 @@ SOCIETY_AXES = [
 # link goes to, then what this page actually takes from it. A paraphrase is a
 # summary of a summary and it is where a source quietly acquires a scope its
 # publisher never claimed.
-# A SOURCE DESCRIBES ITSELF IN FACTS, not in a sentence about itself. Two
-# earlier versions of this list came off the page: the publishers' own blurbs,
-# quoted, and our notes about what each one is used for. What survives is the
-# release a reader would have to match to reproduce this, and the size of the
-# slice actually taken.
+# EACH SOURCE DESCRIBED AS THE SOURCE DESCRIBES ITSELF. Three versions of this
+# list have now come off the page. The publishers' marketing sentences, quoted,
+# went first. Our own notes on what each dataset is used for went second. The
+# third was a mix of the two and drew "sources lines dont look like they're
+# from original sources", which is exactly right: it reported OUR slice - "145
+# countries are used here" - in the slot that should say what the publisher
+# ships.
 #
-# The version numbers, publication dates and wave counts below were read off
-# the publishers' own download pages on 23/09/2026 and are facts about fixed
-# releases rather than moving figures. Everything countable is COUNTED from the
-# frames instead, so it cannot drift from the payload it describes.
-
-
-def _reach(frame):
-    """Countries, country-years and span actually carried for a layer."""
-    obs = {(c, r[0]) for c, axes in frame.items()
-           for rows in axes.values() for r in rows}
-    years = [y for _, y in obs]
-    return len(frame), len(obs), min(years), max(years)
+# So what is here is the release a reader would have to download to check this
+# page, named the way the publisher names it, and the coverage of THEIR file
+# rather than of ours. Everything countable is counted from the publishers'
+# own frames at build time, so no figure here can drift from the data. The
+# version numbers, publication dates, file names and wave lists were read off
+# the publishers' download pages on 23/09/2026, and describe fixed releases.
+#
+# The V-Dem line quotes the codebook's own question for v2cacamps, which is the
+# single most checkable thing on the list: it is the sentence the country
+# experts answered, and it is in the codebook that ships inside the download.
 
 
 def sources(party, europe, society):
-    pc, pe, plo, phi = _reach(party)
-    ec, _, elo, ehi = _reach(europe)
-    sc, _, slo, shi = _reach(society)
+    p, s = REACH["party"], REACH["society"]
     return [
         {"name": "V-Party v2", "publisher": "V-Dem Institute",
          "url": "https://www.v-dem.net/data/v-party-dataset/",
-         "detail": "Version 2, published February 2022. Expert ratings of "
-                   "party positions and organisation, one row per party per "
-                   f"election. {pc} countries and {pe:,} elections are used "
-                   f"here, {plo} to {phi}."},
+         "detail": "Country-Party-Date file, version 2, published February "
+                   "2022, with a codebook and party coding units. Policy "
+                   "positions and organisational structures of political "
+                   f"parties: {p['parties']:,} parties across {p['countries']} "
+                   f"countries and {p['elections']:,} elections, {p['lo']} to "
+                   f"{p['hi']}."},
         {"name": "Chapel Hill Expert Survey, Europe trend file",
          "publisher": "Bakker, Hooghe, Jolly, Marks, Polk and others",
          "url": "https://www.chesdata.eu/",
          "detail": "Seven waves merged into one file: 1999, 2002, 2006, 2010, "
-                   "2014, 2019 and 2024. The survey grew from 14 countries and "
-                   "143 parties in the first wave to 31 and 279 in the last. "
-                   f"{ec} countries clear this page's coverage rule, {elo} to "
-                   f"{ehi}."},
+                   "2014, 2019 and 2024. The survey ran in 14 Western European "
+                   "countries and 143 parties in the first wave and in 31 "
+                   "countries and 279 parties in the last, which covers every "
+                   "EU member state plus Iceland, Norway, Switzerland and "
+                   "Turkey."},
         {"name": "V-Dem v16", "publisher": "V-Dem Institute",
          "url": "https://www.v-dem.net/data/the-v-dem-dataset/",
-         "detail": "Version 16, published March 2026. The full release carries "
-                   "531 indicators and 251 indices, one row per country per "
-                   "year; this page takes one of them, v2cacamps, on whether "
-                   f"society is split into camps. {sc} countries, {slo} to "
-                   f"{shi}."},
+         "detail": "Country-Year Full+Others, version 16, published March "
+                   "2026: 531 V-Dem indicators and 251 indices, plus 62 "
+                   "indicators drawn from other datasets. This page reads one "
+                   "of them, v2cacamps, whose codebook question is \u201cIs "
+                   "society polarized into antagonistic, political "
+                   "camps?\u201d It is rated for "
+                   f"{s['countries']} countries across {s['rows']:,} "
+                   f"country-years, {s['lo']} to {s['hi']}."},
     ]
 
 
@@ -164,10 +168,24 @@ def num(v):
     return None if f != f else f
 
 
+# What each publisher's own file holds, filled by the loaders below and quoted
+# in the sources list. This is the SOURCE's coverage, not the slice this page
+# takes: V-Party codes elections back to 1900 and this page starts at 1970
+# because the earlier ones are too sparse to index against, and a sources list
+# that quietly reports our window as theirs is describing the wrong thing.
+REACH = {}
+
+
 def build_party():
     import pyreadr
 
     df = pyreadr.read_r(str(RAW / "vparty.RData"))["vparty"]
+    REACH["party"] = {
+        "countries": int(df["country_name"].nunique()),
+        "parties": int(df["v2paid"].nunique()),
+        "elections": int(df.groupby(["country_name", "year"]).ngroups),
+        "lo": int(df["year"].min()), "hi": int(df["year"].max()),
+    }
     cols = ["country_name", "year", "v2pavote"] + [c for _, c, _, _ in PARTY_AXES]
     d = df[cols]
 
@@ -254,6 +272,13 @@ def build_society():
     import pyreadr
 
     df = pyreadr.read_r(str(RAW / "polar" / "vdem.RData"))["vdem"]
+    # the indicator this page reads, as the publisher's file holds it
+    camps = df[df["v2cacamps_osp"].notna()]
+    REACH["society"] = {
+        "countries": int(camps["country_name"].nunique()),
+        "rows": int(len(camps)),
+        "lo": int(camps["year"].min()), "hi": int(camps["year"].max()),
+    }
     flags = iso2_by_name(df)
     cols = ["country_name", "year"] + [c for _, c, _, _ in SOCIETY_AXES]
     d = df[cols]
@@ -369,6 +394,9 @@ def main() -> int:
             # rows, so a bare string in there is a trap.
             "iso2": flags,
             "min_coverage": MIN_COVERAGE,
+            # the publishers' own coverage, so a test can check the sentences
+            # in the sources list against the files they describe
+            "source_reach": REACH,
             "sources": sources(party, europe, society),
         },
         "party": party,

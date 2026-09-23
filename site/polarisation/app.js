@@ -23,7 +23,14 @@ const ALL = "__all";
    the reader's own, and Australia is also a useful default on the merits: it
    sits close to the median for most of the century, so the first thing anyone
    sees is a country tracking the world rather than an outlier arguing with it. */
-const DEFAULTS = { country: "Australia" };
+/* TWO COUNTRIES, ONE PER PANEL. They were one for a day and that was wrong:
+   the panels answer different questions off different datasets, and V-Dem
+   rates 180 countries where V-Party codes 145, so a country picked for the
+   chart above would routinely empty the one below. The party panel opens on
+   every country at once, which is where its finding is - the cultural axes
+   pull apart almost everywhere - and a reader who wants one country picks it
+   there. */
+const DEFAULTS = { country: "Australia", party: ALL };
 const state = { ...DEFAULTS };
 let DATA = null;
 
@@ -514,7 +521,7 @@ const THE = /\b(United|Republic|Islands|Isles|Kingdom|Emirates|Netherlands|Phili
 const named = (c) => (THE.test(c) ? `the ${c}` : c);
 
 function drawAxes() {
-  const c = state.country, dec = baseDecade("party", c);
+  const c = state.party, dec = baseDecade("party", c);
   const note = $("#axes-note"), row = $("#axes-row"), sub = $("#axes-sub");
   const nothing = (msg) => {
     note.textContent = msg; note.hidden = false; row.hidden = true;
@@ -549,9 +556,9 @@ function drawAxes() {
   }
 
   sub.textContent = (c === ALL
-    ? `Each line is one thing parties argue about, across every country `
-      + `V-Party codes. It shows how far apart experts placed those parties `
-      + `at each election, `
+    ? `Each line is one thing parties argue about, across all `
+      + `${Object.keys(DATA.party).length} countries V-Party codes. It shows `
+      + `how far apart experts placed those parties at each election, `
     : `Each line is one thing the parties in ${named(c)} argue about. It `
       + `shows how far apart experts placed them at each election, `)
     + `against how far apart they were in the ${dec}s, which is the dotted `
@@ -565,15 +572,14 @@ function drawAxes() {
 
 /* ----------------------------------------------------------------- furniture */
 
-/* THE TWENTY-YEAR MOVE, not today's level. These lists used to rank countries
-   by where they sit now, and the hostile end of that ranking was saturated:
-   the five most divided countries in 2025 sat between 3.97 and 3.99, so the
-   order among them was noise on a 0 to 4 scale and five rows carried one fact.
-   The move spreads from -1.56 to +2.64 over the same countries, which is a
-   ranking rather than a tie, and it is also the page's actual argument - the
-   world median barely shifts while individual countries travel a long way.
+/* WHERE COUNTRIES STAND, AND HOW FAR THEY HAVE COME. The level pair on its
+   own is saturated at the hostile end: the five most divided in 2025 sit
+   between 3.97 and 3.99, so their order is noise on a 0 to 4 scale. The move
+   pair spreads from -1.56 to +2.64 and is the page's argument, but on its own
+   it cannot say whether a country that moved a long way ended up calm or
+   hostile. Both, in two pairs.
 
-   They replaced the outer band before that, which showed that something sat at
+   They replaced the outer band, which showed that something sat at
    3.99 without ever saying what: the edge of a grey shape is not a finding, a
    country's name is. Clicking one picks it out on the chart above, so the list
    is also the fastest way into the control. */
@@ -582,13 +588,15 @@ function renderRanks() {
   if (!el) return;
   const rows = DATA.bands.society.camps;
   const to = rows[rows.length - 1][0], from = to - 20;
-  const vals = [];
+  const level = [], move = [];
   for (const [name, axes] of Object.entries(DATA.society)) {
     const d = new Map(axes.camps || []);
+    if (d.has(to)) level.push([name, d.get(to)]);
     // both ends, or the country is not comparable with itself
-    if (d.has(from) && d.has(to)) vals.push([name, d.get(to) - d.get(from)]);
+    if (d.has(from) && d.has(to)) move.push([name, d.get(to) - d.get(from)]);
   }
-  vals.sort((p, q) => p[1] - q[1]);
+  level.sort((p, q) => p[1] - q[1]);
+  move.sort((p, q) => p[1] - q[1]);
   /* The flag is decoration with a job: at a glance it says which part of the
      world a list is, which is the first thing anyone wants from a ranking of
      countries they may not recognise. flagcdn serves by ISO alpha-2, and the
@@ -597,11 +605,25 @@ function renderRanks() {
      does not jump when the image lands, and loading is lazy because ten flags
      are not worth blocking on. */
   const iso = DATA.meta.iso2 || {};
-  const flag = (n) => (iso[n]
-    ? `<img class="flag" src="https://flagcdn.com/w40/${iso[n]}.png" `
-      + `srcset="https://flagcdn.com/w80/${iso[n]}.png 2x" `
-      + `width="20" height="15" alt="" loading="lazy" decoding="async">`
-    : `<span class="flag flag-none" aria-hidden="true"></span>`);
+  /* THREE UNITS V-DEM RATES THAT ISO DOES NOT NAME, so flagcdn has nothing to
+     serve for them and they used to render as an empty box. Zanzibar reaches
+     one of these lists today. The flags are committed here rather than
+     hotlinked, all three public domain on Wikimedia Commons, and the file is
+     the whole flag so it needs no attribution line on the page. */
+  const OWN = {
+    "Zanzibar": "zanzibar",
+    "Somaliland": "somaliland",
+    "German Democratic Republic": "east-germany",
+  };
+  const flag = (n) => {
+    const src = OWN[n] ? `flags/${OWN[n]}.svg`
+      : iso[n] ? `https://flagcdn.com/w40/${iso[n]}.png` : null;
+    if (!src) return `<span class="flag flag-none" aria-hidden="true"></span>`;
+    const hi = !OWN[n] && iso[n]
+      ? ` srcset="https://flagcdn.com/w80/${iso[n]}.png 2x"` : "";
+    return `<img class="flag" src="${src}"${hi} width="20" height="15" `
+      + `alt="" loading="lazy" decoding="async">`;
+  };
   /* No sub-line. The heading already says which direction and over what
      window, and a sub restating the scale a second time in the same eyeful was
      the only other thing it carried. The figure is SIGNED, because a list of
@@ -609,18 +631,27 @@ function renderRanks() {
      printed as well as a minus even though it is redundant arithmetic, since
      the two lists sit side by side and the sign is what tells them apart. */
   const moved = (v) => `${v > 0 ? "+" : "\u2212"}${fmt2(Math.abs(v))}`;
-  const list = (title, items) =>
+  const list = (title, items, fmt) =>
     `<div class="rank"><h3>${title}</h3><ol>`
     + items.map(([n, v]) =>
         `<li><button type="button" data-country="${n.replace(/"/g, "&quot;")}">`
-        + `${flag(n)}<span class="nm">${n}</span><b>${moved(v)}</b></button></li>`).join("")
+        + `${flag(n)}<span class="nm">${n}</span><b>${fmt(v)}</b></button></li>`).join("")
     + "</ol></div>";
+  /* FOUR LISTS, IN TWO PAIRS: where countries stand, then how far they have
+     come. The level pair alone was saturated at the hostile end - the five
+     most divided sit inside 0.02 of each other, so their order is noise - and
+     the move pair alone loses the fact that a country can move a long way and
+     still be calm. Read together they are the page's argument: the middle
+     barely shifts while the edges travel. */
   el.innerHTML =
-    list(`Less Hostile, ${from} to ${to}`, vals.slice(0, 5))
-    + list(`More Hostile, ${from} to ${to}`, vals.slice(-5).reverse());
+    list(`Least Divided, ${to}`, level.slice(0, 5), fmt2)
+    + list(`Most Divided, ${to}`, level.slice(-5).reverse(), fmt2)
+    + list(`Less Divided Than in ${from}`, move.slice(0, 5), moved)
+    + list(`More Divided Than in ${from}`, move.slice(-5).reverse(), moved);
   for (const btn of el.querySelectorAll("[data-country]")) {
     btn.addEventListener("click", () => {
       setCountry(btn.dataset.country);
+      $("#country-sel").value = state.country;
       $("#camps").scrollIntoView({ block: "center", behavior: "smooth" });
     });
   }
@@ -649,17 +680,19 @@ function renderLayers() {
     + `<span class="detail">${s.detail}</span></li>`).join("");
 }
 
-/* TWO MENUS, ONE STATE. The country now drives both charts, and the second
-   is far enough down the page that scrolling back up to change it is the step
-   a reader gives up on. Both are built and set from here, so there is no
-   second list to drift. */
-const SELS = ["#country-sel", "#country-sel-2"];
-
-function setCountry(c) {
-  state.country = c;
-  for (const id of SELS) { const s = $(id); if (s) s.value = c; }
-  render();
+/* A MENU PER PANEL, EACH LISTING ONLY WHAT IT CAN DRAW. The society menu is
+   the countries V-Dem rates across a long enough span to make a line; the
+   party menu is the countries V-Party codes at two elections or more, which is
+   134 of its 145 and includes two - Czech Republic and Turkey - that V-Dem
+   names differently and so are not in the other list at all. Offering either
+   menu the other's countries would put entries in it that draw nothing. */
+function menuHtml(names, first) {
+  return `<option value="${ALL}">${first}</option>`
+    + names.map((c) => `<option value="${c}">${c}</option>`).join("");
 }
+
+function setCountry(c) { state.country = c; render(); }
+function setParty(c) { state.party = c; render(); }
 
 function buildPickers() {
   const names = Object.keys(DATA.society)
@@ -673,12 +706,22 @@ function buildPickers() {
      choice, and reading it as "show me all of them" left a reader wondering
      what every other option did. The control draws ONE line on top of what
      is already there, and its empty state is no line. */
-  const html = `<option value="${ALL}">None</option>`
-    + names.map((c) => `<option value="${c}">${c}</option>`).join("");
   if (state.country !== ALL && !names.includes(state.country)) state.country = ALL;
-  for (const id of SELS) {
-    const s = $(id);
-    if (s) { s.innerHTML = html; s.value = state.country; }
+  const sel = $("#country-sel");
+  sel.innerHTML = menuHtml(names, "None");
+  sel.value = state.country;
+
+  /* Two elections or more. One is a point, and a point is not a line: a
+     country with a single coded election drew an empty chart under a heading
+     saying what it was about. */
+  const party = Object.keys(DATA.party)
+    .filter((c) => Object.values(DATA.party[c]).some((rows) => rows.length > 1))
+    .sort((a, b) => a.localeCompare(b));
+  if (state.party !== ALL && !party.includes(state.party)) state.party = ALL;
+  const sel2 = $("#country-sel-2");
+  if (sel2) {
+    sel2.innerHTML = menuHtml(party, "All countries");
+    sel2.value = state.party;
   }
 }
 
@@ -713,10 +756,9 @@ function render() {
    explained is enforced in the build and pinned by a test, which is where a
    rule belongs. */
 function wire() {
-  for (const id of SELS) {
-    const s = $(id);
-    if (s) s.addEventListener("change", (e) => setCountry(e.target.value));
-  }
+  $("#country-sel").addEventListener("change", (e) => setCountry(e.target.value));
+  const sel2 = $("#country-sel-2");
+  if (sel2) sel2.addEventListener("change", (e) => setParty(e.target.value));
   let t = null;
   window.addEventListener("resize", () => { clearTimeout(t); t = setTimeout(render, 140); });
 }
