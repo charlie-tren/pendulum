@@ -214,7 +214,17 @@ def build_society():
 
 
 def quartiles(series_by_country, axis, value_at=1):
-    """p25/p50/p75 across countries per year, for one axis.
+    """The whole distribution across countries per year, for one axis.
+
+    Seven cut points, not three. The middle half alone understates the spread
+    badly: in 2024 it runs 1.60 to 3.29 while the countries themselves run 0.22
+    to 3.99, and that is true of every year in the series, so a reader looking
+    at the middle half would think countries far more alike than they are.
+
+    Drawing all 179 of them instead was tried and is worse: raw lines at any
+    opacity that makes one visible fill the plot and bury both the band and the
+    median, which is the same grey-scribble failure that took per-country lines
+    off the wealth page. Nested bands say the same thing and stay readable.
 
     A quartile over three countries is noise, so a year needs four.
     """
@@ -233,9 +243,24 @@ def quartiles(series_by_country, axis, value_at=1):
         v = sorted(by_year[y])
         if len(v) < 4:
             continue
-        out.append([y, round(q(v, .25), 4), round(q(v, .5), 4),
-                    round(q(v, .75), 4), len(v)])
+        out.append([y] + [round(q(v, p), 4) for p in
+                          (0, .10, .25, .50, .75, .90, 1)] + [len(v)])
     return out
+
+
+def _swing(series_by_country, axis, base=(1999, 2006), late=(2019, 2024)):
+    """How far the median country's spread moved between two windows.
+
+    Computed here rather than typed into the note, for the same reason every
+    other number in these notes is computed: a sentence quoting a figure the
+    build already knows is a copy waiting to go stale.
+    """
+    rows = quartiles(series_by_country, axis)
+    pick = lambda lo, hi: sorted(r[4] for r in rows if lo <= r[0] <= hi)
+    a, z = pick(*base), pick(*late)
+    if not a or not z:
+        return 0.0
+    return z[len(z) // 2] / a[len(a) // 2] - 1
 
 
 def main() -> int:
@@ -256,8 +281,17 @@ def main() -> int:
                 },
                 "europe": {
                     "label": "European expert survey",
-                    "note": "The same measure from a second expert panel, on a "
-                            f"different scale. CHES, {len(europe)} countries.",
+                    # this layer has no chart of its own on the page: it exists
+                    # to be a check on the one above it, and a check is a
+                    # sentence rather than a second picture of the same claim
+                    "note": "A different panel of academics, a different "
+                            "questionnaire and a different scale, across "
+                            f"{len(europe)} European countries, 1999 to 2024. It "
+                            "is carried because it agrees: economic distance "
+                            f"moved {_swing(europe, 'economy'):+.0%} over those "
+                            "twenty-five years against "
+                            f"{_swing(europe, 'culture'):+.0%} on liberal and "
+                            "traditional values. CHES.",
                     "axes": [{"key": k, "label": lab} for k, _, lab in CHES_AXES],
                 },
                 "society": {
@@ -295,8 +329,8 @@ def main() -> int:
         b = payload["bands"]["party"][k]
         if len(b) > 8:
             first, last = b[0], b[-1]
-            print(f"    {lab:26s} {first[0]} {first[2]:.2f}  ->  "
-                  f"{last[0]} {last[2]:.2f}")
+            print(f"    {lab:26s} {first[0]} {first[4]:.2f}  ->  "
+                  f"{last[0]} {last[4]:.2f}")
     return 0
 
 

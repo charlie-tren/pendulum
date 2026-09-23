@@ -19,12 +19,19 @@ LAYERS = ("party", "europe", "society")
 CULTURAL = ("immigration", "lgbt", "minorities")
 
 
+# a band row is [year, min, p10, p25, p50, p75, p90, max, n]. Named, because
+# this index moved once already: the row was widened from three cut points to
+# seven and every test here went on reading r[2], which had silently become the
+# tenth percentile. They all still passed, against the wrong statistic.
+MIN, P10, P25, P50, P75, P90, MAX, N = 1, 2, 3, 4, 5, 6, 7, 8
+
+
 def decade_median(layer, axis, lo, hi):
     """Median of the per-year median across the countries in a window."""
     rows = [r for r in P["bands"][layer][axis] if lo <= r[0] <= hi]
     if not rows:
         return None
-    v = sorted(r[2] for r in rows)
+    v = sorted(r[P50] for r in rows)
     return v[len(v) // 2]
 
 
@@ -78,12 +85,33 @@ def test_the_vote_coverage_floor_actually_excluded_something():
         "no election was ever dropped, so the coverage floor is not doing anything")
 
 
-def test_quartile_bands_never_summarise_fewer_than_four_countries():
+def test_band_rows_are_a_sorted_ladder_over_at_least_four_countries():
+    """Seven cut points, in order, every year. Out of order means the
+    percentile function or the column order went wrong, and the chart would draw
+    envelopes that cross each other rather than nest."""
     for layer in LAYERS:
         for axis, rows in P["bands"][layer].items():
             for row in rows:
-                assert row[-1] >= 4, f"{layer}/{axis} {row[0]}: n={row[-1]}"
-                assert row[1] <= row[2] <= row[3], f"{layer}/{axis} {row[0]} unordered"
+                assert row[N] >= 4, f"{layer}/{axis} {row[0]}: n={row[N]}"
+                ladder = row[MIN:N]
+                assert ladder == sorted(ladder), f"{layer}/{axis} {row[0]}: {ladder}"
+
+
+def test_the_full_range_is_much_wider_than_the_middle_half():
+    """The reason the outer envelopes are drawn at all. If the middle half ever
+    came to describe the population well, the extra bands would be clutter and
+    this should say so rather than the page carrying them out of habit."""
+    rows = [r for r in P["bands"]["society"]["camps"] if r[0] >= 1950]
+    assert rows
+    ratio = sorted((r[MAX] - r[MIN]) / (r[P75] - r[P25]) for r in rows)
+    # measured rather than guessed: over the 76 years since 1950 the ratio runs
+    # 1.94 to 2.46 with a median of 2.24, so the full range is consistently
+    # about twice the middle half. 1.6 is well below the observed floor and well
+    # above 1.0, which is the value at which the outer bands would be redundant.
+    assert ratio[0] > 1.6, (
+        f"the narrowest year has a full range only {ratio[0]:.2f} times its "
+        "middle half, so the outer bands have stopped telling the reader "
+        "anything the inner one does not")
 
 
 def test_the_economic_axis_moved_less_than_every_cultural_one():

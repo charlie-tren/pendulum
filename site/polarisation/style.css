@@ -35,7 +35,7 @@
   --p-immig: #c0522d;  --p-lgbt: #a8387e;  --p-minor: #c08a3e;
   --p-viol: #8a2020;   --p-plur: #5d8a6b;  --p-pop: #6b5b95;
   --p-anti: #495070;
-  --p-pick: #1a1c1f;   --p-band: #d7dce2;
+  --p-pick: #1a1c1f;   --p-band: #d7dce2;  --p-all: #9aa6b2;
   --p-left: #2f6fb2;   --p-right: #c33c3c;
   /* the three layers, for the swatches in the panel that lists them */
   --p-party: #c0522d;  --p-europe: #5d8a6b;  --p-society: #2f6fb2;
@@ -261,7 +261,7 @@ a { color: var(--accent); }
     --p-immig: #e08055;  --p-lgbt: #e07ab5;  --p-minor: #e8c07a;
     --p-viol: #d95555;   --p-plur: #82bd93;  --p-pop: #a294cf;
     --p-anti: #8d95bb;
-    --p-pick: #f2f4f7;   --p-band: #343b45;
+    --p-pick: #f2f4f7;   --p-band: #343b45;  --p-all: #6a7684;
     --p-left: #6ea8e0;   --p-right: #d95555;
     --p-party: #e08055;  --p-europe: #82bd93;  --p-society: #6ea8e0;
     --coin-bronze: #b06a28; --coin-bronze-face: #d98f45; --coin-bronze-edge: #f0b982;
@@ -322,7 +322,10 @@ body.loading .loading-note {
   padding: 6px 10px 6px 8px; margin-right: -8px; border-radius: 7px;
 }
 .home:hover { background: var(--panel); color: var(--ink); }
-.home .back { font-size: 15px; }
+/* The arrow rides a touch high. It is a glyph on the text baseline next to a
+   label whose own visual centre is above that baseline, so baseline alignment
+   reads as the arrow having sagged. */
+.home .back { font-size: 15px; display: inline-block; transform: translateY(-0.06em); }
 
 /* ---- wordmark ----
    The rods take currentColor so the mark follows the theme; the three bobs stay

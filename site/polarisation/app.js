@@ -18,6 +18,7 @@
    turn out to be close to unrelated. So nothing on this page averages a party
    spread with a society rating, and the page says so in words. */
 
+const ALL = "__all";
 const DEFAULTS = { country: "United States of America" };
 const state = { ...DEFAULTS };
 let DATA = null;
@@ -50,11 +51,6 @@ const AXIS_STYLE = {
    five are there for anyone who wants to check that the four were not picked to
    flatter the point. */
 const AXES_ON = new Set(["economy", "religion", "immigration", "lgbt"]);
-
-const CHES_STYLE = {
-  economy: "var(--p-econ)", general: "var(--p-relig)",
-  culture: "var(--p-lgbt)", immigration: "var(--p-immig)", eu: "var(--p-plur)",
-};
 
 const fmt2 = (v) => v.toFixed(2);
 const pct = (v) => `${v > 0 ? "+" : ""}${Math.round(v * 100)}%`;
@@ -178,20 +174,36 @@ function drawCamps() {
   const { xOf, yOf } = axisFrame(svg, box, pad, x0, x1, 0, 4,
     [0, 1, 2, 3, 4], narrow ? 40 : 20);
 
-  const p25 = smooth(band.map((r) => [r[0], r[1]]));
-  const p50 = smooth(band.map((r) => [r[0], r[2]]));
-  const p75 = smooth(band.map((r) => [r[0], r[3]]));
-  const top = p75.map(([x, y]) => `${xOf(x).toFixed(1)},${yOf(y).toFixed(1)}`);
-  const bot = p25.slice().reverse()
-    .map(([x, y]) => `${xOf(x).toFixed(1)},${yOf(y).toFixed(1)}`);
-  svg.appendChild(svgEl("polygon", {
-    points: [...top, ...bot].join(" "), fill: "var(--p-band)", "fill-opacity": 0.5,
-  }));
+  /* THREE NESTED BANDS, widest first, so the whole population is on the chart
+     and not just its middle. The outer pair is the full range, and in every
+     single year it runs from about 0.2 to about 4.0: countries are far less
+     alike than the middle half suggests, and a reader is entitled to see that
+     before reading anything off the median.
+
+     Drawing all 179 countries as lines was tried first and is worse. At any
+     opacity that makes one line visible they fill the plot and bury both the
+     band and the median, which is the same grey-scribble failure that took
+     per-country lines off the wealth page. */
+  const col = (i) => smooth(band.map((r) => [r[0], r[i]]));
+  const envelope = (lo, hi, opacity) => {
+    const top = hi.map(([x, y]) => `${xOf(x).toFixed(1)},${yOf(y).toFixed(1)}`);
+    const bot = lo.slice().reverse()
+      .map(([x, y]) => `${xOf(x).toFixed(1)},${yOf(y).toFixed(1)}`);
+    svg.appendChild(svgEl("polygon", {
+      points: [...top, ...bot].join(" "),
+      fill: "var(--p-band)", "fill-opacity": opacity,
+    }));
+  };
+  envelope(col(1), col(7), 0.3);     // every country, lowest to highest
+  envelope(col(2), col(6), 0.4);     // the middle eight in ten
+  envelope(col(3), col(5), 0.7);     // the middle half
+  const p50 = col(4);
   svg.appendChild(line(
     p50.map(([x, y]) => `${xOf(x).toFixed(1)},${yOf(y).toFixed(1)}`).join(" "),
-    "var(--ink-soft)", 2, { "stroke-dasharray": "5 4", "stroke-opacity": 0.8 }));
+    "var(--ink-soft)", 2, { "stroke-dasharray": "5 4", "stroke-opacity": 0.9 }));
 
-  const own = (DATA.society[state.country] || {}).camps || [];
+  const own = state.country === ALL
+    ? [] : ((DATA.society[state.country] || {}).camps || []);
   const sel = smooth(own.filter((r) => r[0] >= 1900));
   if (sel.length > 1) {
     svg.appendChild(line(
@@ -211,9 +223,15 @@ function drawCamps() {
       (!b || Math.abs(p[0] - yr) < Math.abs(b[0] - yr)) ? p : b, null);
     const m = near(p50), s = sel.length ? near(sel) : null;
     if (!m) { readout.hidden = true; return; }
+    const row = band.reduce((b2, r) =>
+      (!b2 || Math.abs(r[0] - yr) < Math.abs(b2[0] - yr)) ? r : b2, null);
     readout.innerHTML = `<b>${yr}</b>`
       + `<div class="row"><span><i style="background:var(--ink-soft)"></i>`
       + `middle country</span><span>${fmt2(m[1])}</span></div>`
+      + `<div class="row"><span><i style="background:var(--p-band)"></i>`
+      + `middle half</span><span>${fmt2(row[3])} to ${fmt2(row[5])}</span></div>`
+      + `<div class="row"><span><i class="faint" style="background:var(--p-band)"></i>`
+      + `all ${row[8]}</span><span>${fmt2(row[1])} to ${fmt2(row[7])}</span></div>`
       + (s ? `<div class="row"><span><i style="background:var(--p-pick)"></i>`
            + `${state.country}</span><span>${fmt2(s[1])}</span></div>` : "")
       + `<div class="prov">0 is no camps, 4 is a society split in two</div>`;
@@ -226,23 +244,26 @@ function drawCamps() {
   const at = (y) => {
     const r = band.reduce((b, p) =>
       (!b || Math.abs(p[0] - y) < Math.abs(b[0] - y)) ? p : b, null);
-    return r ? r[2] : null;
+    return r ? r[4] : null;
   };
   const a = at(1978), z = at(2025);
   $("#camps-sub").textContent =
     `V-Dem asks its country experts, every year since 1900, whether supporters `
     + `of opposing camps avoid one another. The band is the middle half of `
-    + `${band[band.length - 1][4]} countries.`;
+    + `${band[band.length - 1][8]} countries.`;
   $("#camps-caption").textContent =
     `The middle country sits at ${fmt2(z)} today against ${fmt2(a)} in 1978. `
     + `The rise since 2010 is real, and it is a return to where the Cold War `
     + `left things rather than a new peak.`;
-  describe(svg, "Societal polarisation, 1900 to 2025, as the middle half of "
-              + "countries and one selected country.");
+  describe(svg, "Societal polarisation, 1900 to 2025: the full range of "
+              + "countries, the middle half inside it, and one selected "
+              + "country.");
 
   $("#legend-camps").innerHTML =
-    `<span class="explained" tabindex="0" title="The middle half of every country rated that year, and the median through it."><i style="background:var(--p-band)"></i>All countries</span>`
-    + `<span><i style="background:var(--p-pick)"></i>${state.country}</span>`;
+    `<span class="explained" tabindex="0" title="Every country rated that year, from the least divided to the most, and the middle eight in ten inside it."><i class="faint" style="background:var(--p-band)"></i>All ${band[band.length - 1][8]} countries</span>`
+    + `<span class="explained" tabindex="0" title="The middle half of countries, with the median country dashed through it."><i style="background:var(--p-band)"></i>Middle half</span>`
+    + (state.country === ALL ? ""
+        : `<span><i style="background:var(--p-pick)"></i>${state.country}</span>`);
 }
 
 /* ------------------------------------------------ 2. the axes, the contrast */
@@ -261,10 +282,10 @@ function median(rows, from, to) {
 function axisIndex(layer, axis, baseFrom, baseTo) {
   const rows = (DATA.bands[layer] || {})[axis] || [];
   const base = rows.filter((r) => r[0] >= baseFrom && r[0] <= baseTo)
-    .map((r) => r[2]).sort((a, b) => a - b);
+    .map((r) => r[4]).sort((a, b) => a - b);
   if (!base.length) return [];
   const b = base[Math.floor(base.length / 2)];
-  return rows.map((r) => [r[0], r[2] / b]);
+  return rows.map((r) => [r[0], r[4] / b]);
 }
 
 function drawFan(svgId, readoutId, legendId, layer, styles, baseFrom, baseTo,
@@ -351,35 +372,10 @@ function drawAxes() {
   const series = drawFan("#axes", "#axes-readout", "#legend-axes", "party",
     AXIS_STYLE, 1970, 1979, labels, AXES_ON);
   if (!series) return;
-  const swing = (k) => median(axisIndex("party", k, 1970, 1979), 2010, 2019);
-  $("#axes-caption").textContent =
-    `Economic distance is where it was fifty years ago, ${pct(swing("economy"))}. `
-    + `Distance on immigration is ${pct(swing("immigration"))} and on LGBT `
-    + `rights ${pct(swing("lgbt"))}. The parties did not stop disagreeing, they `
-    + `changed what they disagree about.`;
   describe($("#axes"), "Nine measures of how far apart parties stand, each "
                      + "against its own level in the 1970s.");
 }
 
-function drawChes() {
-  const labels = Object.fromEntries(
-    DATA.meta.layers.europe.axes.map((a) => [a.key, a.label]));
-  const on = new Set(["economy", "culture"]);
-  drawFan("#ches", "#ches-readout", "#legend-ches", "europe",
-    CHES_STYLE, 1999, 2006, labels, on);
-  const n = Object.keys(DATA.europe).length;
-  $("#ches-sub").textContent =
-    `The Chapel Hill Expert Survey asks a different panel of academics a `
-    + `different set of questions on a different scale, across ${n} European `
-    + `countries. It is a check on the chart above, not more of it.`;
-  const sw = (k) => median(axisIndex("europe", k, 1999, 2006), 2019, 2024);
-  $("#ches-caption").textContent =
-    `It finds the same thing. Economic distance ${pct(sw("economy"))} over `
-    + `twenty-five years, against ${pct(sw("culture"))} on liberal and `
-    + `traditional values.`;
-  describe($("#ches"), "The same measure from the Chapel Hill Expert Survey, "
-                     + "1999 to 2024.");
-}
 
 /* ----------------------------------------------------------------- furniture */
 
@@ -404,15 +400,17 @@ function buildPickers() {
   const names = Object.keys(DATA.society)
     .filter((c) => (DATA.society[c].camps || []).length > 20)
     .sort((a, b) => a.localeCompare(b));
-  sel.innerHTML = names.map((c) => `<option value="${c}">${c}</option>`).join("");
-  if (!names.includes(state.country)) state.country = names[0];
+  /* "All countries" is not a country: it drops the highlighted line and leaves
+     the spread and the median, which is every country at once. */
+  sel.innerHTML = `<option value="${ALL}">All countries</option>`
+    + names.map((c) => `<option value="${c}">${c}</option>`).join("");
+  if (state.country !== ALL && !names.includes(state.country)) state.country = ALL;
   sel.value = state.country;
 }
 
 function render() {
   drawCamps();
   drawAxes();
-  drawChes();
 }
 
 function wire() {
