@@ -641,7 +641,12 @@ function renderRanks() {
   const el = $("#camps-ranks");
   if (!el) return;
   const rows = DATA.bands.society.camps;
-  const to = rows[rows.length - 1][0], from = to - 20;
+  /* ONE CONSTANT FOR THE WINDOW AND ITS LABEL. The headings used to name the
+     start year, which meant the number in the heading and the number in the
+     arithmetic were written twice and could part company. `(20y)` is derived
+     from the same place the slice is. */
+  const WINDOW = 20;
+  const to = rows[rows.length - 1][0], from = to - WINDOW;
   const level = [], move = [];
   for (const [name, axes] of Object.entries(DATA.society)) {
     const d = new Map(axes.camps || []);
@@ -700,8 +705,9 @@ function renderRanks() {
   el.innerHTML =
     list(`Least Divided, ${to}`, level.slice(0, 5), fmt2)
     + list(`Most Divided, ${to}`, level.slice(-5).reverse(), fmt2)
-    + list(`Less Divided Than in ${from}`, move.slice(0, 5), moved)
-    + list(`More Divided Than in ${from}`, move.slice(-5).reverse(), moved);
+    + list(`Greatest Decrease in Division (${WINDOW}y)`, move.slice(0, 5), moved)
+    + list(`Greatest Increase in Division (${WINDOW}y)`,
+           move.slice(-5).reverse(), moved);
   for (const btn of el.querySelectorAll("[data-country]")) {
     btn.addEventListener("click", () => {
       setCountry(btn.dataset.country);
