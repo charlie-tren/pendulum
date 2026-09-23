@@ -44,7 +44,7 @@
      page: three greys and no reason to look. Indigo for the population, deeper
      indigo for the median, warm amber for whichever country is picked out, so
      the one line the reader chose is the only thing that is not blue. */
-  --p-band: #9aa6cc;   --p-med: #3f4a7a;   --p-pick: #c77d2e;
+  --p-band: #9aa6cc;   --p-med: #3f4a7a;   --p-pick: #a63446;
   --p-left: #2f6fb2;   --p-right: #c33c3c;
   /* the three layers, for the swatches in the panel that lists them */
   --p-party: #c0522d;  --p-europe: #5d8a6b;  --p-society: #2f6fb2;
@@ -289,7 +289,7 @@ a { color: var(--accent); }
     --p-immig: #d18a63;  --p-lgbt: #b28cbd;  --p-minor: #c4ab68;
     --p-viol: #cc7873;   --p-plur: #6fa99b;  --p-pop: #8f99bd;
     --p-anti: #a8957f;
-    --p-band: #59639a;   --p-med: #aab4dc;   --p-pick: #e2a052;
+    --p-band: #59639a;   --p-med: #aab4dc;   --p-pick: #ef8a9c;
     --p-left: #6ea8e0;   --p-right: #d95555;
     --p-party: #e08055;  --p-europe: #82bd93;  --p-society: #6ea8e0;
     --coin-bronze: #b06a28; --coin-bronze-face: #d98f45; --coin-bronze-edge: #f0b982;
@@ -814,6 +814,14 @@ h1:hover .coins .s-gold, h1:focus-within .coins .s-gold { animation-delay: .24s;
   font-size: 12.5px; color: var(--ink-faint); font-variant-numeric: tabular-nums;
 }
 .rank li button > span { flex: 1 1 auto; min-width: 0; }
+/* The flag keeps a fixed box whether or not an image arrives, so the three
+   countries without one line up with the rest instead of shuffling left. */
+.flag {
+  flex: none; width: 20px; height: 15px; align-self: center;
+  border-radius: 2px; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .12);
+  object-fit: cover;
+}
+.flag-none { box-shadow: inset 0 0 0 1px var(--rule); }
 .rank li button > b {
   flex: none; font-weight: 400; color: var(--ink-faint);
   font-variant-numeric: tabular-nums;

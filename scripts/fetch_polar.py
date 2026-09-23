@@ -27,6 +27,11 @@ OUT = RAW / "polar"
 
 # the V-Dem Institute's own R package, which ships the released dataset
 VDEM = "https://github.com/vdeminstitute/vdemdata/raw/master/data/vdem.RData"
+# ISO 3166 alpha-3 to alpha-2, so the ranked lists can show a flag. V-Dem keys
+# on alpha-3 and flagcdn serves on alpha-2, and there is no rule connecting the
+# two: AUS to AU is a lookup, not a truncation.
+ISO = ("https://raw.githubusercontent.com/lukes/"
+       "ISO-3166-Countries-with-Regional-Codes/master/all/all.csv")
 
 # already here for the main page; named so a missing one is a clear error
 LOCAL = {
@@ -48,16 +53,16 @@ def main() -> int:
     for n, what in LOCAL.items():
         print(f"  have  data/raw/{n:18s} {(RAW / n).stat().st_size:>11,} bytes  {what}")
 
-    dest = OUT / "vdem.RData"
-    if dest.exists():
-        print(f"  have  data/raw/polar/vdem.RData  {dest.stat().st_size:,} bytes")
-        return 0
-
-    print(f"  fetch {VDEM}")
-    req = urllib.request.Request(VDEM, headers={"User-Agent": "pendulum/1.0"})
-    with urllib.request.urlopen(req, timeout=300) as r, dest.open("wb") as f:
-        f.write(r.read())
-    print(f"  wrote data/raw/polar/vdem.RData  {dest.stat().st_size:,} bytes")
+    for name, url in (("vdem.RData", VDEM), ("iso3166.csv", ISO)):
+        dest = OUT / name
+        if dest.exists():
+            print(f"  have  data/raw/polar/{name}  {dest.stat().st_size:,} bytes")
+            continue
+        print(f"  fetch {url}")
+        req = urllib.request.Request(url, headers={"User-Agent": "pendulum/1.0"})
+        with urllib.request.urlopen(req, timeout=300) as r, dest.open("wb") as fh:
+            fh.write(r.read())
+        print(f"  wrote data/raw/polar/{name}  {dest.stat().st_size:,} bytes")
     return 0
 
 

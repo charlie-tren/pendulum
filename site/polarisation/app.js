@@ -19,11 +19,11 @@
    spread with a society rating, and the page says so in words. */
 
 const ALL = "__all";
-/* Opens on ALL countries. The page's first claim is about the world, not about
-   America: the median country is back where it was in 1978 and only a handful
-   broke away from it. Opening on the United States put the exception in front
-   of the rule and made the page look like it was arguing the opposite. */
-const DEFAULTS = { country: "__all" };
+/* Opens on Australia. A page about how divided countries are should open on
+   the reader's own, and Australia is also a useful default on the merits: it
+   sits close to the median for most of the century, so the first thing anyone
+   sees is a country tracking the world rather than an outlier arguing with it. */
+const DEFAULTS = { country: "Australia" };
 const state = { ...DEFAULTS };
 let DATA = null;
 
@@ -50,11 +50,12 @@ const AXIS_STYLE = {
   antiplural: { colour: "var(--p-anti)" },
 };
 
-/* Four on, five off. The page's claim is a contrast, and a contrast needs the
-   two flat lines and the two that moved most, not nine lines at once; the other
-   five are there for anyone who wants to check that the four were not picked to
-   flatter the point. */
-const AXES_ON = new Set(["economy", "religion", "immigration", "lgbt",
+/* Five on, four off. Economics is the one that did not move and has to be
+   there or the chart has no baseline; the other four are the ones that did.
+   Religious principles comes off the default set: it is flat like economics and
+   two flat lines make the same point once. The rest stay in the key for anyone
+   checking that these five were not chosen to flatter the argument. */
+const AXES_ON = new Set(["economy", "immigration", "lgbt",
                          "minorities", "pluralism"]);
 
 const fmt2 = (v) => v.toFixed(2);
@@ -286,12 +287,6 @@ function drawCamps() {
   svg.appendChild(grab);
   clearOnLeave(svg, readout);
 
-  const at = (y) => {
-    const r = band.reduce((b, p) =>
-      (!b || Math.abs(p[0] - y) < Math.abs(b[0] - y)) ? p : b, null);
-    return r ? r[4] : null;
-  };
-  const a = at(1978), z = at(2025);
   const last = band[band.length - 1];
   /* The country count is read off the payload, not typed. It moves whenever
      V-Dem extends coverage, and a sentence that quotes a number the build
@@ -301,10 +296,6 @@ function drawCamps() {
     + `interact in a friendly way outside politics: at family functions, in `
     + `civic associations, at work. 0 is friendly, 4 is hostile. The band `
     + `covers the middle half of ${last[8]} countries.`;
-  $("#camps-caption").textContent =
-    `The median sits at ${fmt2(z)} today against ${fmt2(a)} in 1978. `
-    + `The rise since 2010 is real, and it is a return to where the Cold War `
-    + `left things rather than a new peak.`;
   describe(svg, "Societal polarisation, 1900 to 2025: the full range of "
               + "countries, the middle half inside it, and one selected "
               + "country.");
@@ -480,11 +471,24 @@ function renderRanks() {
     if (hit) vals.push([name, hit[1]]);
   }
   vals.sort((p, q) => p[1] - q[1]);
+  /* The flag is decoration with a job: at a glance it says which part of the
+     world a list is, which is the first thing anyone wants from a ranking of
+     countries they may not recognise. flagcdn serves by ISO alpha-2, and the
+     three entries with no code - East Germany, Somaliland, Zanzibar - simply
+     get no image rather than a broken one. width and height are set so the row
+     does not jump when the image lands, and loading is lazy because ten flags
+     are not worth blocking on. */
+  const iso = DATA.meta.iso2 || {};
+  const flag = (n) => (iso[n]
+    ? `<img class="flag" src="https://flagcdn.com/w40/${iso[n]}.png" `
+      + `srcset="https://flagcdn.com/w80/${iso[n]}.png 2x" `
+      + `width="20" height="15" alt="" loading="lazy" decoding="async">`
+    : `<span class="flag flag-none" aria-hidden="true"></span>`);
   const list = (title, note, items) =>
     `<div class="rank"><h3>${title}</h3><p class="rank-note">${note}</p><ol>`
     + items.map(([n, v]) =>
         `<li><button type="button" data-country="${n.replace(/"/g, "&quot;")}">`
-        + `<span>${n}</span><b>${fmt2(v)}</b></button></li>`).join("")
+        + `${flag(n)}<span>${n}</span><b>${fmt2(v)}</b></button></li>`).join("")
     + "</ol></div>";
   el.innerHTML =
     list("Most friendly", `Opposing supporters still get on, ${year}`,

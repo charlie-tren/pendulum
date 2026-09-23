@@ -192,10 +192,34 @@ def build_europe():
     return dict(out)
 
 
+def iso2_by_name(df) -> dict:
+    """Country name to ISO 3166 alpha-2, for the flags on the ranked lists.
+
+    V-Dem keys on alpha-3 and flagcdn serves on alpha-2, and nothing connects
+    the two but a table: AUS to AU is a lookup, not a truncation.
+
+    27 of V-Dem's 202 entries have no alpha-2 and never will, because they are
+    states that no longer exist: Baden, Bavaria, the Papal States, the German
+    Democratic Republic, South Yemen. Those simply carry no flag. Three that DO
+    still exist are missing from the ISO table because their status is disputed,
+    and they are added by hand rather than dropped.
+    """
+    import csv
+
+    table = {r["alpha-3"]: r["alpha-2"].lower()
+             for r in csv.DictReader((RAW / "polar" / "iso3166.csv")
+                                     .open(encoding="utf-8-sig"))
+             if r.get("alpha-3") and r.get("alpha-2")}
+    table.update({"XKX": "xk", "PSG": "ps", "PSB": "ps"})
+    pairs = df[["country_name", "country_text_id"]].drop_duplicates()
+    return {n: table[t] for n, t in pairs.itertuples(index=False) if t in table}
+
+
 def build_society():
     import pyreadr
 
     df = pyreadr.read_r(str(RAW / "polar" / "vdem.RData"))["vdem"]
+    flags = iso2_by_name(df)
     cols = ["country_name", "year"] + [c for _, c, _, _ in SOCIETY_AXES]
     d = df[cols]
     d = d[d["year"] >= 1900]
@@ -210,7 +234,7 @@ def build_society():
     for c in out:
         for k in out[c]:
             out[c][k].sort()
-    return dict(out)
+    return dict(out), flags
 
 
 def quartiles(series_by_country, axis, value_at=1):
@@ -266,7 +290,7 @@ def _swing(series_by_country, axis, base=(1999, 2006), late=(2019, 2024)):
 def main() -> int:
     party, cov = build_party()
     europe = build_europe()
-    society = build_society()
+    society, flags = build_society()
 
     payload = {
         "meta": {
@@ -304,6 +328,11 @@ def main() -> int:
                 },
             },
             "coverage": cov,
+            # country name to ISO alpha-2, for the flags on the ranked lists.
+            # A sibling of the series rather than a key inside them: every
+            # consumer of a country's axes dict assumes the values are lists of
+            # rows, so a bare string in there is a trap.
+            "iso2": flags,
             "min_coverage": MIN_COVERAGE,
             "sources": SOURCES,
         },
