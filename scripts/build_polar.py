@@ -80,6 +80,13 @@ CHES_AXES = [
     ("general", "lrgen", "General left and right"),
 ]
 
+# The `note` on each axis and each layer below is NOT rendered by the page: the
+# panel that showed them came off at Charlie's request on 23/09/2026. They stay
+# in the payload deliberately, and this comment exists so the next pass neither
+# cuts them as dead weight nor puts the panel back. They are the only written
+# definition of nine terms a reader meets as bare labels in a key - "political
+# pluralism", "anti-pluralism" - so if those ever earn a hover, this is where
+# the words come from. Dead CODE gets deleted; a definition does not.
 SOCIETY_AXES = [
     ("camps", "v2cacamps_osp", "Society in antagonistic camps",
      "V-Dem asks its country experts whether supporters of opposing political "
