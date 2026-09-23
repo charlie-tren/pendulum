@@ -343,45 +343,52 @@ def _swing(series_by_country, axis, base=(1999, 2006), late=(2019, 2024)):
     return z[len(z) // 2] / a[len(a) // 2] - 1
 
 
-# UNITS V-DEM CODES THAT ARE NOT COUNTRIES. The institute's coding units are
-# polities - places with their own government whose politics can be observed -
-# which is the right unit for measuring how a society governs itself and the
-# wrong unit for a page that ranks COUNTRIES. Charlie, on finding Zanzibar at
-# the top of a list: "it doesnt exist as a country anymore."
+# A UNIT WHOSE PARENT ALREADY COUNTS IT. V-Dem's coding units are polities -
+# places with their own government whose politics can be observed - and one of
+# them is inside another. Its own metadata says so in both directions:
+# Zanzibar's `histname` reads "Zanzibar, semi-autonomous region of Tanzania",
+# and Tanzania's reads "United Republic of Tanzania [Zanzibar joins
+# Tanganyika]". Zanzibaris vote in Tanzanian national elections. So the island
+# appears twice in any cross-section of this data, once on its own and once
+# inside its parent, and it appeared in a list of countries besides.
 #
-# Merging one into its parent is not the alternative it looks like. V-Dem codes
-# Tanzania and Zanzibar separately because they ARE separately governed, and
-# over the last twenty years they moved in opposite directions - Tanzania 1.00
-# to 2.22, Zanzibar 2.31 to 1.15. An average of the two is a number nobody
-# measured, about a polity nobody governs. So these come out.
+# Merging the two is worse than dropping one. V-Dem codes them separately
+# because they are separately governed, and over the last twenty years they
+# moved in opposite directions - Tanzania 1.00 to 2.22, Zanzibar 2.31 to 1.15.
+# An average is a number nobody measured about a polity nobody governs.
 #
-# The rule is "administered as part of another polity", not "small" or "not a
-# UN member". Taiwan and Kosovo stay: they are partially recognised and they
-# govern themselves, which is what this indicator is about. Palestine/Gaza and
-# Palestine/West Bank stay for the same reason and because no coded unit
-# administers them. The parent is named so the claim is checkable, and asserted
-# against the frame so a rename upstream fails here rather than silently
-# keeping a unit this page means to drop.
-NOT_A_COUNTRY = {
-    "Zanzibar": "Tanzania",
-    "Hong Kong": "China",
-    "Somaliland": "Somalia",
-    "German Democratic Republic": "Germany",
-}
+# CONSIDERED AND KEPT, so nobody cuts them again:
+#
+#   Hong Kong  V-Dem calls it "a special administrative region of China", which
+#              is the same shape of description as Zanzibar's, and it is kept
+#              anyway - Charlie's call, made after seeing what dropping it
+#              cost. The defence is that it is governed under a separate legal
+#              order with its own franchise, and Hong Kongers do not vote in
+#              mainland elections, so its politics are genuinely its own and
+#              China's reading is not a reading of it. That is a judgement
+#              about the world rather than something this data settles.
+#   Somaliland V-Dem: "Republic of Somaliland [independent state]". Unrecognised
+#              and self-governing, like Taiwan and Kosovo, which also stay.
+#   GDR        a sovereign state for every year it is coded, with its own COW
+#              code, and Germany's series covers the Federal Republic only.
+#              Neither it nor Somaliland can reach a ranked list - their data
+#              stops in 1990 and 2024 - so this only affects the bands, where
+#              both belong.
+COVERED_BY_PARENT = {"Zanzibar": "Tanzania"}
 
 
-def drop_non_countries(frame, reference):
-    """Take the parts out, and check each one's parent is really in the data.
+def drop_double_counted(frame, reference):
+    """Take out the unit its parent already counts.
 
-    Checked against the SOCIETY frame rather than each layer's own, because
-    whether Hong Kong is part of China is a fact about the world and not about
-    which countries V-Party happens to code.
+    The parent is asserted present in the SOCIETY frame, which is the one with
+    full coverage, so a rename upstream fails the build rather than silently
+    keeping a unit this page means to drop.
     """
-    for unit, parent in NOT_A_COUNTRY.items():
+    for unit, parent in COVERED_BY_PARENT.items():
         assert parent in reference, (
-            f"{unit} is dropped as part of {parent}, and {parent} is not in "
-            "the data: either the name changed upstream or the claim is wrong")
-    return {n: v for n, v in frame.items() if n not in NOT_A_COUNTRY}
+            f"{unit} is dropped because {parent} already counts it, and "
+            f"{parent} is not in the data: the name changed upstream")
+    return {n: v for n, v in frame.items() if n not in COVERED_BY_PARENT}
 
 
 def main() -> int:
@@ -389,9 +396,9 @@ def main() -> int:
     europe = build_europe()
     society, flags = build_society()
 
-    society = drop_non_countries(society, society)
-    party = drop_non_countries(party, society)
-    flags = {n: c for n, c in flags.items() if n not in NOT_A_COUNTRY}
+    society = drop_double_counted(society, society)
+    party = drop_double_counted(party, society)
+    flags = {n: c for n, c in flags.items() if n not in COVERED_BY_PARENT}
 
     payload = {
         "meta": {

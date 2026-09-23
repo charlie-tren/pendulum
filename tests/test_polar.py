@@ -278,32 +278,38 @@ def test_the_twenty_year_window_is_real_for_almost_every_country():
         f"{to - 20} to {to} window")
 
 
-def test_no_layer_carries_a_unit_that_is_part_of_another_unit_in_it():
-    """V-Dem's coding units are POLITIES, which is the right unit for measuring
-    how a society governs itself and the wrong one for a page that ranks
-    countries. Zanzibar reached the top of a ranked list and Charlie asked what
-    it was doing there.
+def test_no_layer_counts_a_polity_twice():
+    """V-Dem's coding units are POLITIES, and one of them is inside another:
+    Zanzibar's own metadata calls it "a semi-autonomous region of Tanzania",
+    Tanzania's calls itself "the United Republic of Tanzania [Zanzibar joins
+    Tanganyika]", and Zanzibaris vote in Tanzanian national elections. So the
+    island was in every cross-section twice, and in a list of countries
+    besides, which is where Charlie found it.
 
-    Merging is not the alternative: V-Dem codes Tanzania and Zanzibar
-    separately because they are separately governed, and over twenty years they
-    moved in opposite directions, so an average of the two is a number nobody
-    measured. They are dropped in the build; this is the guard that they stay
-    dropped, and that anything of the same shape added later is caught."""
-    parts = {
-        "Zanzibar": "Tanzania",
-        "Hong Kong": "China",
-        "Somaliland": "Somalia",
-        "German Democratic Republic": "Germany",
-    }
+    Merging is not the alternative: the two are coded separately because they
+    are separately governed, and over twenty years they moved in opposite
+    directions, so an average is a number nobody measured.
+
+    WHAT IS DELIBERATELY STILL HERE is the other half of this test. Hong Kong
+    is described by V-Dem in the same shape of words and is kept anyway, by
+    decision, because it is governed under its own legal order and franchise.
+    Somaliland and the German Democratic Republic are self-governing and
+    sovereign respectively. If a future pass cuts any of them as tidying, this
+    fails and says so."""
+    parent = {"Zanzibar": "Tanzania"}
     for layer in LAYERS:
-        for unit in parts:
-            assert unit not in P[layer], f"{layer} still carries {unit}"
-    # the parents are the point: dropping a part is only right if the whole is
-    # there to stand for it
-    for parent in set(parts.values()):
-        assert parent in P["society"], f"{parent} is missing from the society layer"
-    assert not set(parts) & set(P["meta"]["iso2"]), (
+        for unit in parent:
+            assert unit not in P[layer], f"{layer} still counts {unit} twice"
+    for whole in parent.values():
+        assert whole in P["society"], f"{whole} is missing, so the part was cut for nothing"
+    assert not set(parent) & set(P["meta"]["iso2"]), (
         "a dropped unit still has a flag, so something can still render it")
+
+    for kept in ("Hong Kong", "Somaliland", "German Democratic Republic"):
+        assert kept in P["society"], (
+            f"{kept} was dropped. It is not double counted by anything here: "
+            "Hong Kong is kept by decision, Somaliland governs itself, and the "
+            "GDR was sovereign for every year it is coded")
 
 
 def test_every_change_the_page_prints_survives_moving_the_window():
