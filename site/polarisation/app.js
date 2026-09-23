@@ -137,7 +137,7 @@ function smooth(pairs, band = 0.035) {
    means unchanged. Unlabelled, the first looks like a percentage and the second
    looks like a raw score. */
 function axisFrame(svg, box, pad, x0, x1, y0, y1, yticks, xstep,
-                   ytitle = "", xtitle = "") {
+                   ytitle = "", xtitle = "", ysize = 16) {
   const xOf = (x) => pad.l + ((x - x0) / (x1 - x0)) * (box.w - pad.l - pad.r);
   const yOf = (y) => pad.t + (1 - (y - y0) / (y1 - y0)) * (box.h - pad.t - pad.b);
   for (const t of yticks) {
@@ -148,7 +148,7 @@ function axisFrame(svg, box, pad, x0, x1, y0, y1, yticks, xstep,
     }));
     const lab = svgEl("text", {
       x: pad.l - 9, y: (y + 5).toFixed(1), "text-anchor": "end",
-      "font-size": 16, fill: "var(--ink-soft)",
+      "font-size": ysize, fill: "var(--ink-soft)",
     });
     /* two decimals only where one would collide: 1.05 and 1.1 both matter on
        the fan chart, and "1.1" against "1.1" twice is worse than a long label */
@@ -353,14 +353,15 @@ function drawFan(svgId, readoutId, legendId, layer, styles, baseFrom, baseTo,
      down the right of the chart reads as the ranking it looks like and the eye
      can go from the top line straight to the top entry.
 
-     Shown entries first, though. Sorting purely by divergence put political
-     violence and anti-pluralism at the top of the key while neither was drawn:
-     both start from a very small base, so their index against the 1970s is the
-     highest on the page, and the first two things a reader met were greyed out.
-     The hidden ones keep the same ordering, below. */
-  const rank = (x) => x.pts[x.pts.length - 1][1];
+     ONE ORDER, whatever is switched on. Grouping the shown entries first was
+     tried and is worse: every toggle reshuffled the column, so the act of
+     turning a line off moved four other labels and the reader lost their place.
+     A key that rearranges itself when you use it is not a key. The cost is that
+     political violence and anti-pluralism sit near the top while off by
+     default, because both start from a very small base and so carry the highest
+     index on the page; that is a true ranking, just not of what is drawn. */
   series.sort((a, b) =>
-    (on.has(b.key) - on.has(a.key)) || (rank(b) - rank(a)));
+    b.pts[b.pts.length - 1][1] - a.pts[a.pts.length - 1][1]);
 
   /* THE KEY IS BUILT BEFORE THE CHART IS MEASURED, and the order matters now
      that the key sits beside the chart rather than above it. boxFor reads the
@@ -407,7 +408,11 @@ function drawFan(svgId, readoutId, legendId, layer, styles, baseFrom, baseTo,
   }
   const { xOf, yOf } = axisFrame(svg, box, pad, x0, x1, lo, hi,
     ticks, narrow ? 20 : 10,
-    "Distance between parties, 1970s = 1", "Year");
+    /* 13, against the society chart's 16. That one carries five whole numbers
+       on a 0 to 4 scale and they are the thing being read; this one carries
+       1.25 and 1.75 as well, so the same size crowds the gutter and competes
+       with the lines. */
+    "Distance between parties, 1970s = 1", "Year", 13);
 
   // the baseline: 1.0 is "exactly where it was", and it is the whole reference
   svg.appendChild(svgEl("line", {
@@ -529,9 +534,13 @@ function renderLayers() {
     + `country, and nothing at all on changes between elections, against a `
     + `control of 0.93. How people vote and how divided they are turn out to be `
     + `close to unrelated, so nothing here averages one with the other.</dd>`;
+  /* The source's own sentence, then ours. Theirs is quoted so a reader can
+     see what the publisher claims for it before reading what this page claims
+     to take from it. */
   $("#sources").innerHTML = DATA.meta.sources.map((s) =>
-    `<li><a href="${s.url}" rel="noopener">${s.name}</a>, ${s.publisher}. ${s.role}</li>`)
-    .join("");
+    `<li><a href="${s.url}" rel="noopener">${s.name}</a>, ${s.publisher}.`
+    + (s.says ? ` <q>${s.says}</q>` : "")
+    + ` <span class="use">${s.role}</span></li>`).join("");
 }
 
 function buildPickers() {

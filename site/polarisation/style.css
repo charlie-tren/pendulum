@@ -44,7 +44,7 @@
      page: three greys and no reason to look. Indigo for the population, deeper
      indigo for the median, warm amber for whichever country is picked out, so
      the one line the reader chose is the only thing that is not blue. */
-  --p-band: #9aa6cc;   --p-med: #3f4a7a;   --p-pick: #a63446;
+  --p-band: #9aa6cc;   --p-med: #3f4a7a;   --p-pick: #1d6b53;
   --p-left: #2f6fb2;   --p-right: #c33c3c;
   /* the three layers, for the swatches in the panel that lists them */
   --p-party: #c0522d;  --p-europe: #5d8a6b;  --p-society: #2f6fb2;
@@ -289,7 +289,7 @@ a { color: var(--accent); }
     --p-immig: #d18a63;  --p-lgbt: #b28cbd;  --p-minor: #c4ab68;
     --p-viol: #cc7873;   --p-plur: #6fa99b;  --p-pop: #8f99bd;
     --p-anti: #a8957f;
-    --p-band: #59639a;   --p-med: #aab4dc;   --p-pick: #ef8a9c;
+    --p-band: #59639a;   --p-med: #aab4dc;   --p-pick: #5ec6a0;
     --p-left: #6ea8e0;   --p-right: #d95555;
     --p-party: #e08055;  --p-europe: #82bd93;  --p-society: #6ea8e0;
     --coin-bronze: #b06a28; --coin-bronze-face: #d98f45; --coin-bronze-edge: #f0b982;
@@ -829,3 +829,29 @@ h1:hover .coins .s-gold, h1:focus-within .coins .s-gold { animation-delay: .24s;
 .rank li button:hover { background: var(--panel); color: var(--ink); }
 .rank li button:hover > b { color: var(--ink-soft); }
 .rank li button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ---- rhythm between and inside panels ----
+   Sections were separated by the same gap that separated a heading from its own
+   standfirst, so the page read as one column of evenly spaced blocks with no
+   hierarchy. The rule is that the space BETWEEN panels is bigger than any space
+   inside one, and that a chart gets more air above it than the text does. */
+main.wrap > .panel + .panel { margin-top: 34px; }
+.panel > h2 { margin-bottom: 6px; }
+.panel > .sub { margin-bottom: 0; }
+.panel > .controls { margin-top: 20px; }
+.panel > .legend, .panel > .chart-row { margin-top: 22px; }
+.panel > .chart, .panel > .chart-row > .chart { margin-top: 14px; }
+.panel > .ranks { margin-top: 26px; }
+.panel > .sources { margin-top: 14px; }
+@media (max-width: 640px) {
+  main.wrap > .panel + .panel { margin-top: 22px; }
+  .panel > .ranks { margin-top: 20px; }
+}
+
+/* The source's own words, then ours. */
+/* The quote marks are the CHARACTERS, not hex escapes. A CSS escape is one to
+   six hex digits and `C` followed by a closing quote parses as  then a
+   literal C, which rendered as a replacement box and the letter C at the start
+   of every source. */
+.sources q { quotes: "“" "”"; font-style: italic; color: var(--ink-soft); }
+.sources .use { display: block; margin-top: 4px; color: var(--ink-faint); }

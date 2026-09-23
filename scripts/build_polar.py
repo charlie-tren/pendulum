@@ -89,21 +89,36 @@ SOCIETY_AXES = [
      "Whether ordinary citizens use violence to pursue political goals."),
 ]
 
+# Each source is described in ITS OWN WORDS first, quoted from the page the
+# link goes to, then what this page actually takes from it. A paraphrase is a
+# summary of a summary and it is where a source quietly acquires a scope its
+# publisher never claimed.
 SOURCES = [
     {"name": "V-Party v2", "publisher": "V-Dem Institute",
      "url": "https://www.v-dem.net/data/v-party-dataset/",
-     "role": "Party positions and vote shares, 1970 to 2019. The spread across "
-             "parties at each election is computed here, not published there."},
-    {"name": "Chapel Hill Expert Survey, trend file",
-     "publisher": "Polk, Jolly, Bakker and others",
+     "says": "Varieties of Party Identity and Organization (V-Party) is a "
+             "dataset examining the policy positions and organizational "
+             "structures of political parties across the world.",
+     "role": "Used here for party positions and vote shares, 1970 to 2019. The "
+             "spread across the parties at each election is computed here, not "
+             "published there."},
+    {"name": "Chapel Hill Expert Survey, Europe trend file",
+     "publisher": "Bakker, Hooghe, Jolly, Marks, Polk and others",
      "url": "https://www.chesdata.eu/",
-     "role": "A second expert panel on 28 European countries, 1999 to 2024. "
-             "Different questions and a different scale, so it is a check on "
-             "the first layer rather than more of it."},
+     "says": "The Chapel Hill expert surveys estimate party positioning on "
+             "ideology and policy issues for national parties in countries "
+             "across the world.",
+     "role": "Used here as a check on the first layer rather than as more of "
+             "it: a different panel, different questions and a different scale. "
+             "28 European countries clear this page's coverage rule across the "
+             "seven waves from 1999 to 2024."},
     {"name": "V-Dem v16", "publisher": "V-Dem Institute",
      "url": "https://www.v-dem.net/data/the-v-dem-dataset/",
-     "role": "Whether society itself is split into antagonistic camps, expert "
-             "coded, 1900 to 2025. The only layer that reaches past 2019."},
+     "says": "Includes the world's most comprehensive and detailed democracy "
+             "ratings.",
+     "role": "Used here for one of its 531 indicators, v2cacamps, on whether "
+             "society is split into antagonistic camps, 1900 to 2025. The only "
+             "layer that reaches past 2019."},
 ]
 
 
