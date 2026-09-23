@@ -207,6 +207,52 @@ Ordered. `D` = data, `B` = build, `V` = viz, `S` = ship.
 
 ## Parked
 
+### MEASURED 23/09/2026: modelling societal polarisation from votes. Rho +0.16, not chart material
+
+Asked on 23/09 while scoping the polarisation page: "is there a way to model how
+polarised society is, in terms of the political parties people are voting for".
+Measured the same day. **The answer is no, and the null is the useful part.**
+
+A standard deviation of party positions cannot tell a society split into two
+camps from one spread thinly across many, so the right family is Esteban-Ray
+(1994), which pays for a bloc being LARGE as well as distant. Computed per
+country-election from V-Party vote shares, then correlated against V-Dem's
+`v2cacamps_osp`, the country experts' rating of whether society is in
+antagonistic camps. 1,135 elections, 143 countries, 1970-2019.
+
+| index | levels | within-country | change on change |
+|---|---|---|---|
+| Esteban-Ray a=1.0, immigration | +0.009 | **+0.160** | +0.050 |
+| Esteban-Ray a=1.6, immigration | +0.061 | +0.158 | +0.029 |
+| spread, immigration | -0.066 | +0.123 | +0.034 |
+| Esteban-Ray a=1.0, economy | -0.043 | +0.097 | +0.049 |
+| Esteban-Ray a=1.0, LGBT | +0.031 | +0.014 | -0.017 |
+| two-bloc share, economy | -0.152 | +0.023 | +0.006 |
+| effective number of parties | -0.172 | -0.060 | -0.018 |
+| CONTROL, camps vs camps at the next election | | | **+0.929** |
+
+SE is about 0.032 at this n, so 3 SE is 0.10. The control is +0.93, so the
+matching and the differencing are wired up and these are real nulls.
+
+Three reasons it is not a chart:
+
+- **+0.16 is 2.6% of variance.** The populism-vs-inequality chart was declined
+  at +0.12 for being a round cloud. This does not clear that bar either.
+- **Change on change is nothing.** Even the +0.16 is a slow level relationship
+  inside a country, not an election moving the rating.
+- **The cross-section is wrong-signed** on several indices, which is the same
+  development-and-party-system-age confound the populism work hit.
+
+What it IS good for, and what the page says in one sentence: this is measured
+evidence that the layers are independent. How people vote and how divided they
+are turn out to be close to unrelated, so the party layer does not validate the
+society layer and the page must not let a reader read one as the other. The one
+index that gets anywhere is the cultural one, not the economic one, which is
+consistent with the rest of the page.
+
+Scripts are in the session scratchpad, not the repo.
+
+
 ### DECLINED 07/09/2026: a populism-vs-inequality chart
 
 Asked for on 05/09 ("plotting inequality against rise of populist parties in a
