@@ -31,11 +31,20 @@
      The hues carry the argument. The two axes that did not move are COOL and
      everything that roughly doubled is WARM, so a reader who takes nothing else
      from the fan chart still sees that the cool lines are the flat ones. */
-  --p-econ: #2f6fb2;   --p-relig: #6b7f8c;
-  --p-immig: #c0522d;  --p-lgbt: #a8387e;  --p-minor: #c08a3e;
-  --p-viol: #8a2020;   --p-plur: #5d8a6b;  --p-pop: #6b5b95;
-  --p-anti: #495070;
-  --p-pick: #1a1c1f;   --p-band: #d7dce2;  --p-all: #9aa6b2;
+  /* The party chart's nine, and the brief is restraint. Six are on at once and
+     they sit beside each other in a column, where a saturated set reads as a
+     chart trying to be exciting. These are pulled toward one muted register and
+     separated by hue rather than by loudness, with the two that do not move
+     kept coolest. */
+  --p-econ: #35608c;   --p-relig: #78878f;
+  --p-immig: #b0603a;  --p-lgbt: #7c5688;  --p-minor: #96813f;
+  --p-viol: #9c4540;   --p-plur: #43786c;  --p-pop: #5c6890;
+  --p-anti: #6b5c4c;
+  /* The society chart, which was a grey median inside a grey band on a white
+     page: three greys and no reason to look. Indigo for the population, deeper
+     indigo for the median, warm amber for whichever country is picked out, so
+     the one line the reader chose is the only thing that is not blue. */
+  --p-band: #9aa6cc;   --p-med: #3f4a7a;   --p-pick: #c77d2e;
   --p-left: #2f6fb2;   --p-right: #c33c3c;
   /* the three layers, for the swatches in the panel that lists them */
   --p-party: #c0522d;  --p-europe: #5d8a6b;  --p-society: #2f6fb2;
@@ -208,7 +217,7 @@ select:focus-visible, .segmented button:focus-visible { outline: 2px solid var(-
 .legend i.dash {
   width: 20px; height: 12px; border-radius: 0;
   background: repeating-linear-gradient(to right,
-    var(--ink-soft) 0 5px, transparent 5px 9px) center / 100% 2.5px no-repeat;
+    var(--p-med) 0 5px, transparent 5px 9px) center / 100% 2.5px no-repeat;
 }
 
 .chart { margin: 0; position: relative; }
@@ -276,11 +285,11 @@ a { color: var(--accent); }
     --w-england: #6fa583; --w-piedmont: #c383b6; --w-pick: #6ea8e0;
     --w-region: #8a5313;
     --w-median: #e58f6f;
-    --p-econ: #6ea8e0;   --p-relig: #94a6b3;
-    --p-immig: #e08055;  --p-lgbt: #e07ab5;  --p-minor: #e8c07a;
-    --p-viol: #d95555;   --p-plur: #82bd93;  --p-pop: #a294cf;
-    --p-anti: #8d95bb;
-    --p-pick: #f2f4f7;   --p-band: #343b45;  --p-all: #6a7684;
+    --p-econ: #7ba7d6;   --p-relig: #9aa8b0;
+    --p-immig: #d18a63;  --p-lgbt: #b28cbd;  --p-minor: #c4ab68;
+    --p-viol: #cc7873;   --p-plur: #6fa99b;  --p-pop: #8f99bd;
+    --p-anti: #a8957f;
+    --p-band: #59639a;   --p-med: #aab4dc;   --p-pick: #e2a052;
     --p-left: #6ea8e0;   --p-right: #d95555;
     --p-party: #e08055;  --p-europe: #82bd93;  --p-society: #6ea8e0;
     --coin-bronze: #b06a28; --coin-bronze-face: #d98f45; --coin-bronze-edge: #f0b982;
@@ -781,3 +790,34 @@ h1:hover .coins .s-gold, h1:focus-within .coins .s-gold { animation-delay: .24s;
     gap: 6px 16px; padding: 0 0 10px;
   }
 }
+
+/* ---- the extremes, named ----
+   Two ranked fives under the society chart. They replace the outer band, which
+   could show that some country sat at 3.99 but never which one, and the name is
+   the only interesting part of that fact. Each entry is a button: pressing it
+   picks that country out on the chart above, so the list is the quickest route
+   into the control as well as a finding on its own. */
+.ranks { display: flex; gap: 40px; margin: 20px 0 2px; flex-wrap: wrap; }
+.rank { flex: 1 1 250px; min-width: 0; }
+.rank h3 { font-size: 15px; font-weight: 700; margin: 0; color: var(--ink); }
+.rank-note { margin: 2px 0 8px; font-size: 13px; color: var(--ink-faint); }
+.rank ol { margin: 0; padding: 0; list-style: none; counter-reset: rank; }
+.rank li { counter-increment: rank; }
+.rank li button {
+  display: flex; align-items: baseline; gap: 10px; width: 100%;
+  font: inherit; font-size: 14.5px; color: var(--ink-soft);
+  background: none; border: 0; border-radius: 6px;
+  padding: 5px 8px 5px 4px; cursor: pointer; text-align: left;
+}
+.rank li button::before {
+  content: counter(rank) "."; flex: none; width: 16px;
+  font-size: 12.5px; color: var(--ink-faint); font-variant-numeric: tabular-nums;
+}
+.rank li button > span { flex: 1 1 auto; min-width: 0; }
+.rank li button > b {
+  flex: none; font-weight: 400; color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+.rank li button:hover { background: var(--panel); color: var(--ink); }
+.rank li button:hover > b { color: var(--ink-soft); }
+.rank li button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }

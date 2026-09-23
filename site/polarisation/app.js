@@ -54,7 +54,8 @@ const AXIS_STYLE = {
    two flat lines and the two that moved most, not nine lines at once; the other
    five are there for anyone who wants to check that the four were not picked to
    flatter the point. */
-const AXES_ON = new Set(["economy", "religion", "immigration", "lgbt"]);
+const AXES_ON = new Set(["economy", "religion", "immigration", "lgbt",
+                         "minorities", "pluralism"]);
 
 const fmt2 = (v) => v.toFixed(2);
 const pct = (v) => `${v > 0 ? "+" : ""}${Math.round(v * 100)}%`;
@@ -235,12 +236,16 @@ function drawCamps() {
      than as a range: the middle eighty was doing almost no work between the
      other two, and dropping it leaves the two boundaries anyone actually
      wants, the whole population and its middle. */
-  envelope(col(1), col(7), 0.22);    // every country, lowest to highest
-  envelope(col(3), col(5), 0.55);    // the middle half
+  /* ONE envelope. The full range was drawn to show that countries differ far
+     more than the middle half suggests, and it did, but as an anonymous edge:
+     a reader could see something sits at 3.99 and not which country, which is
+     the only interesting part. The named lists under the chart do that job
+     properly, so the outer band comes off and the shape stays readable. */
+  envelope(col(3), col(5), 0.6);     // the middle half
   const p50 = col(4);
   svg.appendChild(line(
     p50.map(([x, y]) => `${xOf(x).toFixed(1)},${yOf(y).toFixed(1)}`).join(" "),
-    "var(--ink-soft)", 2, { "stroke-dasharray": "5 4", "stroke-opacity": 0.9 }));
+    "var(--p-med)", 2.4, { "stroke-dasharray": "5 4" }));
 
   const own = state.country === ALL
     ? [] : ((DATA.society[state.country] || {}).camps || []);
@@ -266,7 +271,7 @@ function drawCamps() {
     const row = band.reduce((b2, r) =>
       (!b2 || Math.abs(r[0] - yr) < Math.abs(b2[0] - yr)) ? r : b2, null);
     readout.innerHTML = `<b>${yr}</b>`
-      + `<div class="row"><span><i style="background:var(--ink-soft)"></i>`
+      + `<div class="row"><span><i style="background:var(--p-med)"></i>`
       + `median</span><span>${fmt2(m[1])}</span></div>`
       + `<div class="row"><span><i style="background:var(--p-band)"></i>`
       + `middle half</span><span>${fmt2(row[3])} to ${fmt2(row[5])}</span></div>`
@@ -294,8 +299,8 @@ function drawCamps() {
   $("#camps-sub").textContent =
     `V-Dem asks country experts whether supporters of opposing camps still `
     + `interact in a friendly way outside politics: at family functions, in `
-    + `civic associations, at work. 0 is friendly, 4 is hostile. The pale band `
-    + `is all ${last[8]} countries; the darker one is the middle half.`;
+    + `civic associations, at work. 0 is friendly, 4 is hostile. The band `
+    + `covers the middle half of ${last[8]} countries.`;
   $("#camps-caption").textContent =
     `The median sits at ${fmt2(z)} today against ${fmt2(a)} in 1978. `
     + `The rise since 2010 is real, and it is a return to where the Cold War `
@@ -305,8 +310,7 @@ function drawCamps() {
               + "country.");
 
   $("#legend-camps").innerHTML =
-    `<span class="explained" tabindex="0" title="Every country rated that year, from the least divided to the most."><i class="faint" style="background:var(--p-band)"></i>All ${last[8]} countries</span>`
-    + `<span class="explained" tabindex="0" title="The middle half of countries, with the median country dashed through it."><i style="background:var(--p-band)"></i>Middle half</span>`
+    `<span class="explained" tabindex="0" title="The middle half of countries: a quarter sit above this band and a quarter below."><i style="background:var(--p-band)"></i>Middle half</span>`
     + `<span class="explained" tabindex="0" title="Half the countries sit above this line and half below it."><i class="dash"></i>Median</span>`
     + (state.country === ALL ? ""
         : `<span><i style="background:var(--p-pick)"></i>${state.country}</span>`);
@@ -460,9 +464,47 @@ function drawAxes() {
 
 /* ----------------------------------------------------------------- furniture */
 
+/* The five friendliest and the five most hostile, most recent year with a full
+   set of ratings. This replaces the outer band, which showed that something sat
+   at 3.99 without ever saying what: the edge of a grey shape is not a finding,
+   a country's name is. Clicking one picks it out on the chart above, so the
+   list is also the fastest way into the control. */
+function renderRanks() {
+  const el = $("#camps-ranks");
+  if (!el) return;
+  const rows = DATA.bands.society.camps;
+  const year = rows[rows.length - 1][0];
+  const vals = [];
+  for (const [name, axes] of Object.entries(DATA.society)) {
+    const hit = (axes.camps || []).find((r) => r[0] === year);
+    if (hit) vals.push([name, hit[1]]);
+  }
+  vals.sort((p, q) => p[1] - q[1]);
+  const list = (title, note, items) =>
+    `<div class="rank"><h3>${title}</h3><p class="rank-note">${note}</p><ol>`
+    + items.map(([n, v]) =>
+        `<li><button type="button" data-country="${n.replace(/"/g, "&quot;")}">`
+        + `<span>${n}</span><b>${fmt2(v)}</b></button></li>`).join("")
+    + "</ol></div>";
+  el.innerHTML =
+    list("Most friendly", `Opposing supporters still get on, ${year}`,
+         vals.slice(0, 5))
+    + list("Least friendly", `They mostly do not, ${year}`,
+           vals.slice(-5).reverse());
+  for (const btn of el.querySelectorAll("[data-country]")) {
+    btn.addEventListener("click", () => {
+      state.country = btn.dataset.country;
+      $("#country-sel").value = state.country;
+      render();
+      $("#camps").scrollIntoView({ block: "center", behavior: "smooth" });
+    });
+  }
+}
+
 function renderLayers() {
   const L = DATA.meta.layers;
-  $("#layers").innerHTML = Object.entries(L).map(([key, v]) =>
+  // the layers panel was removed from the page; the sources list stays
+  if ($("#layers")) $("#layers").innerHTML = Object.entries(L).map(([key, v]) =>
     `<dt><i style="background:var(--p-${key})"></i>${v.label}</dt>`
     + `<dd>${v.note}</dd>`).join("")
     + `<dt><i style="background:var(--ink-faint)"></i>They do not check each other</dt>`
@@ -508,6 +550,7 @@ let settling = false;
 function render() {
   drawCamps();
   drawAxes();
+  renderRanks();
   if (settling) { settling = false; return; }
   const off = ["#camps", "#axes"].some((id) => {
     const svg = $(id);
