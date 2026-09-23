@@ -288,11 +288,14 @@ function drawCamps() {
   };
   const a = at(1978), z = at(2025);
   const last = band[band.length - 1];
+  /* The country count is read off the payload, not typed. It moves whenever
+     V-Dem extends coverage, and a sentence that quotes a number the build
+     already knows is a copy waiting to go stale. */
   $("#camps-sub").textContent =
-    `V-Dem asks its country experts, every year since 1900, whether supporters `
-    + `of opposing camps avoid one another. The pale band is all `
-    + `${last[8]} countries, from ${fmt2(last[1])} to ${fmt2(last[7])} last `
-    + `year; the darker one inside it is the middle half.`;
+    `V-Dem asks country experts whether supporters of opposing camps still `
+    + `interact in a friendly way outside politics: at family functions, in `
+    + `civic associations, at work. 0 is friendly, 4 is hostile. The pale band `
+    + `is all ${last[8]} countries; the darker one is the middle half.`;
   $("#camps-caption").textContent =
     `The middle country sits at ${fmt2(z)} today against ${fmt2(a)} in 1978. `
     + `The rise since 2010 is real, and it is a return to where the Cold War `
