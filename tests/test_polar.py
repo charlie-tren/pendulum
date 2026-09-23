@@ -216,7 +216,7 @@ def test_the_method_does_not_overstate_the_vote_coverage():
     91% of the vote cast, not all of it. Saying '70% of the vote' claims the
     stricter of the two, so the sentence has to name which one it means."""
     assert "70% of the vote" in PAGE
-    assert "V-Party lists" in PAGE, (
+    assert "V-Party" in PAGE.split("70% of the vote")[1][:40], (
         "the method says '70% of the vote' without saying 70% of WHICH vote")
 
 

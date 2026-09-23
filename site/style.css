@@ -641,11 +641,17 @@ h1.coin-title {
    as the cradle and the coins: it moves only when the title is hovered, and it
    holds still for anyone who has asked for less motion. */
 .mark.arrows { height: 0.86em; }
-.arrows .arw-l, .arrows .arw-r { transform-box: view-box; }
-h1:hover .arrows .arw-l, h1:focus-within .arrows .arw-l { animation: leave-l 1.7s ease-in-out infinite; }
-h1:hover .arrows .arw-r, h1:focus-within .arrows .arw-r { animation: leave-r 1.7s ease-in-out infinite; }
-@keyframes leave-l { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-2.5px); } }
-@keyframes leave-r { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(2.5px); } }
+.arrows .arw-l { transform-box: view-box; transform-origin: 37px 14px; }
+.arrows .arw-r { transform-box: view-box; transform-origin: 27px 30px; }
+/* They REACH rather than slide. Picked from eight candidates: a translation
+   moves two arrows that are already apart slightly further apart, which is a
+   small idea shown small, whereas scaling from the tail makes each arrow extend
+   toward where it is pointing. The transform origin is each arrow's own tail,
+   so the heads travel and the tails stay put. */
+h1:hover .arrows .arw-l, h1:focus-within .arrows .arw-l { animation: leave-l 1.8s ease-in-out infinite; }
+h1:hover .arrows .arw-r, h1:focus-within .arrows .arw-r { animation: leave-r 1.8s ease-in-out infinite; }
+@keyframes leave-l { 0%, 100% { transform: scaleX(1); } 50% { transform: scaleX(1.16); } }
+@keyframes leave-r { 0%, 100% { transform: scaleX(1); } 50% { transform: scaleX(1.16); } }
 @media (prefers-reduced-motion: reduce) {
   h1:hover .arrows .arw-l, h1:hover .arrows .arw-r,
   h1:focus-within .arrows .arw-l, h1:focus-within .arrows .arw-r { animation: none; }
@@ -836,6 +842,11 @@ h1:hover .coins .s-gold, h1:focus-within .coins .s-gold { animation-delay: .24s;
    standfirst, so the page read as one column of evenly spaced blocks with no
    hierarchy. The rule is that the space BETWEEN panels is bigger than any space
    inside one, and that a chart gets more air above it than the text does. */
+/* The header and the first panel were separated by the same gap that separates
+   a heading from its own standfirst, so the standfirst read as though it
+   belonged to the panel below rather than to the title above. */
+header.wrap { padding-bottom: 12px; }
+main.wrap { margin-top: 26px; }
 main.wrap > .panel + .panel { margin-top: 34px; }
 .panel > h2 { margin-bottom: 6px; }
 .panel > .sub { margin-bottom: 0; }

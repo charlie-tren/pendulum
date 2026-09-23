@@ -55,8 +55,7 @@ const AXIS_STYLE = {
    Religious principles comes off the default set: it is flat like economics and
    two flat lines make the same point once. The rest stay in the key for anyone
    checking that these five were not chosen to flatter the argument. */
-const AXES_ON = new Set(["economy", "immigration", "lgbt",
-                         "minorities", "pluralism"]);
+const AXES_ON = new Set(["economy", "immigration", "lgbt", "minorities"]);
 
 const fmt2 = (v) => v.toFixed(2);
 const pct = (v) => `${v > 0 ? "+" : ""}${Math.round(v * 100)}%`;
