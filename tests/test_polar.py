@@ -198,8 +198,11 @@ def test_no_country_count_is_typed_into_the_copy():
     """Every count on the page is read off the payload at render time. A typed
     one goes stale the next time V-Dem extends coverage, and nothing would say
     so: the page would simply be wrong by one or two countries for ever."""
+    # The meta description is exempt: scripts/bake_static.py writes it from the
+    # payload, and test_sibling_descriptions_match_their_data fails if it goes stale.
+    copy = re.sub(r'<meta name="description" content="[^"]*">', "", COPY)
     for pat in (r"middle half of (\d+)", r"(\d{3}) countries"):
-        hit = re.search(pat, COPY)
+        hit = re.search(pat, copy)
         assert hit is None, f"hardcoded count in the page copy: {hit.group(0)!r}"
 
 
