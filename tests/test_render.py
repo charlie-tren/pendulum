@@ -271,3 +271,18 @@ def test_resizing_inequality_does_not_rewrite_the_url(browser, server):
             page.wait_for_timeout(250)
         page.wait_for_timeout(1500)
         assert page.evaluate("window.__writes") == 0
+
+
+def test_the_baked_caption_is_the_one_the_page_draws(browser, server):
+    """index.html carries the headline caption as static text for crawlers that
+    do not run JavaScript (scripts/bake_static.py). It must be the sentence the
+    page itself writes, or a data rebuild leaves crawlers quoting last year.
+    Fix by re-running the bake script, never by editing the HTML."""
+    import re
+    src = (SITE / "index.html").read_text(encoding="utf-8")
+    baked = re.search(r'<p class="caption" id="caption">([^<]*)</p>', src).group(1)
+    assert baked, "no caption baked into index.html"
+    with opened(browser, server, PAGES["pendulum"]) as (page, _):
+        drawn = page.evaluate("document.querySelector('#caption').textContent").strip()
+    assert baked.replace("&amp;", "&") == drawn, "re-run scripts/bake_static.py"
+    assert drawn in src, "the meta description no longer carries the caption"

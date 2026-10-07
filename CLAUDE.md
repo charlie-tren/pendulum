@@ -30,6 +30,9 @@ other sessions push to that repo constantly.
 
 The JSON under `site/` is a COPY of `data/out/`. Rebuild, then copy, or the
 page serves yesterday's numbers while the tests pass against today's.
+Then run `scripts/bake_static.py`, which writes the headline caption into
+`index.html` for crawlers that do not run JavaScript; a render test fails until
+you do.
 
 ## Skills that apply here
 
