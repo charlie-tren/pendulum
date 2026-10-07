@@ -223,3 +223,51 @@ def test_every_flag_in_a_ranked_list_loads(browser, server):
         assert not broken, f"broken flags: {broken}"
         rows = page.evaluate("document.querySelectorAll('#camps-ranks .rank').length")
         assert rows == 4, f"expected four ranked lists, found {rows}"
+
+
+COUNT_URL_WRITES = """() => {
+    window.__writes = 0;
+    const real = history.replaceState.bind(history);
+    history.replaceState = (...a) => { window.__writes++; return real(...a); };
+}"""
+
+
+def test_a_running_timeline_does_not_rewrite_the_url(browser, server):
+    """Cloudflare's beacon counts every history.replaceState as a pageview. The
+    timeline used to write the URL on each Play tick, every 320ms, so one
+    visitor watching for two and a half minutes read as 480 pageviews. While it
+    plays nothing is written; when it stops, exactly one write."""
+    with opened(browser, server, PAGES["pendulum"]) as (page, _):
+        page.evaluate(COUNT_URL_WRITES)
+        page.click('.play[data-play="year"]')
+        page.wait_for_timeout(2500)
+        assert page.evaluate("window.__writes") == 0, "the URL was written while playing"
+        page.click('.play[data-play="year"]')
+        page.wait_for_timeout(1500)
+        assert page.evaluate("window.__writes") == 1
+        assert "year=" in page.evaluate("location.hash")
+
+
+def test_dragging_a_slider_writes_the_url_once(browser, server):
+    with opened(browser, server, PAGES["pendulum"]) as (page, _):
+        page.evaluate(COUNT_URL_WRITES)
+        page.evaluate("""() => {
+            const el = document.querySelector('#year');
+            for (let v = +el.min; v < +el.min + 30; v++) {
+                el.value = v; el.dispatchEvent(new Event('input'));
+            }
+        }""")
+        page.wait_for_timeout(1500)
+        assert page.evaluate("window.__writes") == 1
+
+
+def test_resizing_inequality_does_not_rewrite_the_url(browser, server):
+    """render() runs on every resize and called writeHash with an unchanged
+    state, so resizing a window counted as reading."""
+    with opened(browser, server, PAGES["inequality"]) as (page, _):
+        page.evaluate(COUNT_URL_WRITES)
+        for w in (900, 1000, 1100, 1180):
+            page.set_viewport_size({"width": w, "height": 900})
+            page.wait_for_timeout(250)
+        page.wait_for_timeout(1500)
+        assert page.evaluate("window.__writes") == 0

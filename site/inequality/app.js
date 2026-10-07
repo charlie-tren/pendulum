@@ -1028,6 +1028,13 @@ function readHash() {
   }
 }
 
+/* Written once the page settles, and skipped when it would not change the URL.
+   Cloudflare's beacon counts every history.replaceState as a pageview, and
+   render() runs on every resize, so an unguarded write counted window
+   resizing as reading. Same fix as Pendulum's writeHash, see app.js there. */
+const HASH_SETTLE_MS = 1000;
+let hashTimer = null;
+
 function writeHash() {
   const p = new URLSearchParams();
   for (const k of ["metric", "country"]) if (state[k] !== DEFAULTS[k]) p.set(k, state[k]);
@@ -1035,9 +1042,14 @@ function writeHash() {
     if (state.scatter[k] !== DEFAULTS.scatter[k]) p.set(k, state.scatter[k] ? "1" : "0");
   }
   const h = p.toString();
-  try {
-    history.replaceState(null, "", h ? `#${h}` : location.pathname + location.search);
-  } catch { /* sandboxed iframes refuse this, and it must not take the page down */ }
+  const target = h ? `#${h}` : location.pathname + location.search;
+  clearTimeout(hashTimer);
+  hashTimer = setTimeout(() => {
+    if (target === (h ? location.hash : location.pathname + location.search + location.hash)) return;
+    try {
+      history.replaceState(null, "", target);
+    } catch { /* sandboxed iframes refuse this, and it must not take the page down */ }
+  }, HASH_SETTLE_MS);
 }
 
 function render() {

@@ -135,6 +135,16 @@ function readHash() {
   if (params.get("missing") === "include") state.missing = "include";
 }
 
+/* The URL is written once the page SETTLES, never on every frame. Cloudflare's
+   beacon counts each history.replaceState as a pageview, so writing on every
+   Play tick (320ms, looping) turned one visitor watching for two and a half
+   minutes into 480 pageviews: 04/10/2026 read 487 views from 9 visits, 480 of
+   them one browser in France. Debounced past the Play interval, a running
+   timeline writes nothing until it stops, a slider drag writes once when it
+   rests, and a write that would not change the URL is skipped. */
+const HASH_SETTLE_MS = 1000;
+let hashTimer = null;
+
 function writeHash() {
   const params = new URLSearchParams();
   for (const key of ["group", "weight", "year", "mapYear", "regime", "missing"]) {
@@ -143,14 +153,19 @@ function writeHash() {
     if (state[key] !== DEFAULTS[key]) params.set(key, state[key]);
   }
   const hash = params.toString();
-  try {
-    history.replaceState(null, "", hash ? `#${hash}` : location.pathname + location.search);
-  } catch (err) {
-    /* Sandboxed contexts (an about:srcdoc iframe, a file:// page in some
-       browsers) refuse replaceState with a SecurityError. Shareable URLs are a
-       convenience, not a feature the charts depend on, so lose them quietly
-       rather than taking the page down with them. */
-  }
+  const target = hash ? `#${hash}` : location.pathname + location.search;
+  clearTimeout(hashTimer);
+  hashTimer = setTimeout(() => {
+    if (target === (hash ? location.hash : location.pathname + location.search + location.hash)) return;
+    try {
+      history.replaceState(null, "", target);
+    } catch (err) {
+      /* Sandboxed contexts (an about:srcdoc iframe, a file:// page in some
+         browsers) refuse replaceState with a SecurityError. Shareable URLs are a
+         convenience, not a feature the charts depend on, so lose them quietly
+         rather than taking the page down with them. */
+    }
+  }, HASH_SETTLE_MS);
 }
 
 /* ---------- shared chart geometry ---------- */
