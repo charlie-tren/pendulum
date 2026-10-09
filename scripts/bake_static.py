@@ -25,8 +25,6 @@ import socket
 import threading
 from pathlib import Path
 
-from playwright.sync_api import sync_playwright
-
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / "site"
 PAGE = SITE / "index.html"
@@ -35,6 +33,9 @@ LEDE = "How the world's governments have moved along the political spectrum sinc
 
 
 def rendered_caption() -> str:
+    # Local so tests can import this module without playwright installed.
+    from playwright.sync_api import sync_playwright
+
     handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(SITE))
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
