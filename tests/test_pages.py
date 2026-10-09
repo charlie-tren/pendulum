@@ -123,15 +123,18 @@ def test_one_stylesheet_reaches_all_three_pages():
         assert 'href="style.css"' in (ROOT / html).read_text(encoding="utf-8"), html
 
 
-def test_sibling_descriptions_match_their_data():
+@pytest.mark.parametrize("sibling", ["polarisation", "inequality"])
+def test_sibling_descriptions_match_their_data(sibling):
     """Inequality and Polarisation carry a meta description built from their own
     data by scripts/bake_static.py. A data rebuild that is not followed by a bake
     leaves crawlers quoting stale figures. Fix by re-running the script."""
     import html, importlib.util, re
+    if not (ROOT / "site" / sibling / "data.json").exists():
+        pytest.skip(f"site/{sibling}/data.json not present (gitignored)")
     spec = importlib.util.spec_from_file_location("bake", ROOT / "scripts" / "bake_static.py")
     bake = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(bake)
-    for page, build in bake.SIBLINGS.items():
-        src = page.read_text(encoding="utf-8")
-        got = html.unescape(re.search(r'<meta name="description" content="([^"]*)">', src).group(1))
-        assert got == build(), f"{page.parent.name}: re-run scripts/bake_static.py"
+    page = ROOT / "site" / sibling / "index.html"
+    src = page.read_text(encoding="utf-8")
+    got = html.unescape(re.search(r'<meta name="description" content="([^"]*)">', src).group(1))
+    assert got == bake.SIBLINGS[page](), f"{sibling}: re-run scripts/bake_static.py"
