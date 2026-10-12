@@ -206,13 +206,13 @@ def test_no_country_count_is_typed_into_the_copy():
         assert hit is None, f"hardcoded count in the page copy: {hit.group(0)!r}"
 
 
-def test_the_share_title_names_a_period_the_data_supports():
-    """og:title claims the world is about as divided as it was in the
+def test_the_share_line_names_a_period_the_data_supports():
+    """og:description claims the world is about as divided as it was in the
     mid-1970s. It said 1978 first, which was twice as far from today's median as
     1974 and 1975 are, so the claim was picking a year for sounding precise."""
     med = {r[0]: r[P50] for r in P["bands"]["society"]["camps"]}
     now = med[max(med)]
-    claimed = re.search(r'og:title" content="([^"]+)"', PAGE).group(1)
+    claimed = re.search(r'og:description" content="([^"]+)"', PAGE).group(1)
     assert "mid-1970s" in claimed, claimed
     window = [v for y, v in med.items() if 1974 <= y <= 1976]
     assert window, "no mid-1970s data"
