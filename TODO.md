@@ -118,7 +118,9 @@ rejected, so it is the one worth doing first.
       hour and would fix that permanently. Reading it needs `pyreadr`, which is
       now installed here.
 
-- [ ] **S6. Decide whether `charlie-tren/pendulum` goes public.** The footer on
+- [x] **S6. DONE 06/11/2026: public**, after a clean secrets scan (91 files, 137
+      commits); a "Code and data" link sits under Sources on all three pages.
+      **Decide whether `charlie-tren/pendulum` goes public.** The footer on
       both pages said "Built from open data. Code and data." and linked to this
       repo, which is PRIVATE while the site is public, so it was a 404 for every
       visitor. The link is removed rather than left broken. If the repo goes
