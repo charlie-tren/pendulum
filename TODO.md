@@ -80,15 +80,14 @@ rejected, so it is the one worth doing first.
       **Needs Charlie:** tDAR requires a free account, which is not mine to
       create. https://core.tdar.org/project/496853
 
-- [ ] **D11. `data/raw/` has no fetch script for four of its inputs.**
-      **06/11/2026: `scripts/fetch_raw.py` now fetches three of the four.**
-      `continents.csv` and `ne_110m_countries.geojson` fetched and checked.
-      `wikidata_hog.json` has its query rebuilt from docs/data-sources.md (with the
-      party-dates overlap fix), not yet run: query.wikidata.org was answering 429
-      "1 req / min during active wdqs outage" all afternoon. Left: run
-      `python scripts/fetch_raw.py wikidata` and check UK/France/Australia 2025
-      through `resolve.load_wikidata`. `dpi2023.csv` stays manual - the IDB page
-      returns 403 to scripts.
+- [x] **D11. DONE 09/11/2026: `scripts/fetch_raw.py` fetches three of the four**,
+      all checked: `continents.csv`, `ne_110m_countries.geojson`, and
+      `wikidata_hog.json` (1,356 country-years; UK, France, Australia, Germany,
+      Canada, Japan and Italy 2025 resolve to the right government). The 429s were
+      the User-Agent, not the outage: Wikimedia wants a contact URL in it.
+      `dpi2023.csv` stays a manual download - the IDB page returns 403 to scripts,
+      as docs/data-sources.md says.
+      **`data/raw/` has no fetch script for four of its inputs.**
       CORRECTED 23/09/2026: the directory is no longer empty - all 15 files
       are present and `build_polar.py`, `build_index.py` and
       `build_wealth.py` all run. Three fetch scripts now exist

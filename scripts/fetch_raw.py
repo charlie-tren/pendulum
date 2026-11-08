@@ -19,7 +19,9 @@ import urllib.request
 from pathlib import Path
 
 RAW = Path(__file__).resolve().parents[1] / "data" / "raw"
-UA = "pendulum/0.1 (charlietrenorden.com; data viz project)"
+# Wikimedia's User-Agent policy wants a contact URL: without one the query service
+# answered 429 "1 req / min" for three days running (06-09/11/2026).
+UA = "Pendulum/0.1 (https://charlietrenorden.com/pendulum/; data visualisation)"
 
 CONTINENTS = ("https://ourworldindata.org/grapher/continents-according-to-our-world-in-data.csv"
               "?v=1&csvType=full&useColumnShortNames=true")
